@@ -17,6 +17,12 @@ Send ONE message with at most 6 questions, each with your proposed default so th
 platforms (web, mobile, both), data it stores, whether users sign in, and hard constraints (budget,
 deadline, existing services). Then wait. If the user says "you decide", use your defaults and say so.
 
+## 3a. Compare with the existing code (when there is code)
+For each thing the user wants, look at what already exists and mark it: already works, partly there,
+missing, or conflicts with how the code is built. Reuse existing patterns, components and helpers instead
+of planning new ones, and name the files you'd extend. Put this in the spec as a short "What exists / what's
+new" list so the build doesn't duplicate or fight the codebase.
+
 ## 3. Gap check
 Before writing, check the idea against what people expect and what usually gets forgotten. Note each gap
 as: add it, defer it, or not needed (with a reason).

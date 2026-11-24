@@ -27,5 +27,11 @@ Check where the project uses them:
 - Personal data, especially of minors: collect the minimum, keep it out of logs and analytics.
 - Project-specific risks listed in CLAUDE.md.
 
+Use real tools when the project has them: if `semgrep`, `bandit`, `gosec`, `cargo audit`, `npm audit` or
+similar is installed, run it on the changed files and include its findings (mark them as tool output, and
+dismiss false positives with a reason). Don't install anything. When you find one real issue, search the
+rest of the codebase for the same pattern (variant analysis) and report every instance. Don't just
+report the first one.
+
 Every finding needs: file, line, impact, and a concrete fix. Do not report style issues.
 End with a verdict: APPROVE or CHANGES REQUESTED, with findings ranked by severity.

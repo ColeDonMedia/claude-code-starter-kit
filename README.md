@@ -15,6 +15,7 @@ agents and commands read each project's own commands from its `CLAUDE.md`.
 | `/starter-kit:feature <what to build>` | Builds it in an isolated branch + worktree via a subagent, reviews it, merges it into your main branch only when green and approved. Keeps your main conversation small |
 | `/starter-kit:spec <idea>` | Requirements, gap check and acceptance criteria before building a new app or a vague feature |
 | `/starter-kit:research <question>` | Sourced competitor and market research with a gap list |
+| `/starter-kit:debug <problem>` | For a bug or failing test with an unclear cause: reproduce, write a failing test, isolate, test one hypothesis at a time, fix the root cause, prove it. Stops after three wrong guesses instead of flailing |
 | `/starter-kit:vet <link>` | Audits someone else's skill, plugin or MCP server before you install it: safe download, pattern scan, full read, verdict |
 | `/starter-kit:tdd <feature>` | One red → green → refactor cycle, done in the current conversation (for small changes) |
 | `/starter-kit:review` | Correctness review of the diff; UI review only when UI files changed |
@@ -42,7 +43,7 @@ Claude picks and runs the right workflow itself, saying in one line what it ran:
   you one yes/no question, about letting it run your test and build commands without prompts.
 - **Routing:** questions and small edits are handled directly; a new app or vague feature goes
   `spec` → `feature`; features and bug fixes go to `feature`; one-file tweaks go `tdd` → `review`;
-  competitor and market questions go to `research`; a link to someone else's skill goes to `vet`.
+  bugs with an unclear cause go to `debug`; competitor and market questions go to `research`; a link to someone else's skill goes to `vet`.
 - **Shipping:** saying "ship it", "push" or "done" runs `full-scan`. A hook also blocks `git push` and
   `gh pr create` until `/starter-kit:full-scan` has passed for the exact commit being pushed; a new commit
   means a new scan.
@@ -57,8 +58,17 @@ send broad searches to a subagent. It never shortens code, commands, paths or er
 security issues are written in full. It only trims Claude's replies and reading habits, so expect modest
 savings (roughly 15–30%), not the 65%+ some tools claim. Lean mode costs about 240 tokens per session, and the workflow routing another 240.
 
+**Safety guard.** A hook reads every shell command before it runs (like a shell would, so text that merely
+mentions a dangerous command, such as a commit message, is fine). It *blocks* catastrophic commands:
+`rm -rf` on `/`, your home folder or a drive, force-pushing `main`/`master`, writing to disks, fork bombs. It
+*asks you first* for risky but sometimes intended ones: `git reset --hard`, `git clean -f`, discarding changes,
+force-push to other branches, `curl | sh`, `DROP TABLE`, database resets, printing `.env`/SSH keys. Normal
+cleanups like `rm -rf node_modules` pass. Allow a specific rule per project with
+`{ "guardAllow": ["reset-hard"] }` (rule ids are listed at the top of `hooks/safety-guard.mjs`), or turn the
+guard off with `{ "guard": false }`.
+
 **Turning it off** (per project, in `.claude/kit.json`): `{ "lean": false }` stops lean mode;
-`{ "autoGate": false }` stops the push gate; `{ "auto": false }` stops everything automatic (setup
+`{ "guard": false }` stops the safety guard; `{ "autoGate": false }` stops the push gate; `{ "auto": false }` stops everything automatic (setup
 nudge, lean mode, gate). Claude is told never to change this itself.
 
 The automatic behaviour is instructions plus two hooks, so it is reliable but not magic: the push gate is
@@ -84,7 +94,7 @@ enforced by a hook, while "use `/feature` for features" is guidance Claude follo
 - Never downloads a test runner (`npx --no-install`), and skips file names containing shell-special characters.
 - A file edited inside a git worktree is tested against that worktree's own files.
 - Requires Node.js on the PATH. Without it the hook does nothing useful and can be ignored.
-- Hook tests: `node --test plugins/starter-kit/hooks/test-related.test.mjs plugins/starter-kit/hooks/auto.test.mjs`
+- Hook tests: `node --test plugins/starter-kit/hooks/test-related.test.mjs plugins/starter-kit/hooks/auto.test.mjs plugins/starter-kit/hooks/safety-guard.test.mjs`
 
 ## Built for getting it right the first time
 | Step | What happens |
@@ -96,6 +106,8 @@ enforced by a hook, while "use `/feature` for features" is guidance Claude follo
 | `/starter-kit:full-scan` | Now includes a dependency vulnerability audit |
 
 ## Recommended add-ons (not bundled)
+Eighteen third-party repos were cloned, scanned and read; results, pinned commits and cautions are in [VETTED.md](VETTED.md). The short version: `ccusage`, selected Trail of Bits and Anthropic skills are the cleanest; `rtk`, `tdd-guard` and `ccstatusline` are useful with cautions (see the file).
+
 Third-party skills run with your permissions and load their instructions into every session, so this kit
 does not bundle them. Install only what you need. Official Anthropic plugins first, since they are
 maintained by Anthropic and already listed in the official marketplace:

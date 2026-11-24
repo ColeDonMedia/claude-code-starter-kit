@@ -2,7 +2,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync, realpathSync, symlinkSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync, realpathSync, symlinkSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -152,6 +152,17 @@ test("usage error without a folder", () => {
 
 test("the starter-kit plugin itself scans clean of HIGH findings", () => {
   const r = scan(PLUGIN);
-  const high = r.findings.filter((x) => x.sev === "HIGH" && !x.file.endsWith(".test.mjs") && x.file !== "scripts/vet-scan.mjs");
+  // Detectors (the scanner, the safety guard) and their tests legitimately contain the very patterns they look for
+  // (`curl | sh`, `id_rsa`, ...), so they are excluded. The guard is checked separately below: it must stay read-only.
+  const detectors = new Set(["scripts/vet-scan.mjs", "hooks/safety-guard.mjs"]);
+  const high = r.findings.filter((x) => x.sev === "HIGH" && !x.file.endsWith(".test.mjs") && !detectors.has(x.file));
   assert.deepEqual(high, [], JSON.stringify(high, null, 2));
+});
+
+test("the safety guard stays passive: only reads files, no network, no process spawning, no writes", () => {
+  const src = readFileSync(join(HERE, "..", "hooks", "safety-guard.mjs"), "utf8");
+  const imports = [...src.matchAll(/^import .* from "(.+)";$/gm)].map((m) => m[1]).sort();
+  assert.deepEqual(imports, ["node:fs", "node:path"]);
+  assert.match(src, /import \{ existsSync, readFileSync \} from "node:fs"/);
+  assert.doesNotMatch(src, /\b(fetch|spawn|spawnSync|exec|execSync|writeFile|writeFileSync|appendFile|unlink|rmSync)\s*\(/);
 });

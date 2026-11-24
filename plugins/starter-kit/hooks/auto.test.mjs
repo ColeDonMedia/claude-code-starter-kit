@@ -57,7 +57,7 @@ test("session-start: set-up project gets workflow routing and lean mode, not the
     s.put("CLAUDE.md", MANAGED);
     const ctx = contextOf(runHook(SESSION, {}, s.dir));
     assert.match(ctx, /STARTER KIT WORKFLOWS/);
-    for (const cmd of ["spec", "feature", "tdd", "review", "research", "full-scan", "vet"]) {
+    for (const cmd of ["spec", "feature", "tdd", "review", "research", "full-scan", "vet", "debug"]) {
       assert.ok(ctx.includes(`/starter-kit:${cmd}`), `routing should mention /starter-kit:${cmd}`);
     }
     assert.match(ctx, /Never ask the user to type a command/);

@@ -61,6 +61,8 @@ const ROUTING =
   "- You changed code directly in this conversation -> /starter-kit:review before you say it's done.\n" +
   "- User says ship, release, deploy, push, open a PR, or 'done' -> /starter-kit:full-scan (a hook blocks git push until it passes).\n" +
   "- User shares a link to a skill, plugin or MCP server, or asks to install one -> /starter-kit:vet first; never install it yourself.\n" +
+  "- A bug, error, crash or failing test with an unclear cause -> /starter-kit:debug (root cause before any fix); hand big fixes to /starter-kit:feature.\n" +
+  "- Never say done, fixed or passing without running the check this turn and quoting its result.\n" +
   "- Unsure which -> take the lighter path.";
 
 if (cfg.lean === false) emit(ROUTING);
@@ -71,7 +73,7 @@ emit(
   "LEAN MODE (starter kit; the user can switch it off with {\"lean\": false} in .claude/kit.json):\n" +
     "- Replies: lead with the answer or result. No preamble, no restating the request, no recap of what you just did (the diff shows it), no pleasantries. Short sentences; bullets over paragraphs; about 5 lines unless the user asks for detail.\n" +
     "- Don't narrate obvious steps or tool calls.\n" +
-    "- Read narrowly: search before reading; read only the line ranges you need; don't re-read files you've read or just edited; quote the relevant lines of long output instead of pasting it.\n" +
+    "- Read narrowly: search before reading; read only the line ranges you need; don't re-read files you've read or just edited; quote the relevant lines of long output instead of pasting it. Cap noisy commands yourself (`| tail -n 40`, quiet or dot reporters, `--quiet`) rather than dumping everything into context.\n" +
     "- Smallest change: edit existing code before adding files or abstractions; no extra features, comments or refactors beyond the request.\n" +
     "- Send broad searches and long logs to a subagent.\n" +
     "- Never shorten code, commands, paths, error text, or anything the user must act on. Write warnings, destructive actions, security issues and anything easy to misread in full: clarity beats brevity.",

@@ -21,6 +21,7 @@ agents and commands read each project's own commands from its `CLAUDE.md`.
 | `/starter-kit:review` | Correctness review of the diff; UI review only when UI files changed |
 | `/starter-kit:full-scan` | Tests, typecheck, lint, build, then the security review — the gate before shipping |
 | `implementer` agent (Sonnet) | Does the building for `/starter-kit:feature` in its own worktree and commits on its own branch |
+| `researcher` agent (Sonnet) | Does the web reading for research and planning in its own context: at least six searches, primary sources, cross-checked claims, dated links, a confidence rating |
 | `reviewer` agent (Sonnet) | Reviews the diff and runs the tests. Read-only |
 | `ui-reviewer` agent (Sonnet) | Looks at the running app in a browser when browser tools exist. Read-only |
 | `security-reviewer` agent (Opus) | Hardening review, run once before shipping. Read-only |
@@ -66,6 +67,22 @@ force-push to other branches, `curl | sh`, `DROP TABLE`, database resets, printi
 cleanups like `rm -rf node_modules` pass. Allow a specific rule per project with
 `{ "guardAllow": ["reset-hard"] }` (rule ids are listed at the top of `hooks/safety-guard.mjs`), or turn the
 guard off with `{ "guard": false }`.
+
+**Built for people who don't code.** Claude is told the owner is not a programmer: it explains results in plain
+words (what works now, how to see it, what isn't done), makes routine technical choices itself, and asks only
+when a choice changes what you get, costs money, or can't be undone. It creates the git repository, commits its
+own verified work locally, and never pushes unless asked. Switch the wording rule off with
+`{ "plainLanguage": false }`.
+
+**Builds that continue by themselves.** For a new app, the plan step researches similar products, picks the
+technology, writes a design brief (`DESIGN.md`) and a `ROADMAP.md` checklist, and asks you to approve it once.
+Claude then builds the roadmap one feature at a time, ticking each off. At the start of every later session the
+kit tells Claude how far the roadmap is and what's next, so "continue" is all you need to say.
+
+**Checks must pass before a turn ends.** When Claude finishes a turn and code has changed, a hook runs the
+project's own checks (the `verify` list in `.claude/kit.json`: typecheck, lint, tests). If one fails, the turn
+doesn't end; Claude gets the failure and must fix it or tell you plainly what's broken. Passing checks cost no
+tokens, and it blocks at most once per turn. Switch off with `{ "verifyGate": false }`.
 
 **Self-updating.** At the start of a session (at most once a day) a background job updates this plugin from
 its GitHub repo, so every computer stays current without anyone typing a command. It never delays the session
@@ -148,6 +165,11 @@ Tests: `node --test plugins/starter-kit/scripts/vet-scan.test.mjs`.
 - **Jailbreak or "safety bypass" skills** (for example Hermes's "godmode"). They don't make code better and they defeat the guardrails this kit relies on.
 - **"Godmode"-style mode switches and mega-bundles.** Reviewed in this repo's history: a per-turn "max capability" hook adds tokens on every message (the opposite of lean mode) and rewrites your settings on install; a 56-skill orchestration bundle needs other vendors' API keys and has no track record; a discipline pipeline (noobygains/godmode: question, verify docs, plan, test-first, second-model review, prove) mostly duplicates `spec` / `feature` / `full-scan`. It was fully vetted at commit 97c3f62 and nothing malicious was found, but it injects about 2,000 tokens at every session start plus a reminder on every prompt (about 4,000 tokens baseline versus this kit's 480), and its "invoke a skill before any response" rule would fight this kit's routing and lean mode. The one new idea, verifying library APIs against current docs, is now in the implementer agent.
 - **Large bundles** ("150 agents, 70 plugins"). Every skill's description costs tokens each session, and most of them will never be used.
+
+## Requirements
+- A current Claude Code. Very old versions of the `claude` command (2.1.0, for example) fail on any tool use
+  with "tool_use ids must be unique"; update with `npm install -g @anthropic-ai/claude-code@latest`.
+- Node.js on the PATH (the hooks are small Node scripts) and git.
 
 ## What a plugin can't carry
 Plugins don't ship `CLAUDE.md` or permission rules, which is why `/starter-kit:init` writes those

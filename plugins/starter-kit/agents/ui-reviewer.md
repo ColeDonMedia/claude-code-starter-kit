@@ -15,6 +15,9 @@ How to look:
 2. If you have no browser tools or the app won't start, review the components and styles in the diff
    instead, and state plainly at the top of your report: "Not visually verified".
 
+If the project has a `DESIGN.md`, check the screens against it (colors, fonts, spacing, component rules) and
+report every place that drifts from it.
+
 Check: visual consistency, spacing/typography, broken or overflowing layouts, responsive behavior,
 loading/error/empty states, user-flow dead ends.
 

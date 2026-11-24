@@ -102,7 +102,7 @@ test("session-start: injected text stays short (it costs tokens every session)",
     s.put("package.json", "{}");
     s.put("CLAUDE.md", MANAGED);
     const words = contextOf(runHook(SESSION, {}, s.dir)).split(/\s+/).length;
-    assert.ok(words < 400, `session context is ${words} words; keep under 400`);
+    assert.ok(words < 480, `session context is ${words} words; keep under 480`);
   } finally {
     s.cleanup();
   }
@@ -224,4 +224,54 @@ test('push-gate: off when .claude/kit.json has "autoGate": false', () => {
 test("push-gate: bad input never blocks", () => {
   const r = spawnSync("node", [GATE], { input: "garbage", encoding: "utf8" });
   assert.equal(r.status, 0);
+});
+
+test("session-start: plain-language rule is on by default and can be switched off", () => {
+  const s = sandbox();
+  try {
+    s.put("package.json", "{}");
+    s.put("CLAUDE.md", MANAGED);
+    assert.match(contextOf(runHook(SESSION, {}, s.dir)), /NOT A PROGRAMMER/);
+    s.put(".claude/kit.json", '{"plainLanguage":false}');
+    assert.doesNotMatch(contextOf(runHook(SESSION, {}, s.dir)), /NOT A PROGRAMMER/);
+  } finally {
+    s.cleanup();
+  }
+});
+
+test("session-start: reports roadmap progress and the next item", () => {
+  const s = sandbox();
+  try {
+    s.put("package.json", "{}");
+    s.put("CLAUDE.md", MANAGED);
+    s.put("ROADMAP.md", "# Roadmap\n- [x] Sign in — accounts\n  - [ ] indented criteria are not counted\n- [ ] Save recipes — the core\n- [ ] Ratings\n");
+    const ctx = contextOf(runHook(SESSION, {}, s.dir));
+    assert.match(ctx, /ROADMAP\.md: 1 of 3 done/);
+    assert.match(ctx, /Next: "Save recipes/);
+  } finally {
+    s.cleanup();
+  }
+});
+
+test("session-start: a finished roadmap suggests the pre-ship scan; no roadmap says nothing about it", () => {
+  const s = sandbox();
+  try {
+    s.put("package.json", "{}");
+    s.put("CLAUDE.md", MANAGED);
+    assert.doesNotMatch(contextOf(runHook(SESSION, {}, s.dir)), /ROADMAP/);
+    s.put("ROADMAP.md", "- [x] One\n- [x] Two\n");
+    assert.match(contextOf(runHook(SESSION, {}, s.dir)), /all 2 items are done/);
+  } finally {
+    s.cleanup();
+  }
+});
+
+test("session-start: a set-up project without git or a manifest still gets routing", () => {
+  const s = sandbox();
+  try {
+    s.put("CLAUDE.md", MANAGED);
+    assert.match(contextOf(runHook(SESSION, {}, s.dir)), /STARTER KIT WORKFLOWS/);
+  } finally {
+    s.cleanup();
+  }
 });

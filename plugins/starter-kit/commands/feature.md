@@ -9,10 +9,11 @@ only their short reports come back here. Do not read the implementation files or
 yourself unless something fails.
 
 ## 0. Preconditions
-- The project must be a git repository with at least one commit. If it isn't, explain that and ask
-  before running `git init` and making a first commit.
-- The main checkout must be clean (`git status`). If there are uncommitted changes, stop and ask the
-  user whether to commit or stash them first.
+- The project must be a git repository with at least one commit. If it isn't, create one yourself
+  (`git init`, add a sensible `.gitignore`, first commit) and say so in one line. It is local and harmless.
+- The main checkout must be clean (`git status`). If the uncommitted changes are your own finished, tested
+  work from this conversation, commit them yourself with a clear message. If you don't know where they came
+  from, or tests are failing, stop and ask the user in plain words what to do with them.
 - Note the current branch name (normally `main`) and its tip commit (`git rev-parse HEAD`). Call them
   MAIN and BASE. The feature merges back into MAIN.
 - If this is a whole new app, or the request is large or vague and has no written acceptance criteria,
@@ -54,7 +55,10 @@ Only when the implementer reported a green full suite AND the reviewer said APPR
 - On success: remove the worktree (`git worktree remove WORKTREE`) and delete the branch (`git branch -d BRANCH`).
 - Never push. Pushing is the user's call.
 
-## 4. Report
-In a few lines: what was built, the merge commit, the test result on the merged branch, and anything
-the reviewer flagged that was left as-is. If anything stopped early, say exactly where the work is
-(branch and worktree path) so nothing is lost.
+## 4. Report and continue
+- If `ROADMAP.md` lists this feature, tick its box and commit that.
+- Tell the user in plain words, a few lines at most: what now works, how to see it for themselves (the command
+  to run or the page to open), and anything the reviewer flagged that was left as-is. No git details unless
+  something went wrong.
+- If anything stopped early, say exactly where the work is (branch and worktree path) so nothing is lost.
+- If `ROADMAP.md` has more unticked items and nothing needs the user's decision, start the next one now.

@@ -28,6 +28,10 @@ brief and in the project's files.
    Never guess a library or framework API from memory: if you are not certain of a function, option or
    version behavior, look up the current documentation first (a docs tool such as context7 if available,
    otherwise web search or the package's own docs/types in `node_modules` or site-packages).
+   For anything with a screen: follow `DESIGN.md` if the project has one (colors, type, spacing, components);
+   build every state, not just the happy one (empty, loading, error, success); make it work at phone width
+   (about 375px) and desktop; every input needs a label, everything must work by keyboard, and text contrast
+   must be at least 4.5:1. Handle bad input and failed requests with a message a person can understand.
 6. Run the FULL test suite, plus typecheck and lint if the project has them. All must be green.
 7. Commit your work on your branch with a clear message. Never push, never merge, never switch the main
    checkout's branch.

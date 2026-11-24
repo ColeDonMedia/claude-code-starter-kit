@@ -12,5 +12,7 @@ stop and suggest running `/starter-kit:init` first.
 2. GREEN: write the minimum code to make it pass. Show the passing output.
 3. REFACTOR: clean up without changing behavior. Re-run the tests.
 
+When it's green and reviewed, commit it locally with a clear message (never push unless asked).
+
 Never delete or weaken a test to make it pass. If the change falls under the TDD exemptions in
 CLAUDE.md, say so and skip RED. Do not move on to the next feature until this cycle is green.

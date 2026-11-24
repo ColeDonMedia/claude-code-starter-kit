@@ -1,6 +1,7 @@
-// SessionStart hook: if this folder is a code project that hasn't been set up with the
-// starter kit yet, tell Claude to offer /starter-kit:init. Silent everywhere else
-// (not a project, already set up, or turned off with { "auto": false } in .claude/kit.json).
+// SessionStart hook. Two jobs, both silent unless they apply:
+//  1. Un-set-up code project  -> tell Claude to offer /starter-kit:init.
+//  2. Set-up project          -> inject "lean mode" rules that cut token use.
+// Turn lean mode off with { "lean": false } in .claude/kit.json; turn everything off with { "auto": false }.
 import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
@@ -30,16 +31,34 @@ try {
 }
 if (cfg.auto === false) process.exit(0);
 
+const emit = (additionalContext) => {
+  process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: "SessionStart", additionalContext } }));
+  process.exit(0);
+};
+
 const MANIFESTS = ["package.json", "pyproject.toml", "requirements.txt", "go.mod", "Cargo.toml", "Gemfile", "pom.xml", "build.gradle", "composer.json", "Makefile"];
 const looksLikeProject = existsSync(join(root, ".git")) || MANIFESTS.some((m) => existsSync(join(root, m)));
 if (!looksLikeProject) process.exit(0);
 
-if ((read(join(root, "CLAUDE.md")) ?? "").includes("starter-kit:managed")) process.exit(0);
+const managed = (read(join(root, "CLAUDE.md")) ?? "").includes("starter-kit:managed");
 
-const context =
-  "STARTER KIT: this project has not been set up yet (no starter-kit CLAUDE.md). " +
-  "At the start of your first reply, tell the user in one sentence that it isn't set up and ask if they " +
-  "want you to run /starter-kit:init (it detects the stack and writes CLAUDE.md and permissions). " +
-  "If they say yes, run it with the Skill tool. If they decline, don't ask again this session.";
+if (!managed) {
+  emit(
+    "STARTER KIT: this project has not been set up yet (no starter-kit CLAUDE.md). " +
+      "At the start of your first reply, tell the user in one sentence that it isn't set up and ask if they " +
+      "want you to run /starter-kit:init (it detects the stack and writes CLAUDE.md and permissions). " +
+      "If they say yes, run it with the Skill tool. If they decline, don't ask again this session.",
+  );
+}
 
-process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: "SessionStart", additionalContext: context } }));
+if (cfg.lean === false) process.exit(0);
+
+emit(
+  "LEAN MODE (starter kit; the user can switch it off with {\"lean\": false} in .claude/kit.json):\n" +
+    "- Replies: lead with the answer or result. No preamble, no restating the request, no recap of what you just did (the diff shows it), no pleasantries. Short sentences; bullets over paragraphs; about 5 lines unless the user asks for detail.\n" +
+    "- Don't narrate obvious steps or tool calls.\n" +
+    "- Read narrowly: search before reading; read only the line ranges you need; don't re-read files you've read or just edited; quote the relevant lines of long output instead of pasting it.\n" +
+    "- Smallest change: edit existing code before adding files or abstractions; no extra features, comments or refactors beyond the request.\n" +
+    "- Send broad searches and long logs to a subagent.\n" +
+    "- Never shorten code, commands, paths, error text, or anything the user must act on. Write warnings, destructive actions, security issues and anything easy to misread in full: clarity beats brevity.",
+);

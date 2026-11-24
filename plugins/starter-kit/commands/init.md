@@ -35,7 +35,8 @@ Go. For anything else, write `.claude/kit.json`:
 Use `{ "relatedTests": false }` if the project has no fast way to run a subset of tests.
 Skip this file when auto-detection already covers the project.
 The same file can switch off the automatic behaviour: `"autoGate": false` stops the push gate,
-`"auto": false` stops the session-start nudge and the gate. Only the user decides that — never set it yourself.
+`"auto": false` stops the session-start nudge, lean mode and the gate, and `"lean": false` stops only lean
+mode (the token-saving reply rules). Only the user decides that — never set it yourself.
 
 ## 5. Preview (only for projects with a web UI)
 Offer to create `.claude/launch.json` with the real dev command and port.
@@ -84,6 +85,8 @@ Anything with logic — pricing, validation, auth, business rules — is never e
 - Commit or push only when asked.
 
 # Automatic workflow (follow this without being asked)
+- New app, or a large or vague feature → run `/starter-kit:spec` first (requirements, gap check, acceptance criteria), then build it.
+- Questions about competitors, the market, alternatives or what's missing → run `/starter-kit:research`.
 - New feature, added functionality, or a non-trivial bug fix → run `/starter-kit:feature` (Skill tool).
 - Small tweak in one file → `/starter-kit:tdd`, then `/starter-kit:review` when done.
 - About to push, open a PR, deploy or release → run `/starter-kit:full-scan` first. A hook blocks `git push` until it has passed.

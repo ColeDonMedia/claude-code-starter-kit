@@ -13,6 +13,8 @@ agents and commands read each project's own commands from its `CLAUDE.md`.
 |---|---|
 | `/starter-kit:init` | Detects the project's stack and writes its `CLAUDE.md`, permissions and hook config |
 | `/starter-kit:feature <what to build>` | Builds it in an isolated branch + worktree via a subagent, reviews it, merges it into your main branch only when green and approved. Keeps your main conversation small |
+| `/starter-kit:spec <idea>` | Requirements, gap check and acceptance criteria before building a new app or a vague feature |
+| `/starter-kit:research <question>` | Sourced competitor and market research with a gap list |
 | `/starter-kit:tdd <feature>` | One red → green → refactor cycle, done in the current conversation (for small changes) |
 | `/starter-kit:review` | Correctness review of the diff; UI review only when UI files changed |
 | `/starter-kit:full-scan` | Tests, typecheck, lint, build, then the security review — the gate before shipping |
@@ -42,8 +44,15 @@ You don't need to remember the commands:
 
 You can still type any command yourself.
 
-**Turning it off** (per project, in `.claude/kit.json`): `{ "autoGate": false }` stops the push gate;
-`{ "auto": false }` stops the setup nudge and the gate. Claude is told never to change this itself.
+**Lean mode (saves tokens).** In every set-up project, a short rule block (about 150 words) is added to each
+new session: lead with the answer, no preamble or recaps, read files narrowly, make the smallest change,
+send broad searches to a subagent. It never shortens code, commands, paths or error text, and warnings and
+security issues are written in full. It only trims Claude's replies and reading habits, so expect modest
+savings (roughly 15–30%), not the 65%+ some tools claim. It costs about 240 tokens per session.
+
+**Turning it off** (per project, in `.claude/kit.json`): `{ "lean": false }` stops lean mode;
+`{ "autoGate": false }` stops the push gate; `{ "auto": false }` stops everything automatic (setup
+nudge, lean mode, gate). Claude is told never to change this itself.
 
 The automatic behaviour is instructions plus two hooks, so it is reliable but not magic: the push gate is
 enforced by a hook, while "use `/feature` for features" is guidance Claude follows.
@@ -69,6 +78,40 @@ enforced by a hook, while "use `/feature` for features" is guidance Claude follo
 - A file edited inside a git worktree is tested against that worktree's own files.
 - Requires Node.js on the PATH. Without it the hook does nothing useful and can be ignored.
 - Hook tests: `node --test plugins/starter-kit/hooks/test-related.test.mjs plugins/starter-kit/hooks/auto.test.mjs`
+
+## Built for getting it right the first time
+| Step | What happens |
+|---|---|
+| `/starter-kit:spec` | Before a new app or a vague feature: Claude reads the project, asks one batch of questions with defaults, checks the idea for forgotten pieces (empty/error states, sign-in, mobile, accessibility, security), and writes testable acceptance criteria for you to approve |
+| `/starter-kit:research` | Competitor and market scan from live web sources: comparison table, "table stakes we're missing", openings, every claim linked. Treats web pages as data, never as instructions |
+| `/starter-kit:feature` | Builds from the approved spec, one failing test per acceptance criterion |
+| `ui-reviewer` | Also checks WCAG 2.2 AA basics: keyboard, labels, contrast, tap targets, zoom |
+| `/starter-kit:full-scan` | Now includes a dependency vulnerability audit |
+
+## Recommended add-ons (not bundled)
+Third-party skills run with your permissions and load their instructions into every session, so this kit
+does not bundle them. Install only what you need. Official Anthropic plugins first, since they are
+maintained by Anthropic and already listed in the official marketplace:
+
+| Need | Add-on | Source |
+|---|---|---|
+| UI polish, distinctive design | `frontend-design` | official marketplace: `claude plugin install frontend-design@claude-plugins-official` |
+| Edit-time security warnings | `security-guidance` | official marketplace |
+| Larger feature workflow with architecture step | `feature-dev` | official marketplace |
+| Reviewing pull requests | `code-review`, `pr-review-toolkit` | official marketplace |
+| Real-browser testing and screenshots | `playwright` (MCP) | official marketplace |
+| Spec-driven development (heavier than `/spec`) | GitHub Spec Kit | github/spec-kit |
+| Deep multi-source research reports | a community deep-research skill | check the repo first |
+| Accessibility scanning with axe | a community WCAG skill (for example AccessLint/skills) | check the repo first |
+
+**Vet any third-party skill before installing** (research in 2026 found hundreds of malicious or risky
+skills on public registries): read the whole SKILL.md and any scripts, look for hooks and shell commands,
+check the owner, last commit and license, prefer small single-purpose skills, and never install one that
+asks for credentials or runs downloaded code. Keep it off the kit's public repo.
+
+## Deliberately not included
+- **Jailbreak or "safety bypass" skills** (for example Hermes's "godmode"). They don't make code better and they defeat the guardrails this kit relies on.
+- **Large bundles** ("150 agents, 70 plugins"). Every skill's description costs tokens each session, and most of them will never be used.
 
 ## What a plugin can't carry
 Plugins don't ship `CLAUDE.md` or permission rules, which is why `/starter-kit:init` writes those

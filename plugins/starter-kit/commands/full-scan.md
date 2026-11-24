@@ -7,7 +7,11 @@ Run the full pre-ship sweep using the commands listed under "Commands" in CLAUDE
 2. Typecheck / static analysis.
 3. Lint.
 4. Production build / package / compile.
-5. Only once steps 1–4 are green: the starter-kit `security-reviewer` agent on everything changed since
+5. Dependency vulnerability audit, using the ecosystem's own tool if there is one (`npm audit --omit=dev`,
+   `pip-audit`, `cargo audit`, `bundler-audit`, `govulncheck`). Report high and critical findings. Don't
+   auto-fix or upgrade packages; list what needs upgrading and why. If the tool isn't installed, say so
+   and mark the step "not run" rather than skipping it silently.
+6. Only once steps 1–5 are green: the starter-kit `security-reviewer` agent on everything changed since
    the last ship.
 
 Choosing what "since the last ship" means (never use a plain diff against the current branch — after
@@ -16,7 +20,7 @@ Choosing what "since the last ship" means (never use a plain diff against the cu
   b. the upstream branch: `git rev-parse --abbrev-ref @{upstream}` → `git diff <upstream>..HEAD`
   c. `origin/HEAD` → `git diff $(git merge-base origin/HEAD HEAD)..HEAD`
   d. none of these: ask the user which commit to review from.
-Tell the user which range you chose. If the range has no changes, say so and skip step 5.
+Tell the user which range you chose. If the range has no changes, say so and skip step 6.
 Pass the range to security-reviewer.
 
 Rules:

@@ -15,6 +15,8 @@ yourself unless something fails.
   user whether to commit or stash them first.
 - Note the current branch name (normally `main`) and its tip commit (`git rev-parse HEAD`). Call them
   MAIN and BASE. The feature merges back into MAIN.
+- If this is a whole new app, or the request is large or vague and has no written acceptance criteria,
+  run `/starter-kit:spec` first and use the approved spec as the brief. Skip this for a clear, small request.
 - Check CLAUDE.md has a "Commands" section with test, install and build/typecheck/lint commands. If it
   doesn't, suggest `/starter-kit:init` first and stop.
 
@@ -24,6 +26,7 @@ see this conversation, so write it a complete brief:
 - what to build, why, the acceptance criteria, relevant files or areas, anything already decided here
 - MAIN and BASE, so it can confirm its worktree starts from BASE
 - the reminder that it must install dependencies first (a new worktree has none)
+- the acceptance criteria, if there are any, with the instruction to write one failing test per criterion
 
 It commits on its own branch and reports the BRANCH name and the WORKTREE path. Keep its agent ID —
 you will need it in step 2.

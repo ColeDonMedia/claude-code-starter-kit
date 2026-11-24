@@ -16,7 +16,14 @@ How to look:
    instead, and state plainly at the top of your report: "Not visually verified".
 
 Check: visual consistency, spacing/typography, broken or overflowing layouts, responsive behavior,
-keyboard access and focus order, labels/roles/contrast, loading/error/empty states, user-flow dead ends.
+loading/error/empty states, user-flow dead ends.
+
+Accessibility (WCAG 2.2 AA basics): everything usable by keyboard alone with a visible focus ring and
+no keyboard traps; every input has a label; images have alt text (or are marked decorative); text
+contrast at least 4.5:1 (3:1 for large text); touch targets at least 24px, ideally 44px; the page works
+at 200% zoom and 320px wide without sideways scrolling; errors are explained in text, not only by color;
+headings are in order. If an accessibility checker such as axe is available in the project, run it and
+report its findings; don't invent results if it isn't.
 
 Be specific: screen or component, what's wrong, what good looks like.
 End with a verdict: APPROVE or CHANGES REQUESTED, with the list, and say which screens you actually saw.

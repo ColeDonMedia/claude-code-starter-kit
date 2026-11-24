@@ -48,12 +48,53 @@ test("session-start: nudges to run init in an un-set-up project", () => {
   }
 });
 
-test("session-start: silent when the project is already set up", () => {
+const contextOf = (r) => (r.stdout ? JSON.parse(r.stdout).hookSpecificOutput.additionalContext : "");
+
+test("session-start: set-up project gets lean-mode rules, not the init nudge", () => {
   const s = sandbox();
   try {
     s.put("package.json", "{}");
     s.put("CLAUDE.md", MANAGED);
+    const ctx = contextOf(runHook(SESSION, {}, s.dir));
+    assert.match(ctx, /LEAN MODE/);
+    assert.match(ctx, /clarity beats brevity/);
+    assert.doesNotMatch(ctx, /starter-kit:init/);
+  } finally {
+    s.cleanup();
+  }
+});
+
+test("session-start: un-set-up project gets the nudge, not lean mode", () => {
+  const s = sandbox();
+  try {
+    s.put("package.json", "{}");
+    const ctx = contextOf(runHook(SESSION, {}, s.dir));
+    assert.match(ctx, /starter-kit:init/);
+    assert.doesNotMatch(ctx, /LEAN MODE/);
+  } finally {
+    s.cleanup();
+  }
+});
+
+test('session-start: "lean": false switches lean mode off but keeps the project set up', () => {
+  const s = sandbox();
+  try {
+    s.put("package.json", "{}");
+    s.put("CLAUDE.md", MANAGED);
+    s.put(".claude/kit.json", '{"lean":false}');
     assert.equal(runHook(SESSION, {}, s.dir).stdout, "");
+  } finally {
+    s.cleanup();
+  }
+});
+
+test("session-start: lean-mode text stays short (it costs tokens every session)", () => {
+  const s = sandbox();
+  try {
+    s.put("package.json", "{}");
+    s.put("CLAUDE.md", MANAGED);
+    const words = contextOf(runHook(SESSION, {}, s.dir)).split(/\s+/).length;
+    assert.ok(words < 250, `lean rules are ${words} words; keep under 250`);
   } finally {
     s.cleanup();
   }

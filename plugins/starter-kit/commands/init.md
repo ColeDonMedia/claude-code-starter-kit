@@ -31,7 +31,12 @@ Merge into the existing file if there is one; never drop existing entries.
   the install, test, typecheck, lint and build commands you found (as `Bash(<command>:*)`), plus
   `Bash(git status:*)`, `Bash(git diff:*)`, `Bash(git log:*)`. Add them only if the user says yes.
 Add these lines to `.gitignore` (skip any already present): `.claude/settings.local.json`,
-`.claude/worktrees/`, `.claude/last-full-scan`, `.claude/last-verified`.
+`.claude/worktrees/`, `.claude/last-full-scan`, `.claude/last-verified`, and the secret files: `.env`, `.env.*`,
+`*.pem`, `*.key`, `*.p12`, `*.pfx`, `credentials.json`. Then un-ignore only the templates with
+`!.env.example` (they hold no real values). Never put real keys or passwords in a tracked file: store them in
+`.env` (ignored) or the host's secret manager, and read them from the environment in code.
+If `.env` or a key file already exists and is tracked by git, stop the usual flow and tell the user in one
+plain sentence that it is public history risk, and that the key must be rotated. Do not run `git rm` on it yourself.
 
 ## 5. Kit settings (`.claude/kit.json`) — always write this file
 ```json

@@ -84,6 +84,15 @@ project's own checks (the `verify` list in `.claude/kit.json`: typecheck, lint, 
 doesn't end; Claude gets the failure and must fix it or tell you plainly what's broken. Passing checks cost no
 tokens, and it blocks at most once per turn. Switch off with `{ "verifyGate": false }`.
 
+**Secret guard.** Before anything leaves your computer, a hook scans it: `git commit` (the staged changes),
+`git push` and `gh pr create` (every commit not yet on GitHub, including ones later removed), and `git add` of
+env or key files. It blocks on API keys (AWS, GitHub, Anthropic, OpenAI, Stripe, Google, Slack, npm), private keys,
+JSON web tokens, credential-named values like `API_KEY=...`, and `.env`/`.pem`/`.key` files. It also blocks anything
+in your private terms list at `~/.claude/plugins/data/starter-kit/private-terms.txt` (your name, email, client
+names). The reason shows file and line with the value redacted, never the secret. Placeholders such as
+`your-key-here` are allowed. If a real key ever got committed, rotate it: deleting it later does not remove it
+from GitHub's history. Switch off with `{ "secretGuard": false }` in `.claude/kit.json`.
+
 **Self-updating.** At the start of a session (at most once a day) a background job updates this plugin from
 its GitHub repo, so every computer stays current without anyone typing a command. It never delays the session
 and applies the new version the next time Claude Code starts. It runs exactly two fixed commands, for this plugin

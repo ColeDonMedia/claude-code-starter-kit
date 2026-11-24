@@ -23,17 +23,14 @@ agents and commands read each project's own commands from its `CLAUDE.md`.
 | Related-tests hook | After each edit, runs only the tests for that file and shows Claude any failures |
 
 ## Install (once per computer)
-From a local folder:
 ```
-/plugin marketplace add C:\path\to\claude-code-starter-kit
-/plugin install starter-kit@starter-kit-marketplace
+claude plugin marketplace add ColeDonMedia/claude-code-starter-kit
+claude plugin install starter-kit@starter-kit-marketplace
 ```
-From a private git repo (recommended, so every computer gets updates):
-```
-/plugin marketplace add <owner>/<repo>
-/plugin install starter-kit@starter-kit-marketplace
-```
-Update later with `/plugin marketplace update starter-kit-marketplace`.
+(Inside Claude Code the same commands are `/plugin marketplace add …` and `/plugin install …`.)
+Restart Claude Code afterwards. Update later with `claude plugin marketplace update starter-kit-marketplace`.
+If the `owner/repo` form fails because SSH isn't set up, use the full URL
+`https://github.com/ColeDonMedia/claude-code-starter-kit.git`.
 
 ## Use in a project
 Run `/starter-kit:init` once in each project. After that, per feature: `/starter-kit:feature <what you want>`.
@@ -56,7 +53,10 @@ Before shipping: `/starter-kit:full-scan`. For a tiny change you can skip `featu
   `{ "relatedTests": "bundle exec rspec {file}", "extensions": [".rb"] }`.
 - Turn it off for a project: `{ "relatedTests": false }`.
 - Failing tests are shown to Claude but never block an edit; during TDD's RED step a failure is expected.
+- Never downloads a test runner (`npx --no-install`), and skips file names containing shell-special characters.
+- A file edited inside a git worktree is tested against that worktree's own files.
 - Requires Node.js on the PATH. Without it the hook does nothing useful and can be ignored.
+- Hook tests: `node --test plugins/starter-kit/hooks/test-related.test.mjs`
 
 ## What a plugin can't carry
 Plugins don't ship `CLAUDE.md` or permission rules, which is why `/starter-kit:init` writes those

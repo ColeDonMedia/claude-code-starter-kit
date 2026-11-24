@@ -8,8 +8,9 @@ you cannot find something, write `TODO` rather than guessing.
 ## 1. Detect the stack
 Read the manifests and scripts that exist: package.json, pyproject.toml / requirements.txt / tox.ini,
 go.mod, Cargo.toml, Gemfile, pom.xml / build.gradle, *.csproj, composer.json, Makefile / justfile /
-Taskfile, CI workflow files. From them work out the real commands for: dev/run, tests (run once),
-typecheck or static analysis, lint, build. Note the test runner and whether the project has a UI.
+Taskfile, CI workflow files. From them work out the real commands for: install dependencies (for example
+`npm ci`, `pip install -e .`, `bundle install`; a fresh git worktree has none installed), dev/run,
+tests (run once), typecheck or static analysis, lint, build. Note the test runner and whether the project has a UI.
 
 ## 2. CLAUDE.md
 - If the project has no CLAUDE.md, create one from the template below with every placeholder filled in.
@@ -20,7 +21,9 @@ Merge into the existing file if there is one; never drop existing entries.
 - allow: the exact test, typecheck, lint and build commands you found (as `Bash(<command>:*)`), plus
   `Bash(git status:*)`, `Bash(git diff:*)`, `Bash(git log:*)`.
 - deny: `Read(./.env)`, `Read(./.env.*)`, `Read(./**/*.pem)`, `Read(./**/*.key)`.
-Add `.claude/settings.local.json` to `.gitignore` if the project uses git.
+Also add the install command to `allow`.
+If the project uses git, add these lines to `.gitignore` (create it if missing, skip any already present):
+`.claude/settings.local.json` and `.claude/worktrees/` (where `/starter-kit:feature` builds features).
 
 ## 4. Related-tests hook (`.claude/kit.json`)
 The plugin's hook runs the tests related to each edited file. It auto-detects Vitest, Jest, pytest and
@@ -43,6 +46,7 @@ List every file you created or changed, the commands you detected, and every `TO
 <name> — <what it does, one line>. Stack: <language, framework, test runner, data store, hosting>.
 
 # Commands
+- Install dependencies: <command — a fresh git worktree has nothing installed>
 - Dev/run: <command>
 - Tests (run once, not watch): <command>
 - Typecheck / static analysis: <command or "none">

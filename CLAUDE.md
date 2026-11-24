@@ -20,5 +20,5 @@ tell the user right away — deleting it in a later commit does not remove it fr
 # Rules
 - No project names, frameworks or package managers hard-coded in agents or commands; they read the project's CLAUDE.md.
 - The CLAUDE.md template lives inside `commands/init.md` — edit it there.
-- After changing the hook, test it by piping a sample payload: `echo '{"tool_input":{"file_path":"<file>"}}' | node plugins/starter-kit/hooks/test-related.mjs`
+- After changing the hook, run its tests: `node --test plugins/starter-kit/hooks/test-related.test.mjs` (add a test for every bug you fix).
 - Validate before committing: `claude plugin validate .`

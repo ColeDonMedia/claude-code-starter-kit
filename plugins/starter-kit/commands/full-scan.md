@@ -8,7 +8,16 @@ Run the full pre-ship sweep using the commands listed under "Commands" in CLAUDE
 3. Lint.
 4. Production build / package / compile.
 5. Only once steps 1–4 are green: the starter-kit `security-reviewer` agent on everything changed since
-   the last ship (the diff against the main branch).
+   the last ship.
+
+Choosing what "since the last ship" means (never use a plain diff against the current branch — after
+`/starter-kit:feature` you are already on it, so that diff is empty). Take the first that exists:
+  a. the latest tag: `git describe --tags --abbrev=0`  → `git diff <tag>..HEAD`
+  b. the upstream branch: `git rev-parse --abbrev-ref @{upstream}` → `git diff <upstream>..HEAD`
+  c. `origin/HEAD` → `git diff $(git merge-base origin/HEAD HEAD)..HEAD`
+  d. none of these: ask the user which commit to review from.
+Tell the user which range you chose. If the range has no changes, say so and skip step 5.
+Pass the range to security-reviewer.
 
 Rules:
 - Use only commands from CLAUDE.md or the project's own manifest and scripts. Never invent one.

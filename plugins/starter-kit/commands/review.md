@@ -1,12 +1,19 @@
 ---
-description: Fresh-context correctness review of the current diff, plus a UI/UX review when the diff touches UI.
+description: Fresh-context correctness review of the current changes, plus a UI/UX review when they touch UI.
 ---
 
-Review the current diff with fresh subagents, launched in parallel:
+Review the current changes with fresh subagents, launched in parallel.
+
+First decide what to review ($ARGUMENTS can name a commit range or branch to use instead):
+1. Uncommitted changes: `git diff HEAD`.
+2. If that is empty, the last commit: `git show HEAD`.
+3. If neither has anything, say there is nothing to review and stop.
+
+Then launch:
 1. The starter-kit `reviewer` agent — correctness, edge cases, regressions (it runs the tests).
-2. The starter-kit `ui-reviewer` agent — only if the diff changes user-interface files. Skip it otherwise.
+2. The starter-kit `ui-reviewer` agent — only if the changes touch user-interface files. Skip it otherwise.
 
 Do NOT run `security-reviewer` here; it runs once before shipping, in `/starter-kit:full-scan`.
 
-Tell each agent what the change is meant to do and which files changed. Report each verdict
-(APPROVE or CHANGES REQUESTED) with its findings. Do not ship on a CHANGES REQUESTED verdict.
+Tell each agent what the change is meant to do, which files changed, and exactly what to diff.
+Report each verdict (APPROVE or CHANGES REQUESTED) with its findings. Do not ship on a CHANGES REQUESTED verdict.

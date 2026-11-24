@@ -67,8 +67,17 @@ cleanups like `rm -rf node_modules` pass. Allow a specific rule per project with
 `{ "guardAllow": ["reset-hard"] }` (rule ids are listed at the top of `hooks/safety-guard.mjs`), or turn the
 guard off with `{ "guard": false }`.
 
+**Self-updating.** At the start of a session (at most once a day) a background job updates this plugin from
+its GitHub repo, so every computer stays current without anyone typing a command. It never delays the session
+and applies the new version the next time Claude Code starts. It runs exactly two fixed commands, for this plugin
+only (`claude plugin marketplace update starter-kit-marketplace`, then `claude plugin update
+starter-kit@starter-kit-marketplace`), and skips plugins loaded straight from a folder (development). The last
+result is in `~/.claude/plugins/data/starter-kit/auto-update.log`. Trade-off: the GitHub repo is the source of
+code that runs on every computer, so keep that account secured (two-factor on, no shared access). Switch it off
+with `{ "autoUpdate": false }` in `.claude/kit.json` or the environment variable `KIT_AUTOUPDATE=0`.
+
 **Turning it off** (per project, in `.claude/kit.json`): `{ "lean": false }` stops lean mode;
-`{ "guard": false }` stops the safety guard; `{ "autoGate": false }` stops the push gate; `{ "auto": false }` stops everything automatic (setup
+`{ "autoUpdate": false }` stops self-updating; `{ "guard": false }` stops the safety guard; `{ "autoGate": false }` stops the push gate; `{ "auto": false }` stops everything automatic (setup
 nudge, lean mode, gate). Claude is told never to change this itself.
 
 The automatic behaviour is instructions plus two hooks, so it is reliable but not magic: the push gate is
@@ -94,7 +103,7 @@ enforced by a hook, while "use `/feature` for features" is guidance Claude follo
 - Never downloads a test runner (`npx --no-install`), and skips file names containing shell-special characters.
 - A file edited inside a git worktree is tested against that worktree's own files.
 - Requires Node.js on the PATH. Without it the hook does nothing useful and can be ignored.
-- Hook tests: `node --test plugins/starter-kit/hooks/test-related.test.mjs plugins/starter-kit/hooks/auto.test.mjs plugins/starter-kit/hooks/safety-guard.test.mjs`
+- Hook tests: `node --test plugins/starter-kit/hooks/test-related.test.mjs plugins/starter-kit/hooks/auto.test.mjs plugins/starter-kit/hooks/safety-guard.test.mjs plugins/starter-kit/hooks/auto-update.test.mjs`
 
 ## Built for getting it right the first time
 | Step | What happens |

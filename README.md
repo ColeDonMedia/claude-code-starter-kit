@@ -107,6 +107,7 @@ maintained by Anthropic and already listed in the official marketplace:
 | Larger feature workflow with architecture step | `feature-dev` | official marketplace |
 | Reviewing pull requests | `code-review`, `pr-review-toolkit` | official marketplace |
 | Real-browser testing and screenshots | `playwright` (MCP) | official marketplace |
+| Current library docs, so code uses real APIs instead of guesses | `context7` (MCP, runs an npm package via `npx`) | official marketplace |
 | Spec-driven development (heavier than `/spec`) | GitHub Spec Kit | github/spec-kit |
 | Deep multi-source research reports | a community deep-research skill | check the repo first |
 | Accessibility scanning with axe | a community WCAG skill (for example AccessLint/skills) | check the repo first |
@@ -124,6 +125,7 @@ Tests: `node --test plugins/starter-kit/scripts/vet-scan.test.mjs`.
 
 ## Deliberately not included
 - **Jailbreak or "safety bypass" skills** (for example Hermes's "godmode"). They don't make code better and they defeat the guardrails this kit relies on.
+- **"Godmode"-style mode switches and mega-bundles.** Reviewed in this repo's history: a per-turn "max capability" hook adds tokens on every message (the opposite of lean mode) and rewrites your settings on install; a 56-skill orchestration bundle needs other vendors' API keys and has no track record; a discipline pipeline (question, verify docs, plan, test-first, second-model review, prove) mostly duplicates `spec` / `feature` / `full-scan`. The one new idea, verifying library APIs against current docs, is now in the implementer agent.
 - **Large bundles** ("150 agents, 70 plugins"). Every skill's description costs tokens each session, and most of them will never be used.
 
 ## What a plugin can't carry

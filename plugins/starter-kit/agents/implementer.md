@@ -25,6 +25,9 @@ brief and in the project's files.
    it fails for the right reason, minimum code to pass, then refactor. Never delete or weaken a test to
    make it pass.
 5. Match the existing code style, structure and test patterns.
+   Never guess a library or framework API from memory: if you are not certain of a function, option or
+   version behavior, look up the current documentation first (a docs tool such as context7 if available,
+   otherwise web search or the package's own docs/types in `node_modules` or site-packages).
 6. Run the FULL test suite, plus typecheck and lint if the project has them. All must be green.
 7. Commit your work on your branch with a clear message. Never push, never merge, never switch the main
    checkout's branch.

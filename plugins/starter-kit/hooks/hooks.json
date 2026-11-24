@@ -34,7 +34,8 @@
     "Stop": [
       {
         "hooks": [
-          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/verify-gate.mjs\"", "timeout": 300 }
+          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/verify-gate.mjs\"", "timeout": 300 },
+          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/docs-gate.mjs\"", "timeout": 30 }
         ]
       }
     ],

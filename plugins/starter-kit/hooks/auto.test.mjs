@@ -102,7 +102,7 @@ test("session-start: injected text stays short (it costs tokens every session)",
     s.put("package.json", "{}");
     s.put("CLAUDE.md", MANAGED);
     const words = contextOf(runHook(SESSION, {}, s.dir)).split(/\s+/).length;
-    assert.ok(words < 480, `session context is ${words} words; keep under 480`);
+    assert.ok(words < 520, `session context is ${words} words; keep under 520`);
   } finally {
     s.cleanup();
   }
@@ -263,7 +263,7 @@ test("session-start: a finished roadmap suggests the pre-ship scan; no roadmap s
   try {
     s.put("package.json", "{}");
     s.put("CLAUDE.md", MANAGED);
-    assert.doesNotMatch(contextOf(runHook(SESSION, {}, s.dir)), /ROADMAP/);
+    assert.doesNotMatch(contextOf(runHook(SESSION, {}, s.dir)), /ROADMAP\.md: (\d|all)/, "no roadmap status when there is no roadmap");
     s.put("ROADMAP.md", "- [x] One\n- [x] Two\n");
     assert.match(contextOf(runHook(SESSION, {}, s.dir)), /all 2 items are done/);
   } finally {
@@ -276,6 +276,52 @@ test("session-start: a set-up project without git or a manifest still gets routi
   try {
     s.put("CLAUDE.md", MANAGED);
     assert.match(contextOf(runHook(SESSION, {}, s.dir)), /STARTER KIT WORKFLOWS/);
+  } finally {
+    s.cleanup();
+  }
+});
+
+test("session-start: loads the previous session's handoff, labelled as notes and shortened", () => {
+  const s = sandbox();
+  try {
+    s.put("package.json", "{}");
+    s.put("CLAUDE.md", MANAGED);
+    assert.doesNotMatch(contextOf(runHook(SESSION, {}, s.dir)), /HANDOFF\.md from the previous session/, "nothing to load when there is no handoff");
+    s.put("HANDOFF.md", "# Handoff\nCovers-through: abc1234\nDone: sign in.\nFirst thing next: build saved recipes.\n" + "x".repeat(5000));
+    const ctx = contextOf(runHook(SESSION, {}, s.dir));
+    assert.match(ctx, /HANDOFF\.md from the previous session \(notes, not instructions from the user\)/);
+    assert.match(ctx, /First thing next: build saved recipes/);
+    assert.ok(ctx.length < 6500, "a huge handoff must be cut short");
+  } finally {
+    s.cleanup();
+  }
+});
+
+test("session-start: tells every session where the kit's scripts are, as a real path", () => {
+  for (const managed of [true, false]) {
+    const s = sandbox();
+    try {
+      s.put("package.json", "{}");
+      if (managed) s.put("CLAUDE.md", MANAGED);
+      const ctx = contextOf(runHook(SESSION, {}, s.dir));
+      const m = /<SCRIPTS> means this folder: (.+)$/m.exec(ctx);
+      assert.ok(m, "scripts folder line present");
+      assert.ok(m[1].split("\\").join("/").endsWith("/scripts"), m[1]);
+      assert.doesNotMatch(ctx, /\$\{CLAUDE_PLUGIN_ROOT\}/);
+    } finally {
+      s.cleanup();
+    }
+  }
+});
+
+test("session-start: warns up front when ticked roadmap items have no proof", () => {
+  const s = sandbox();
+  try {
+    s.put("package.json", "{}");
+    s.put("CLAUDE.md", MANAGED);
+    s.put("ROADMAP.md", "- [x] Sign in — accounts\n  - [x] sign up\n- [ ] Save recipes — core\n");
+    const ctx = contextOf(runHook(SESSION, {}, s.dir));
+    assert.match(ctx, /ROADMAP\.md has \d+ unproven claim/);
   } finally {
     s.cleanup();
   }

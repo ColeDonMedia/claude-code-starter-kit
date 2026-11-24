@@ -48,6 +48,11 @@ brief and in the project's files.
    established (`node "<plugin>/scripts/pkg-check.mjs" npm <name>`, or pypi / cargo); a package guard also checks
    automatically and will stop a name that doesn't exist. Never invent a package name; look up the real one in the
    official docs. Commit the lockfile so versions are exact.
+   Document as you go, so a stranger (or the next bot) can read the code and understand it: every new file starts
+   with a short comment saying what it is for and how it connects to the rest; public functions get a one-line
+   description; comment the WHY of anything non-obvious (a workaround, a security check, a surprising choice). Don't
+   comment the obvious. If you add a folder, a data table, an external service, a setting or an environment variable,
+   say so in your report so `PROJECT.md` (the master document) can be updated.
 6. Run the FULL test suite, plus typecheck and lint if the project has them. All must be green.
 7. Commit your work on your branch with a clear message. Never push, never merge, never switch the main
    checkout's branch.
@@ -56,3 +61,7 @@ If the brief is ambiguous or you hit something you cannot resolve, stop and repo
 
 Report back, briefly: the BRANCH name and the WORKTREE path (absolute), files changed, tests added, the
 final test command and its output summary, and anything you were unsure about. Do not paste whole files.
+Include a table with one row per acceptance criterion in your brief: `criterion → file::exact test name`, or
+`criterion → manual: how it was checked by hand` for what a test cannot show (how a screen looks). A criterion you did
+not cover must say NOT DONE. Never claim a criterion is met without naming the test that proves it. Also list new
+folders, services, settings and environment variables, and decisions you made with their reasons.

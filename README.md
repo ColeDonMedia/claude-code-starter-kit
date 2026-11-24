@@ -80,6 +80,23 @@ technology, writes a design brief (`DESIGN.md`) and a `ROADMAP.md` checklist, an
 Claude then builds the roadmap one feature at a time, ticking each off. At the start of every later session the
 kit tells Claude how far the roadmap is and what's next, so "continue" is all you need to say.
 
+**Memory and proof: any session can pick up with full context.** A set-up project keeps four short records, and
+hooks keep them honest:
+- `PROJECT.md` is the master document: what the app is, the stack and why, how to run it, an architecture map,
+  decisions with their reasons, what works now, known problems, next steps.
+- `HANDOFF.md` is what the last session leaves for the next: what was done, what is half-done (and exactly where),
+  what to do first, open questions, and what failed or wasn't verified. Every new session starts by loading it.
+- `CHANGELOG.md` has one plain-words entry per merged change, with the commit.
+- `ROADMAP.md` is the checklist, and a box can only be ticked with proof: the merge commit (checked against git)
+  and, for each criterion, the test that covers it (the file must exist and contain that test name), or a written
+  description of how it was checked by hand.
+When a turn ends and the handoff doesn't cover the newest code commit, or a tick is unproven, the turn is held
+until the records are fixed (once per problem; never loops). Switch off with `{ "docsGate": false }`. Builders also
+document as they go (a purpose comment at the top of every file, the why of non-obvious code), reviewers check it, and
+a reviewer must find a real test for every acceptance criterion, so "done" has to be shown, not claimed. Limits: Claude
+still writes these notes, so the proof checks (git history, files and test names) are what keep them true, and they cannot
+prove a test is a *good* test; the reviewer reads the test for that.
+
 **Checks must pass before a turn ends.** When Claude finishes a turn and code has changed, a hook runs the
 project's own checks (the `verify` list in `.claude/kit.json`: typecheck, lint, tests). If one fails, the turn
 doesn't end; Claude gets the failure and must fix it or tell you plainly what's broken. Passing checks cost no

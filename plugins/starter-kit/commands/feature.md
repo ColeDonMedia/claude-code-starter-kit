@@ -59,8 +59,22 @@ Only when the implementer reported a green full suite AND the reviewer said APPR
 - On success: remove the worktree (`git worktree remove WORKTREE`) and delete the branch (`git branch -d BRANCH`).
 - Never push. Pushing is the user's call.
 
-## 4. Report and continue
-- If `ROADMAP.md` lists this feature, tick its box and commit that.
+## 4. Prove it, write it down, report, continue
+Done is something you can show, not something you say. Before reporting or ticking anything:
+- **Prove it on the merged code.** Take the merge commit id (`git rev-parse --short HEAD` right after the merge).
+  The implementer's report must map each acceptance criterion to a test (`file::test name`); open each test file
+  yourself and confirm those tests exist and cover the criterion (a criterion no test checks is not done). Run the
+  full suite once more and quote its result.
+- **Write the records**, all in one docs commit:
+  - `ROADMAP.md`: tick the feature as `- [x] <name> — <goal> (merged <short id>)`, tick each criterion and add
+    `→ test: <file>::<test name>` (or `→ manual: <how it was checked by hand>` for things a test can't show, such as how a screen looks).
+    Run `node "<SCRIPTS>/roadmap-check.mjs" --project .` and fix anything it reports; it checks the commit and tests are real.
+  - `CHANGELOG.md`: one plain-words entry with the commit id.
+  - `PROJECT.md`: update current state, the architecture map, any decision made (with the reason), known problems, next steps.
+  - `HANDOFF.md`: rewrite it for the next session, and set its `Covers-through:` line to the newest code commit
+    (`git log -1 --format=%H -- . ':(exclude)*.md' ':(exclude).claude'`).
+  Write only what is true. If something was not verified, say so in "Failed or not verified" instead of leaving it out.
+- If `ROADMAP.md` lists this feature, tick its box as described above and commit that.
 - Tell the user in plain words, a few lines at most: what now works, how to see it for themselves (the command
   to run or the page to open), and anything the reviewer flagged that was left as-is. No git details unless
   something went wrong.

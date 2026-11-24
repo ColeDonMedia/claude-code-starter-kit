@@ -80,9 +80,14 @@ and desktop widths. Use the project's existing design system if it has one. Ever
 Ask the user to approve or correct it. Don't build until they do.
 
 ## 9. Save and hand off
-On approval, write `ROADMAP.md`: one checkbox per feature, in order (`- [ ] Feature name — one-line goal`), with
-that feature's acceptance criteria (including its security criteria, and a `high-risk` tag where it applies)
-indented beneath it. Commit it. Then build the items in order with
-`/starter-kit:feature`, one at a time: tick each box when it's merged, tell the user in a line or two what now
-works and how to see it, and carry on to the next without being asked. Stop only for a real decision, a failing
-check you cannot fix, or when the list is done.
+On approval, write the project's memory so any later session can pick up with full context:
+- `ROADMAP.md`: one checkbox per feature, in order (`- [ ] Feature name — one-line goal`), with that feature's
+  acceptance criteria (including its security criteria, and a `high-risk` tag where it applies) indented beneath it
+  as unticked checkboxes. A box is ticked later, and only with proof: `- [x] Name — goal (merged <commit>)` and, per
+  criterion, `→ test: <file>::<test name>` or `→ manual: <how it was checked>`. A hook rejects ticks without proof.
+- `PROJECT.md` (the master document): what it is, the stack and why, how to run it, the architecture map, the
+  decisions made in this planning (with the reasons and what was rejected), current state, known problems, next steps.
+- `HANDOFF.md` and `CHANGELOG.md`: start them as described in `/starter-kit:init` if they don't exist.
+Commit them. Then build the items in order with `/starter-kit:feature`, one at a time: after each merge the records
+are updated (see that command), tell the user in a line or two what now works and how to see it, and carry on to
+the next without being asked. Stop only for a real decision, a failing check you cannot fix, or when the list is done.

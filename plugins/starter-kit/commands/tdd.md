@@ -12,7 +12,11 @@ stop and suggest running `/starter-kit:init` first.
 2. GREEN: write the minimum code to make it pass. Show the passing output.
 3. REFACTOR: clean up without changing behavior. Re-run the tests.
 
-When it's green and reviewed, commit it locally with a clear message (never push unless asked).
+When it's green and reviewed, commit it locally with a clear message (never push unless asked), then keep the
+records true in a second small commit: one plain-words line in `CHANGELOG.md` with the commit id, a touch-up of
+`PROJECT.md` if what exists or a decision changed, and `HANDOFF.md` rewritten for the next session with its
+`Covers-through:` line set to the newest code commit (`git log -1 --format=%H -- . ':(exclude)*.md' ':(exclude).claude'`).
+Say only what was really done.
 
 Never delete or weaken a test to make it pass. If the change falls under the TDD exemptions in
 CLAUDE.md, say so and skip RED. Do not move on to the next feature until this cycle is green.

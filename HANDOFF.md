@@ -1,0 +1,31 @@
+# Handoff — starter-kit plugin (for the next session, human or bot)
+
+Read this, then `CLAUDE.md` (how to work on this repo), `README.md` (what the kit does) and `CHANGELOG.md` (history).
+Rewrite this file at the end of every session; keep it under 40 lines and true.
+
+## State at version 2.1.0 (2026-11-24)
+- Public repo `ColeDonMedia/claude-code-starter-kit`, MIT, installed from GitHub; machines self-update daily.
+- The plugin lives in `plugins/starter-kit/`: 11 commands, 5 agents, 10 hooks, helper scripts, ~200 tests.
+- Everything is unit-tested against real git repositories and (for packages) the live registries.
+
+## Not verified (be honest about this)
+- No hook has been observed firing inside a live interactive Claude Code session. Tests call each hook with
+  Claude Code's payload shape. The routing choice (which command Claude picks) WAS observed live, for 7 requests.
+- The full pipeline (plan, research, multi-feature build, ship) has never run end to end. The account's API credit
+  ran out, so live runs stopped. One small test-first change with reviewer approval did run live.
+- Whether command text expands `${CLAUDE_PLUGIN_ROOT}` is unknown, so commands use `<SCRIPTS>` and the session note
+  gives the real path. Hooks do get the variable (their config uses it and works).
+- Haiku-quality research vs Sonnet is unmeasured.
+
+## Known risks
+- The GitHub repo is the source of code that auto-runs on every computer: keep two-factor on for that account.
+- Third-party skills are never bundled; `VETTED.md` lists what was reviewed (commits pinned).
+
+## Do this first next session
+1. If credit is available, run a real small project through plan → build → ship and fix what breaks.
+2. Watch for false positives from the guards (safety, package, secret, docs) and loosen rules with tests.
+
+## Rules that must not regress
+- Nothing from a project's own files may run or take effect without the user's approval on this computer (see `CLAUDE.md`).
+- Keep the session note small (test limit 520 words); every command description is loaded each session.
+- Every release: bump `plugin.json`, add a `CHANGELOG.md` entry, update this file, run all tests, push.

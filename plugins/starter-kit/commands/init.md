@@ -31,7 +31,7 @@ Merge into the existing file if there is one; never drop existing entries.
   the install, test, typecheck, lint and build commands you found (as `Bash(<command>:*)`), plus
   `Bash(git status:*)`, `Bash(git diff:*)`, `Bash(git log:*)`. Add them only if the user says yes.
 Add these lines to `.gitignore` (skip any already present): `.claude/settings.local.json`,
-`.claude/worktrees/`, `.claude/last-full-scan`, `.claude/last-verified`, and the secret files: `.env`, `.env.*`,
+`.claude/worktrees/`, `.claude/last-full-scan`, `.claude/last-verified`, `.claude/last-docs-check`, and the secret files: `.env`, `.env.*`,
 `*.pem`, `*.key`, `*.p12`, `*.pfx`, `credentials.json`. Then un-ignore only the templates with
 `!.env.example` (they hold no real values). Never put real keys or passwords in a tracked file: store them in
 `.env` (ignored) or the host's secret manager, and read them from the environment in code.
@@ -57,13 +57,13 @@ plain sentence that it is public history risk, and that the key must be rotated.
 The checks, the related-tests runner and any switch above come from a file inside the project, so they run only
 after the user approves them on this computer. Ask the user ONE plain yes/no question that covers this and the
 permission question in step 4 together: "May I run this project's own tests and checks without asking each time
-(<the commands>)?" If they say yes, run `node "${CLAUDE_PLUGIN_ROOT}/scripts/trust.mjs" --project .` (Claude Code
+(<the commands>)?" If they say yes, run `node "<SCRIPTS>/trust.mjs" --project .` (Claude Code
 then shows them a permission prompt listing the exact commands, which is their real approval). If they say no, skip
 it: the project works, only the automatic checks stay off, and you don't ask again this session.
-If `${CLAUDE_PLUGIN_ROOT}` is empty, find `trust.mjs` under the starter-kit plugin folder.
+
 
 ## 7. Guard every commit (any tool, not only Claude)
-Run `node "${CLAUDE_PLUGIN_ROOT}/scripts/install-git-hooks.mjs" --project .`. It copies the secret scanner into
+Run `node "<SCRIPTS>/install-git-hooks.mjs" --project .`. It copies the secret scanner into
 `.claude/tools/` and installs a git pre-commit hook, so a key, env file or private detail is refused by git itself
 whoever commits. It never changes a pre-commit hook it didn't write. Skip it if the folder is not a git repository.
 Tell the user, once, that they can list their name, email and client names (one per line) in
@@ -96,7 +96,54 @@ scanning with push protection, Dependabot alerts) and that two-factor sign-in on
 ## 9. Preview (only for projects with a web UI)
 Create `.claude/launch.json` with the real dev command and port, so the app can be opened and looked at.
 
-## 10. Report
+## 10. The project's memory: three short documents
+Create these if missing (never overwrite ones that exist), fill what you know and leave `TODO` for the rest. Any
+session, by any bot or person, must be able to read them and carry on with full context. Hooks keep them honest:
+the handoff must cover the newest code commit, and roadmap ticks must be backed by merges and tests.
+
+`PROJECT.md` — the master document. Short, plain, current; edit it, don't keep appending:
+```markdown
+# <Project name> — master document
+## What it is
+<two sentences, for someone who has never seen it>
+## Stack and why
+<each choice, one line, with the reason>
+## How to run it
+<install, run, test, build: the real commands>
+## Architecture map
+<folders and key files: what each is for, how a request or action flows through them>
+## Decisions
+- <date> — <decision> — because <reason> (and what was rejected)
+## Current state
+<what works now; what is in progress; what does not exist yet>
+## Known problems
+<bugs, shortcuts, things that were not verified>
+## Next steps
+<in order>
+```
+
+`HANDOFF.md` — what the previous session leaves for the next. Rewritten, never appended. Under 25 lines:
+```markdown
+# Handoff
+Covers-through: none
+## Done this session
+## Half-done (state exactly where it stands, including any branch or worktree)
+## Do this first next session
+## Questions waiting for the user
+## Failed or not verified
+```
+The `Covers-through:` line holds the full id of the newest code commit the notes describe; the docs hook tells you the
+exact value to write when the notes fall behind.
+
+`CHANGELOG.md` — one entry per merged feature or fix, newest first, in plain words with the commit:
+```markdown
+# Changelog
+## Unreleased
+- <date> — <what changed, as the user would describe it> (commit <short id>)
+```
+Also add to the project's CLAUDE.md template output (below) the "Records" section, so every session starts by reading them.
+
+## 11. Report
 In plain words, a few lines: what kind of project this is, what you set up, and anything marked `TODO`.
 Commit the new files locally. Then carry on with whatever the user originally asked for.
 
@@ -127,6 +174,12 @@ The starter-kit plugin decides which workflow to run for each request; nothing t
 - Patterns: <data access, error handling, naming — only what can't be seen from the code>
 - Design: follow `DESIGN.md` when it exists.
 - Never read or commit `.env*` files, keys or other secrets.
+
+# Records (read first, keep true)
+- Resuming? Read `HANDOFF.md`, then `PROJECT.md` (the master document), before anything else.
+- After real work, update `HANDOFF.md`, `PROJECT.md` and `CHANGELOG.md`. Describe only what was actually done and verified.
+- A `ROADMAP.md` box is ticked only with `(merged <commit>)` and, per criterion, `→ test: <file>::<test name>`.
+- Every source file starts with a short comment saying what it is for; comment the WHY of non-obvious code.
 
 # Git
 - Claude commits its own finished, verified work locally with clear messages.

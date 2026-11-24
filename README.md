@@ -1,5 +1,9 @@
 # Claude Code Starter Kit
 
+> **This is a public repository. Do not put private details in it** — no names, emails, company or
+> client details, personal file paths, keys, tokens, or code from private projects. Keep it generic.
+> Project-specific settings belong in each project's own `CLAUDE.md`, not here.
+
 A project-agnostic foundation for Claude Code, packaged as a plugin: strict TDD, read-only reviewers,
 a pre-ship sweep, and a hook that runs related tests after each edit. Works with any language — the
 agents and commands read each project's own commands from its `CLAUDE.md`.

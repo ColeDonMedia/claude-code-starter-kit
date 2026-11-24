@@ -1,0 +1,12 @@
+{
+  "name": "starter-kit-marketplace",
+  "owner": { "name": "starter-kit" },
+  "metadata": { "description": "Project-agnostic Claude Code foundation: TDD, isolated feature branches, reviewers, pre-ship sweep." },
+  "plugins": [
+    {
+      "name": "starter-kit",
+      "source": "./plugins/starter-kit",
+      "description": "Project-agnostic foundation: strict TDD, read-only reviewers, pre-ship sweep, and a related-tests hook."
+    }
+  ]
+}

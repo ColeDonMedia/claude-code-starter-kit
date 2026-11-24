@@ -45,15 +45,29 @@ const managed = (read(join(root, "CLAUDE.md")) ?? "").includes("starter-kit:mana
 if (!managed) {
   emit(
     "STARTER KIT: this project has not been set up yet (no starter-kit CLAUDE.md). " +
-      "At the start of your first reply, tell the user in one sentence that it isn't set up and ask if they " +
-      "want you to run /starter-kit:init (it detects the stack and writes CLAUDE.md and permissions). " +
-      "If they say yes, run it with the Skill tool. If they decline, don't ask again this session.",
+      "Before anything else, run /starter-kit:init yourself with the Skill tool, without asking first; the user " +
+      "should never need to type it. Then carry on with their request. It detects the stack and writes CLAUDE.md; " +
+      "it asks the user one yes/no question about command permissions. If it fails, say so in one sentence and continue.",
   );
 }
 
-if (cfg.lean === false) process.exit(0);
+const ROUTING =
+  "STARTER KIT WORKFLOWS — you choose and run the right one yourself with the Skill tool. Never ask the user to type a command; say in one line what you ran.\n" +
+  "- Question, explanation, docs, config edit -> just answer or do it.\n" +
+  "- New app, or a large or vague feature -> /starter-kit:spec first (get the user's approval), then /starter-kit:feature.\n" +
+  "- New feature or non-trivial bug fix -> /starter-kit:feature.\n" +
+  "- Small one-file tweak -> /starter-kit:tdd, then /starter-kit:review.\n" +
+  "- Competitors, market, alternatives, 'what's missing' -> /starter-kit:research.\n" +
+  "- You changed code directly in this conversation -> /starter-kit:review before you say it's done.\n" +
+  "- User says ship, release, deploy, push, open a PR, or 'done' -> /starter-kit:full-scan (a hook blocks git push until it passes).\n" +
+  "- User shares a link to a skill, plugin or MCP server, or asks to install one -> /starter-kit:vet first; never install it yourself.\n" +
+  "- Unsure which -> take the lighter path.";
+
+if (cfg.lean === false) emit(ROUTING);
 
 emit(
+  ROUTING +
+    "\n\n" +
   "LEAN MODE (starter kit; the user can switch it off with {\"lean\": false} in .claude/kit.json):\n" +
     "- Replies: lead with the answer or result. No preamble, no restating the request, no recap of what you just did (the diff shows it), no pleasantries. Short sentences; bullets over paragraphs; about 5 lines unless the user asks for detail.\n" +
     "- Don't narrate obvious steps or tool calls.\n" +

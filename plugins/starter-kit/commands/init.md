@@ -1,5 +1,5 @@
 ---
-description: Use when a code project has no starter-kit CLAUDE.md yet (the session-start hook will say so). Sets the project up — detects the stack, writes CLAUDE.md, permissions, and hook config.
+description: Run yourself, without asking, when the session-start hook says the project isn't set up. Detects the stack, writes CLAUDE.md and hook config, and asks one yes/no about command permissions.
 ---
 
 Set up the current project for the starter kit. Work from what the project actually contains; where
@@ -18,9 +18,11 @@ tests (run once), typecheck or static analysis, lint, build. Note the test runne
 
 ## 3. Permissions (`.claude/settings.json`)
 Merge into the existing file if there is one; never drop existing entries.
-- allow: the exact test, typecheck, lint and build commands you found (as `Bash(<command>:*)`), plus
-  `Bash(git status:*)`, `Bash(git diff:*)`, `Bash(git log:*)`.
-- deny: `Read(./.env)`, `Read(./.env.*)`, `Read(./**/*.pem)`, `Read(./**/*.key)`.
+- deny (add without asking — these only restrict): `Read(./.env)`, `Read(./.env.*)`, `Read(./**/*.pem)`, `Read(./**/*.key)`.
+- allow: this lets commands run without a permission prompt, so ask the user ONE yes/no question first,
+  listing the exact commands: the test, typecheck, lint, build and install commands you found (as
+  `Bash(<command>:*)`), plus `Bash(git status:*)`, `Bash(git diff:*)`, `Bash(git log:*)`. Add them only
+  if the user says yes. If they say no or don't answer, skip this part and carry on.
 Also add the install command to `allow`.
 If the project uses git, add these lines to `.gitignore` (create it if missing, skip any already present):
 `.claude/settings.local.json`, `.claude/worktrees/` (where `/starter-kit:feature` builds features) and
@@ -84,14 +86,9 @@ Anything with logic — pricing, validation, auth, business rules — is never e
 - Commits: <message style>
 - Commit or push only when asked.
 
-# Automatic workflow (follow this without being asked)
-- New app, or a large or vague feature → run `/starter-kit:spec` first (requirements, gap check, acceptance criteria), then build it.
-- Questions about competitors, the market, alternatives or what's missing → run `/starter-kit:research`.
-- New feature, added functionality, or a non-trivial bug fix → run `/starter-kit:feature` (Skill tool).
-- Small tweak in one file → `/starter-kit:tdd`, then `/starter-kit:review` when done.
-- About to push, open a PR, deploy or release → run `/starter-kit:full-scan` first. A hook blocks `git push` until it has passed.
-- Questions, explanations, docs and config edits → just do them, no ceremony.
-- Never ask the user to type these commands; run them yourself and say in one line what you ran.
+# Workflow
+The starter-kit plugin tells Claude at the start of every session which workflow to run for each kind of
+request (spec, feature, tdd, review, research, full-scan). Nothing to configure here.
 
 # Reviews
 - After each feature: reviewer (correctness), plus ui-reviewer only when UI files changed.

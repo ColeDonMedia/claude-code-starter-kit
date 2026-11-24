@@ -50,12 +50,17 @@ test("session-start: nudges to run init in an un-set-up project", () => {
 
 const contextOf = (r) => (r.stdout ? JSON.parse(r.stdout).hookSpecificOutput.additionalContext : "");
 
-test("session-start: set-up project gets lean-mode rules, not the init nudge", () => {
+test("session-start: set-up project gets workflow routing and lean mode, not the init instruction", () => {
   const s = sandbox();
   try {
     s.put("package.json", "{}");
     s.put("CLAUDE.md", MANAGED);
     const ctx = contextOf(runHook(SESSION, {}, s.dir));
+    assert.match(ctx, /STARTER KIT WORKFLOWS/);
+    for (const cmd of ["spec", "feature", "tdd", "review", "research", "full-scan", "vet"]) {
+      assert.ok(ctx.includes(`/starter-kit:${cmd}`), `routing should mention /starter-kit:${cmd}`);
+    }
+    assert.match(ctx, /Never ask the user to type a command/);
     assert.match(ctx, /LEAN MODE/);
     assert.match(ctx, /clarity beats brevity/);
     assert.doesNotMatch(ctx, /starter-kit:init/);
@@ -64,37 +69,40 @@ test("session-start: set-up project gets lean-mode rules, not the init nudge", (
   }
 });
 
-test("session-start: un-set-up project gets the nudge, not lean mode", () => {
+test("session-start: un-set-up project is told to run init itself, without asking", () => {
   const s = sandbox();
   try {
     s.put("package.json", "{}");
     const ctx = contextOf(runHook(SESSION, {}, s.dir));
-    assert.match(ctx, /starter-kit:init/);
+    assert.match(ctx, /run \/starter-kit:init yourself/);
+    assert.match(ctx, /without asking first/);
     assert.doesNotMatch(ctx, /LEAN MODE/);
   } finally {
     s.cleanup();
   }
 });
 
-test('session-start: "lean": false switches lean mode off but keeps the project set up', () => {
+test('session-start: "lean": false drops lean mode but keeps the workflow routing', () => {
   const s = sandbox();
   try {
     s.put("package.json", "{}");
     s.put("CLAUDE.md", MANAGED);
     s.put(".claude/kit.json", '{"lean":false}');
-    assert.equal(runHook(SESSION, {}, s.dir).stdout, "");
+    const ctx = contextOf(runHook(SESSION, {}, s.dir));
+    assert.match(ctx, /STARTER KIT WORKFLOWS/);
+    assert.doesNotMatch(ctx, /LEAN MODE/);
   } finally {
     s.cleanup();
   }
 });
 
-test("session-start: lean-mode text stays short (it costs tokens every session)", () => {
+test("session-start: injected text stays short (it costs tokens every session)", () => {
   const s = sandbox();
   try {
     s.put("package.json", "{}");
     s.put("CLAUDE.md", MANAGED);
     const words = contextOf(runHook(SESSION, {}, s.dir)).split(/\s+/).length;
-    assert.ok(words < 250, `lean rules are ${words} words; keep under 250`);
+    assert.ok(words < 400, `session context is ${words} words; keep under 400`);
   } finally {
     s.cleanup();
   }

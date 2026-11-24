@@ -15,6 +15,7 @@ agents and commands read each project's own commands from its `CLAUDE.md`.
 | `/starter-kit:feature <what to build>` | Builds it in an isolated branch + worktree via a subagent, reviews it, merges it into your main branch only when green and approved. Keeps your main conversation small |
 | `/starter-kit:spec <idea>` | Requirements, gap check and acceptance criteria before building a new app or a vague feature |
 | `/starter-kit:research <question>` | Sourced competitor and market research with a gap list |
+| `/starter-kit:vet <link>` | Audits someone else's skill, plugin or MCP server before you install it: safe download, pattern scan, full read, verdict |
 | `/starter-kit:tdd <feature>` | One red → green → refactor cycle, done in the current conversation (for small changes) |
 | `/starter-kit:review` | Correctness review of the diff; UI review only when UI files changed |
 | `/starter-kit:full-scan` | Tests, typecheck, lint, build, then the security review — the gate before shipping |
@@ -34,13 +35,19 @@ Restart Claude Code afterwards. Update later with `claude plugin marketplace upd
 If the `owner/repo` form fails because SSH isn't set up, use the full URL
 `https://github.com/ColeDonMedia/claude-code-starter-kit.git`.
 
-## Use in a project — mostly automatic
-You don't need to remember the commands:
-1. **Setup:** open a code project that isn't set up and Claude says so and offers to run `/starter-kit:init`. Say yes.
-2. **Building:** the generated `CLAUDE.md` tells Claude to use `/starter-kit:feature` for features and bigger
-   fixes, and `/starter-kit:tdd` plus `/starter-kit:review` for small tweaks. Just ask for what you want.
-3. **Shipping:** a hook blocks `git push` and `gh pr create` until `/starter-kit:full-scan` has passed for the
-   exact commit being pushed. Claude runs the scan, then the push goes through. A new commit means a new scan.
+## Use in a project — fully automatic
+You never type a command. At the start of every session a hook gives Claude a short routing table, and
+Claude picks and runs the right workflow itself, saying in one line what it ran:
+- **Setup:** open a code project that isn't set up and Claude runs `/starter-kit:init` on its own. It asks
+  you one yes/no question, about letting it run your test and build commands without prompts.
+- **Routing:** questions and small edits are handled directly; a new app or vague feature goes
+  `spec` → `feature`; features and bug fixes go to `feature`; one-file tweaks go `tdd` → `review`;
+  competitor and market questions go to `research`; a link to someone else's skill goes to `vet`.
+- **Shipping:** saying "ship it", "push" or "done" runs `full-scan`. A hook also blocks `git push` and
+  `gh pr create` until `/starter-kit:full-scan` has passed for the exact commit being pushed; a new commit
+  means a new scan.
+
+The routing text lives in the plugin, so updates reach every project automatically.
 
 You can still type any command yourself.
 
@@ -48,7 +55,7 @@ You can still type any command yourself.
 new session: lead with the answer, no preamble or recaps, read files narrowly, make the smallest change,
 send broad searches to a subagent. It never shortens code, commands, paths or error text, and warnings and
 security issues are written in full. It only trims Claude's replies and reading habits, so expect modest
-savings (roughly 15–30%), not the 65%+ some tools claim. It costs about 240 tokens per session.
+savings (roughly 15–30%), not the 65%+ some tools claim. Lean mode costs about 240 tokens per session, and the workflow routing another 240.
 
 **Turning it off** (per project, in `.claude/kit.json`): `{ "lean": false }` stops lean mode;
 `{ "autoGate": false }` stops the push gate; `{ "auto": false }` stops everything automatic (setup
@@ -105,9 +112,15 @@ maintained by Anthropic and already listed in the official marketplace:
 | Accessibility scanning with axe | a community WCAG skill (for example AccessLint/skills) | check the repo first |
 
 **Vet any third-party skill before installing** (research in 2026 found hundreds of malicious or risky
-skills on public registries): read the whole SKILL.md and any scripts, look for hooks and shell commands,
-check the owner, last commit and license, prefer small single-purpose skills, and never install one that
-asks for credentials or runs downloaded code. Keep it off the kit's public repo.
+skills on public registries). Claude does this for you: share the link, or run `/starter-kit:vet <link>`.
+It downloads the repo into an empty folder without running anything, runs `scripts/vet-scan.mjs`
+(flags download-and-run commands, encoded payloads, throwaway upload endpoints, credential access plus
+network use, install-time scripts, binaries, hidden Unicode, hidden HTML comments and common
+prompt-injection phrases), then reads every file and reports a verdict. A skill is mostly plain text, so
+reading it is the real "reverse engineering". Limits: the scan only knows patterns, injected instructions
+can be worded innocently, and a repo can change after it is vetted, so pin the commit you reviewed. The
+safest route of all is to have Claude write its own version of an idea instead of copying the source.
+Tests: `node --test plugins/starter-kit/scripts/vet-scan.test.mjs`.
 
 ## Deliberately not included
 - **Jailbreak or "safety bypass" skills** (for example Hermes's "godmode"). They don't make code better and they defeat the guardrails this kit relies on.

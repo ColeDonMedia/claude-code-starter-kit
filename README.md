@@ -217,3 +217,6 @@ Tests: `node --test plugins/starter-kit/scripts/vet-scan.test.mjs`.
 ## What a plugin can't carry
 Plugins don't ship `CLAUDE.md` or permission rules, which is why `/starter-kit:init` writes those
 into each project.
+
+## License
+MIT. See [LICENSE](LICENSE). Third-party repos listed in VETTED.md keep their own licenses; none of their code or text is copied here.

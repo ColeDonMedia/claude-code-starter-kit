@@ -10,8 +10,13 @@ Research this and report back briefly: $ARGUMENTS
    the user is building, what a useful answer looks like, and anything already known. Web pages are long; keeping
    them in the subagent keeps this conversation small. For a broad topic, launch two or three researchers in
    parallel on separate angles (for example: direct competitors, pricing, user complaints).
+   The researcher runs on Haiku (fast and cheap), which suits gathering. It is weaker at judging source quality and
+   spotting subtle contradictions, so the checking in the next step is yours, not its.
 3. **Check the report before passing it on.** Every important claim needs a link. If the confidence is low or key
    facts are unverified, send the researcher back once with the specific gaps. Never fill gaps from memory.
+   Re-check the claims that matter most yourself, or with a stronger researcher (launch the same agent with the
+   `model` set to `sonnet`), whenever a wrong answer would cost real money or cause harm: prices and limits, legal,
+   privacy or compliance rules, security advice, and any claim two researchers disagree on.
 4. **Report to the user in plain words:** the takeaway first, then the comparison table, then the gaps (table
    stakes we're missing, openings, things to ignore), then confidence and sources. One page at most.
 5. If this research was for a product decision, say what you'd change in the plan because of it.

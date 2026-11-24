@@ -11,6 +11,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { scanDiff, scanFiles, loadPrivateTerms, FORBIDDEN_NAME, FILE_OK } from "../scripts/secret-scan.mjs";
+import { switchedOff } from "../scripts/trust-lib.mjs";
 
 const allow = () => process.exit(0);
 
@@ -33,13 +34,15 @@ try {
 } catch {
   /* ignore bad json */
 }
-if (cfg.auto === false || cfg.secretGuard === false) allow();
+if (switchedOff(root, cfg, "auto", "secretGuard")) allow(); // counts only if the user approved the switch on this computer
 
 const isCommit = /(^|[;&|(]\s*)git(\s+-C\s+\S+|\s+-c\s+\S+)*\s+commit\b/.test(command);
 const isPush = /(^|[;&|(]\s*)git(\s+-C\s+\S+|\s+-c\s+\S+)*\s+push\b/.test(command);
 const isPr = /(^|[;&|(]\s*)gh\s+(pr\s+create|repo\s+create|gist\s+create)\b/.test(command);
 const addMatch = /(^|[;&|(]\s*)git(\s+-C\s+\S+)?\s+add\b([^;&|]*)/.exec(command);
-if (!isCommit && !isPush && !isPr && !addMatch) allow();
+// Publishing and deploying ship the files in the folder (not git commits), so they scan every tracked file.
+const isDeploy = /(^|[;&|(]\s*)(npx\s+|pnpm\s+|yarn\s+)?((npm|pnpm|yarn)\s+publish|cargo\s+publish|twine\s+upload|docker\s+push|vercel(\s+deploy)?\b[^;&|]*--prod|netlify\s+deploy\b[^;&|]*--prod|(fly|flyctl)\s+deploy|firebase\s+deploy|wrangler\s+(deploy|publish)|gh\s+release\s+create)\b/.test(command) && !/--dry-run/.test(command);
+if (!isCommit && !isPush && !isPr && !addMatch && !isDeploy) allow();
 
 const git = (args) => spawnSync("git", args, { cwd: root, encoding: "utf8", maxBuffer: 256 * 1024 * 1024 });
 if (git(["rev-parse", "--is-inside-work-tree"]).status !== 0) allow();
@@ -48,7 +51,11 @@ const terms = loadPrivateTerms();
 let findings = [];
 let scope = "";
 
-if (addMatch && !isCommit && !isPush && !isPr) {
+if (isDeploy) {
+  const tracked = (git(["ls-files"]).stdout ?? "").split("\n").filter(Boolean).slice(0, 4000);
+  findings = scanFiles(tracked.map((f) => resolve(root, f)), terms);
+  scope = "the files about to be published or deployed";
+} else if (addMatch && !isCommit && !isPush && !isPr) {
   // `git add <paths>`: check the named files themselves, before they are staged.
   const tokens = addMatch[3].trim().split(/\s+/).filter(Boolean);
   const broad = tokens.some((t) => ["-A", "--all", "-u", "--update", "."].includes(t) || /^-[a-zA-Z]*[Au][a-zA-Z]*$/.test(t));

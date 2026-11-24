@@ -14,6 +14,7 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { basename, dirname, extname, join, resolve } from "node:path";
+import { isTrusted } from "../scripts/trust-lib.mjs";
 
 const done = () => process.exit(0);
 
@@ -123,6 +124,11 @@ if (typeof cfg.relatedTests === "string") {
 }
 
 if (!cmd) done();
+
+// SECURITY: a custom command comes from the project's kit.json, and even the standard test runners execute
+// project code. Run them only if the user approved this on this computer (scripts/trust-lib.mjs).
+const entry = typeof cfg.relatedTests === "string" ? `related:${cfg.relatedTests.trim()}` : "auto-runner";
+if (!isTrusted(root, entry)) done();
 
 if (process.env.KIT_DRY_RUN) {
   process.stdout.write(`CMD: ${cmd}\nCWD: ${cwd}\n`);

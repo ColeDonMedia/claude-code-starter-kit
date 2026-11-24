@@ -16,6 +16,7 @@
 // Any parse problem or unknown input allows the command: this hook must never get in the way by accident.
 import { existsSync, readFileSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
+import { entriesOf, switchedOff, approvedAllows } from "../scripts/trust-lib.mjs";
 
 let raw = "";
 for await (const chunk of process.stdin) raw += chunk;
@@ -36,8 +37,12 @@ try {
 } catch {
   /* ignore bad json */
 }
-if (cfg.auto === false || cfg.guard === false) process.exit(0);
-const allowed = new Set(Array.isArray(cfg.guardAllow) ? cfg.guardAllow : []);
+// A project's own kit.json may switch the guard off or allow rules only if the user approved that on this
+// computer (scripts/trust-lib.mjs); a hostile project must not be able to disable its own protection.
+// Even switched off, the two rules that protect the approval process itself still apply.
+const guardOff = switchedOff(root, cfg, "auto", "guard");
+const allowed = approvedAllows(root, cfg);
+const NEVER_ALLOWED = new Set(["trust-commands", "trust-store"]);
 
 // ---------- read the command like a shell ----------
 function parse(cmd) {
@@ -123,7 +128,8 @@ const SECRET_FILE = /(^|[\\/])(\.env(\.(?!example$|sample$|template$|dist$)[\w.-
 
 const findings = [];
 const add = (level, id, reason) => {
-  if (!allowed.has(id)) findings.push({ level, id, reason });
+  if (NEVER_ALLOWED.has(id)) findings.push({ level, id, reason });
+  else if (!guardOff && !allowed.has(id)) findings.push({ level, id, reason });
 };
 
 function checkRm(cmd, args) {
@@ -165,6 +171,8 @@ function checkGit(args) {
 
 function analyze(text, depth = 0) {
   if (depth > 3) return;
+  // The approval list is the user's. Nothing may read or edit it except through the trust script, which asks.
+  if (/trusted\.json/i.test(text)) add("deny", "trust-store", "the approval list can only be changed with the trust script, which asks the user");
   if (/:\(\)\s*\{\s*:\s*\|\s*:\s*&\s*\}\s*;\s*:/.test(text)) add("deny", "fork-bomb", "fork bomb");
   if (/\b(bash|sh|zsh)\s+<\(\s*(curl|wget)\b/.test(text) || /\b(iex|invoke-expression)\b[^|]*\b(iwr|irm|invoke-webrequest|invoke-restmethod|downloadstring)\b/i.test(text))
     add("ask", "pipe-to-shell", "downloads and runs code in one step");
@@ -180,7 +188,20 @@ function analyze(text, depth = 0) {
       const k = args.findIndex((a) => /^(-c|-command|\/c)$/i.test(a) || /^-[a-z]*c$/.test(a));
       if (k >= 0 && args[k + 1]) analyze(args.slice(k + 1).join(" "), depth + 1);
     } else if (cmd === "eval" && args.length) analyze(args.join(" "), depth + 1);
-    if (["rm", "rmdir", "rd", "del", "erase", "remove-item", "ri"].includes(cmd)) checkRm(cmd, args);
+    // Approving a project's commands: always shown to the user as a real permission prompt with the exact list.
+    if (cmd === "node" && args.some((a) => /(^|[\\/])trust\.mjs$/i.test(a)) && !args.includes("--list")) {
+      const pi = args.indexOf("--project");
+      const target = resolve(root, pi >= 0 && args[pi + 1] ? args[pi + 1] : ".");
+      let tcfg = {};
+      try {
+        const p = join(target, ".claude", "kit.json");
+        if (existsSync(p)) tcfg = JSON.parse(readFileSync(p, "utf8"));
+      } catch {
+        /* unreadable */
+      }
+      const list = entriesOf(tcfg).map((e) => e.replace(/^auto-runner$/, "the project's own test runner (tests execute project code)").replace(/^verify:/, "run: ").replace(/^related:/, "run on each edit: ").replace(/^switch:/, "TURN OFF protection: ").replace(/^allow:/, "ALLOW risky action: "));
+      add("ask", "trust-commands", `approve letting "${target}" run these automatically on your computer — ${list.join("; ")}`);
+    } else if (["rm", "rmdir", "rd", "del", "erase", "remove-item", "ri"].includes(cmd)) checkRm(cmd, args);
     else if (cmd === "git") checkGit(args);
     else if (/^mkfs/.test(cmd) || ["diskpart", "fdisk", "parted", "wipefs"].includes(cmd)) add("deny", "disk-write", `${cmd} can erase a whole disk`);
     else if (cmd === "dd" && args.some((a) => /^of=\/dev\//.test(a))) add("deny", "disk-write", "dd writing straight to a disk device");

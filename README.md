@@ -16,6 +16,7 @@ agents and commands read each project's own commands from its `CLAUDE.md`.
 | `/starter-kit:spec <idea>` | Requirements, gap check and acceptance criteria before building a new app or a vague feature |
 | `/starter-kit:research <question>` | Sourced competitor and market research with a gap list |
 | `/starter-kit:debug <problem>` | For a bug or failing test with an unclear cause: reproduce, write a failing test, isolate, test one hypothesis at a time, fix the root cause, prove it. Stops after three wrong guesses instead of flailing |
+| `/starter-kit:audit` | Security audit of the whole project (secret scan, dependency audit, package check, then the security reviewer); asked for by saying things like "is this secure?" |
 | `/starter-kit:vet <link>` | Audits someone else's skill, plugin or MCP server before you install it: safe download, pattern scan, full read, verdict |
 | `/starter-kit:tdd <feature>` | One red → green → refactor cycle, done in the current conversation (for small changes) |
 | `/starter-kit:review` | Correctness review of the diff; UI review only when UI files changed |
@@ -93,6 +94,37 @@ names). The reason shows file and line with the value redacted, never the secret
 `your-key-here` are allowed. If a real key ever got committed, rotate it: deleting it later does not remove it
 from GitHub's history. Switch off with `{ "secretGuard": false }` in `.claude/kit.json`.
 
+**Security, built in at every stage.**
+- *Planning:* the plan includes a threat check (what's worth stealing, who could misuse it, the likely attacks) and turns
+  each defence into a test, such as "user A cannot read user B's data". High-risk features are tagged.
+- *Building:* the builder follows secure-coding defaults (check who is asking on every request, validate input on the
+  server, parameterized queries, secrets only in environment variables, hashed passwords, rate limits, safe cookies).
+- *Right after risky features* (sign-in, payments, uploads, permissions, database rules, secrets), the security
+  reviewer runs immediately, not only at the end.
+- *New packages:* a package guard looks each one up in its public registry before it installs. A name that doesn't
+  exist is blocked (AI tools invent plausible names and attackers register them); brand-new, barely used, deprecated
+  or script-running packages, and installs from a URL or git repo, ask you first.
+- *Every commit:* the secret scan also runs as a real git pre-commit hook, so it protects commits from any tool or
+  from you, and the same scan runs in a GitHub check on every push and pull request (read-only permissions,
+  official actions only).
+- *Shipping:* pushes, pull requests, releases, `npm publish`, `docker push` and deploy commands such as
+  `vercel --prod` or `fly deploy` all wait for the pre-ship scan, and the secret scan covers the files being published.
+  The first launch also gets a launch-readiness checklist (HTTPS, security headers, CORS, database rules, key
+  privileges, rate limits, backups, rollback).
+- *Whole project:* ask "is it secure?" and a full-codebase audit runs (tools first, then the security reviewer),
+  not just a review of recent changes.
+
+**A project can't switch your protections off or run its own commands.** A project's `.claude/kit.json` can list
+check commands and off-switches, but a stranger's project must not be able to run code on your computer or disable
+the guards. So those entries do nothing until you approve them on this computer. Approval is one plain yes/no
+question when a project is set up; Claude Code then shows a permission prompt with the exact commands, and the
+approval is stored outside the project (`~/.claude/plugins/data/starter-kit/trusted.json`, which neither shell
+commands nor Claude's file tools can edit). Changing a command voids its approval.
+
+**Cheap research.** Web searching and reading run on Haiku (fast and inexpensive), in parallel by angle. The main
+conversation checks the claims, and anything costing real money or affecting security or legal choices is
+re-checked with a stronger model.
+
 **Self-updating.** At the start of a session (at most once a day) a background job updates this plugin from
 its GitHub repo, so every computer stays current without anyone typing a command. It never delays the session
 and applies the new version the next time Claude Code starts. It runs exactly two fixed commands, for this plugin
@@ -102,9 +134,11 @@ result is in `~/.claude/plugins/data/starter-kit/auto-update.log`. Trade-off: th
 code that runs on every computer, so keep that account secured (two-factor on, no shared access). Switch it off
 with `{ "autoUpdate": false }` in `.claude/kit.json` or the environment variable `KIT_AUTOUPDATE=0`.
 
-**Turning it off** (per project, in `.claude/kit.json`): `{ "lean": false }` stops lean mode;
-`{ "autoUpdate": false }` stops self-updating; `{ "guard": false }` stops the safety guard; `{ "autoGate": false }` stops the push gate; `{ "auto": false }` stops everything automatic (setup
-nudge, lean mode, gate). Claude is told never to change this itself.
+**Turning things off** (per project, in `.claude/kit.json`). Comfort settings take effect right away:
+`{ "lean": false }` (token-saving replies), `{ "plainLanguage": false }`, `{ "autoUpdate": false }`,
+`{ "verifyGate": false }`. Protections (`"guard"`, `"secretGuard"`, `"packageGuard"`, `"autoGate"`, `"auto"`, and
+`"guardAllow": [rule ids]`) also need your approval before they count, as described above. Claude never turns any
+of them off on its own; if you ask it to, it sets the switch and you approve it in a permission prompt.
 
 The automatic behaviour is instructions plus two hooks, so it is reliable but not magic: the push gate is
 enforced by a hook, while "use `/feature` for features" is guidance Claude follows.

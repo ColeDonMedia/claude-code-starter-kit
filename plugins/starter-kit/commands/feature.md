@@ -33,7 +33,11 @@ It commits on its own branch and reports the BRANCH name and the WORKTREE path. 
 you will need it in step 2.
 
 ## 2. Review (subagents)
-Launch the starter-kit `reviewer` agent, plus `ui-reviewer` in parallel if UI files changed. Give them:
+Launch the starter-kit `reviewer` agent, plus `ui-reviewer` in parallel if UI files changed, plus the
+`security-reviewer` agent (range mode, on `git diff MAIN...BRANCH`) right now — not only at ship time — whenever the
+feature is tagged `high-risk` in ROADMAP.md or its diff touches sign-in or sessions, permissions or roles,
+payments, file uploads, database rules or migrations, secrets or environment settings, network or CORS settings,
+or anything that handles other people's personal data. Treat its CHANGES REQUESTED like the reviewer's. Give them:
 - the WORKTREE path — they must run every command there (`cd` into it, or `git -C`), because the main
   checkout does not have the feature's code and would be testing the old version
 - the diff to review: `git diff MAIN...BRANCH`

@@ -61,7 +61,8 @@ const parts = [
     "- Bug, error, crash or failing test with an unclear cause -> /starter-kit:debug (root cause before any fix).\n" +
     "- Competitors, market, alternatives, 'what's missing' -> /starter-kit:research.\n" +
     "- You changed code directly in this conversation -> /starter-kit:review before you say it's done.\n" +
-    "- User says ship, release, deploy, push, open a PR -> /starter-kit:full-scan (a hook blocks git push until it passes).\n" +
+    "- User says ship, release, deploy, publish, push, open a PR -> /starter-kit:full-scan (a hook blocks pushes, publishes and deploys until it passes).\n" +
+    "- Is it secure, security audit, harden it, or first time in an existing codebase with real users -> /starter-kit:audit.\n" +
     "- A link to a skill, plugin or MCP server, or a request to install one -> /starter-kit:vet first; never install it yourself.\n" +
     "- Never say done, fixed or passing without running the check this turn and quoting its result.\n" +
     "- When work is verified, commit it locally yourself with a clear message. Never push unless asked.\n" +

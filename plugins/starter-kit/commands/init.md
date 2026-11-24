@@ -48,14 +48,55 @@ plain sentence that it is public history risk, and that the key must be rotated.
 - The related-tests hook auto-detects Vitest, Jest, pytest and Go. For another runner add
   `"relatedTests": "<command with {file}>", "extensions": [".ext"]`, or `"relatedTests": false` if there is no
   fast way to run a subset.
-- Off switches, which only the user may set (never set them yourself): `"auto": false` (everything automatic),
-  `"lean": false`, `"plainLanguage": false`, `"guard": false`, `"guardAllow": [...]`, `"autoGate": false`,
-  `"verifyGate": false`, `"autoUpdate": false`.
+- Off switches exist (`"auto"`, `"guard"`, `"secretGuard"`, `"packageGuard"`, `"autoGate"`, `"verifyGate"`, `"lean"`,
+  `"plainLanguage"`, `"autoUpdate"`, and `"guardAllow": [rule ids]`). Never set one on your own. Only if the user
+  asks in chat to turn something off may you set it, and it then does nothing until the user approves it in a
+  permission prompt (step 6). A project file alone can never switch a protection off.
 
-## 6. Preview (only for projects with a web UI)
+## 6. Approve what this project may run automatically
+The checks, the related-tests runner and any switch above come from a file inside the project, so they run only
+after the user approves them on this computer. Ask the user ONE plain yes/no question that covers this and the
+permission question in step 4 together: "May I run this project's own tests and checks without asking each time
+(<the commands>)?" If they say yes, run `node "${CLAUDE_PLUGIN_ROOT}/scripts/trust.mjs" --project .` (Claude Code
+then shows them a permission prompt listing the exact commands, which is their real approval). If they say no, skip
+it: the project works, only the automatic checks stay off, and you don't ask again this session.
+If `${CLAUDE_PLUGIN_ROOT}` is empty, find `trust.mjs` under the starter-kit plugin folder.
+
+## 7. Guard every commit (any tool, not only Claude)
+Run `node "${CLAUDE_PLUGIN_ROOT}/scripts/install-git-hooks.mjs" --project .`. It copies the secret scanner into
+`.claude/tools/` and installs a git pre-commit hook, so a key, env file or private detail is refused by git itself
+whoever commits. It never changes a pre-commit hook it didn't write. Skip it if the folder is not a git repository.
+Tell the user, once, that they can list their name, email and client names (one per line) in
+`~/.claude/plugins/data/starter-kit/private-terms.txt` so those are never committed either.
+
+## 8. Checks on GitHub (only if the project has a GitHub remote or the user plans to use GitHub)
+Create `.github/workflows/checks.yml` that runs on every push and pull request. Use ONLY official actions from the
+`actions/` organisation pinned to a major version, give the workflow read-only permissions, and no secrets:
+```yaml
+name: checks
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      # <stack setup, e.g. actions/setup-node@v4 with node-version-file, or actions/setup-python@v5>
+      - run: <install command>
+      - run: <each verify command, one step each>
+      - run: <dependency audit, e.g. npm audit --omit=dev --audit-level=high | pip-audit | cargo audit>
+      - run: node .claude/tools/secret-scan.mjs --files $(git ls-files)
+```
+Adapt the setup and commands to the detected stack and leave out any step the project has no command for. Never
+add a third-party action. Tell the user the free protections they can switch on in GitHub's settings (secret
+scanning with push protection, Dependabot alerts) and that two-factor sign-in on their account matters most.
+
+## 9. Preview (only for projects with a web UI)
 Create `.claude/launch.json` with the real dev command and port, so the app can be opened and looked at.
 
-## 7. Report
+## 10. Report
 In plain words, a few lines: what kind of project this is, what you set up, and anything marked `TODO`.
 Commit the new files locally. Then carry on with whatever the user originally asked for.
 

@@ -8,6 +8,7 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { switchedOff } from "../scripts/trust-lib.mjs";
 
 let raw = "";
 for await (const chunk of process.stdin) raw += chunk;
@@ -21,8 +22,23 @@ try {
 const command = input?.tool_input?.command;
 if (typeof command !== "string") process.exit(0);
 
-// A real push/PR command at the start of the command or after ; && || | (not inside an echo, etc.)
-const PUSH = /(^|[;&|(]\s*)(git(\s+-C\s+\S+)?\s+push|gh\s+pr\s+create)\b/;
+// A real push, PR, publish or deploy command at the start of the command or after ; && || | (not inside an echo, etc.)
+const START = String.raw`(^|[;&|(]\s*)(npx\s+|pnpm\s+(dlx\s+|exec\s+)?|yarn\s+)?`;
+const SHIPPING = [
+  String.raw`git(\s+-C\s+\S+)?\s+push`,
+  String.raw`gh\s+(pr\s+create|release\s+create)`,
+  String.raw`(npm|pnpm|yarn)\s+publish`,
+  String.raw`(cargo|twine|gem|dotnet\s+nuget)\s+(publish|upload|push)`,
+  String.raw`docker\s+(push|buildx\s+build\b[^;&|]*--push)`,
+  String.raw`vercel(\s+deploy)?\b[^;&|]*--prod`,
+  String.raw`netlify\s+deploy\b[^;&|]*--prod`,
+  String.raw`(fly|flyctl)\s+deploy`,
+  String.raw`firebase\s+deploy`,
+  String.raw`wrangler\s+(deploy|publish)`,
+  String.raw`railway\s+up`,
+  String.raw`(heroku|render)\s+(deploy|releases:create)`,
+].map((p) => `(${p})`);
+const PUSH = new RegExp(`${START}(${SHIPPING.join("|")})\\b`);
 if (!PUSH.test(command) || /--dry-run/.test(command)) process.exit(0);
 
 const root = resolve(process.env.CLAUDE_PROJECT_DIR || input.cwd || process.cwd());
@@ -42,7 +58,7 @@ try {
 } catch {
   /* ignore bad json */
 }
-if (cfg.autoGate === false || cfg.auto === false) process.exit(0);
+if (switchedOff(root, cfg, "autoGate", "auto")) process.exit(0); // counts only if the user approved it on this computer
 
 const head = spawnSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" });
 if (head.status !== 0) process.exit(0); // not a git repo or no commits: nothing to gate
@@ -55,7 +71,7 @@ process.stderr.write(
   "Blocked by the starter kit: this commit hasn't passed /starter-kit:full-scan " +
     (marker ? "(the last passing scan was for a different commit). " : "(no passing scan recorded). ") +
     "Run /starter-kit:full-scan now with the Skill tool; when it finishes green it records the commit. " +
-    "Then retry this command. If the user wants to skip the check, they can set " +
-    '{"autoGate": false} in .claude/kit.json — do not edit that yourself.\n',
+    "Then retry this command. Never skip this check on your own. If the user explicitly asks to turn it off, " +
+    'set {"autoGate": false} in .claude/kit.json and run the trust script so they approve it in a permission prompt.\n',
 );
 process.exit(2);

@@ -6,6 +6,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, realpathSy
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { trustEntries, entriesOf } from "../scripts/trust-lib.mjs";
 
 const GATE = join(dirname(fileURLToPath(import.meta.url)), "verify-gate.mjs");
 const PASS = 'node -e "process.exit(0)"';
@@ -28,8 +29,51 @@ function project({ verify = [PASS], managed = true, extra = {} } = {}) {
   git("commit", "-q", "-m", "init");
   return { dir, put, git, cleanup: () => { try { rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 }); } catch { /* a just-killed child may still hold it on Windows */ } } };
 }
-const stop = (p, payload = {}, env = {}) =>
-  spawnSync("node", [GATE], { input: JSON.stringify(payload), encoding: "utf8", env: { ...process.env, CLAUDE_PROJECT_DIR: p.dir, ...env } });
+// The gate runs a project's commands only after the user approved them on this computer: give the tests their own store.
+const DATA = realpathSync(mkdtempSync(join(tmpdir(), "verify-trust-")));
+test.after(() => rmSync(DATA, { recursive: true, force: true }));
+process.env.KIT_DATA_DIR = DATA;
+const approve = (p) => {
+  let cfg = {};
+  try {
+    cfg = JSON.parse(readFileSync(join(p.dir, ".claude", "kit.json"), "utf8"));
+  } catch {
+    /* none */
+  }
+  trustEntries(p.dir, entriesOf(cfg));
+};
+const stop = (p, payload = {}, env = {}, { trusted = true } = {}) => {
+  if (trusted) approve(p);
+  return spawnSync("node", [GATE], { input: JSON.stringify(payload), encoding: "utf8", env: { ...process.env, CLAUDE_PROJECT_DIR: p.dir, KIT_DATA_DIR: DATA, ...env } });
+};
+
+test("SECURITY: unapproved project commands are never run; the user is asked once", () => {
+  const p = project({ verify: ['node -e "require(\'fs\').writeFileSync(\'hostile-ran\',\'x\')"'] });
+  try {
+    const r = stop(p, {}, {}, { trusted: false });
+    assert.equal(r.status, 2);
+    assert.match(r.stderr, /not approved/);
+    assert.match(r.stderr, /trust\.mjs/);
+    assert.equal(existsSync(join(p.dir, "hostile-ran")), false, "the command must not have run");
+    assert.equal(stop(p, {}, {}, { trusted: false }).status, 0, "asks only once for the same state");
+    assert.equal(existsSync(join(p.dir, "hostile-ran")), false);
+  } finally {
+    p.cleanup();
+  }
+});
+
+test("approval is per exact command: editing it voids the approval", () => {
+  const p = project({ verify: [PASS] });
+  try {
+    assert.equal(stop(p).status, 0); // approved and passes
+    p.put(".claude/kit.json", JSON.stringify({ verify: [`${PASS} && echo changed`] }));
+    const r = stop(p, {}, {}, { trusted: false });
+    assert.equal(r.status, 2);
+    assert.match(r.stderr, /changed/);
+  } finally {
+    p.cleanup();
+  }
+});
 
 test("passing checks let the turn end and record the state", () => {
   const p = project();

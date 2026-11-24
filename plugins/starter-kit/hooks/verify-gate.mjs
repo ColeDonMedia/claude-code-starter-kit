@@ -14,6 +14,8 @@ import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { isTrusted } from "../scripts/trust-lib.mjs";
 
 const done = () => process.exit(0);
 let raw = "";
@@ -67,6 +69,31 @@ const DOC = /\.(md|mdx|txt|rst)$/i;
 if (last.head === head.stdout.trim()) {
   const changed = status.split("\n").filter(Boolean).map((l) => l.slice(3).trim().replace(/^"|"$/g, ""));
   if (changed.length && changed.every((f) => DOC.test(f))) done();
+}
+
+// SECURITY: these commands come from the project's own kit.json. Run them only if the user approved this exact
+// text on this computer (see scripts/trust-lib.mjs); otherwise ask once and run nothing.
+const unapproved = commands.filter((c) => !isTrusted(root, `verify:${c}`));
+if (unapproved.length) {
+  try {
+    mkdirSync(join(root, ".claude"), { recursive: true });
+    writeFileSync(stateFile, JSON.stringify({ fingerprint, head: head.stdout.trim(), ok: null, untrusted: true, when: new Date().toISOString() }));
+  } catch {
+    /* best effort */
+  }
+  const trustScript = fileURLToPath(new URL("../scripts/trust.mjs", import.meta.url));
+  process.stderr.write(
+    "This project lists check commands that you have not approved on this computer, so none were run:\n" +
+      unapproved.map((c) => `- ${c}`).join("\n") +
+      "\nAsk the user ONE plain yes/no question: \"May I automatically run this project's own checks (" +
+      unapproved.join(", ") +
+      ") whenever I finish a change?\" If they say yes, run: node \"" +
+      trustScript +
+      "\" --project \"" +
+      root +
+      "\" (they will see a permission prompt showing these exact commands). If they say no, carry on without the automatic checks and don't ask again this session.\n",
+  );
+  process.exit(2);
 }
 
 const budgetMs = Number(process.env.KIT_VERIFY_BUDGET_MS || 240000);

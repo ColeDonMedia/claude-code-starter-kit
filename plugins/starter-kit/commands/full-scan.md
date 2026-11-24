@@ -14,6 +14,13 @@ Run the full pre-ship sweep using the commands listed under "Commands" in CLAUDE
 6. Only once steps 1–5 are green: the starter-kit `security-reviewer` agent on everything changed since
    the last ship.
 
+7. Launch readiness, only for something that serves real users (a web app, an API, a hosted service) and only the
+   first time it ships or when hosting, security settings or access rules changed: have the `security-reviewer`
+   run its launch-readiness checklist (HTTPS, security headers, CORS, database access rules, key privileges,
+   rate limits, error handling, backups, a rollback plan). Anything FAIL blocks the launch; NOT CHECKED items go
+   to the user in plain words with what to look at. This gate covers pushes, pull requests, releases, package
+   publishes and deploy commands (`npm publish`, `vercel --prod`, `fly deploy`, `docker push`, and so on).
+
 Choosing what "since the last ship" means (never use a plain diff against the current branch — after
 `/starter-kit:feature` you are already on it, so that diff is empty). Take the first that exists:
   a. the latest tag: `git describe --tags --abbrev=0`  → `git diff <tag>..HEAD`
@@ -28,7 +35,7 @@ Rules:
 - If the project genuinely has no command for a step (for example no typecheck in a shell-script
   project), report that step as "not applicable" with the reason. Do not silently skip it.
 - Report each step's real output.
-- Ship only when every applicable step is green AND security-reviewer returns APPROVE.
+- Ship only when every applicable step is green AND security-reviewer returns APPROVE (and step 7 has no FAIL).
   If anything fails, fix it and re-run the full sweep.
 
 When — and only when — every applicable step is green and security-reviewer returned APPROVE, record it

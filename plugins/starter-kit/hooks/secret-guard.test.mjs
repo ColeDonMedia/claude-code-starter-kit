@@ -8,6 +8,12 @@ import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { scanText, scanDiff, scanFiles } from "../scripts/secret-scan.mjs";
+import { trustEntries, entriesOf } from "../scripts/trust-lib.mjs";
+
+// Project switches count only once approved on this computer, so give these tests their own approval store.
+const TRUST_DATA = realpathSync(mkdtempSync(join(tmpdir(), "secret-trust-")));
+process.env.KIT_DATA_DIR = TRUST_DATA;
+test.after(() => rmSync(TRUST_DATA, { recursive: true, force: true }));
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const GUARD = join(HERE, "secret-guard.mjs");
@@ -198,10 +204,12 @@ test("off switches: secretGuard false and auto false", () => {
     r.put("config.js", `const k = "${FAKE.anthropic}";\n`);
     r.g("add", "config.js");
     mkdirSync(join(r.dir, ".claude"), { recursive: true });
-    writeFileSync(join(r.dir, ".claude", "kit.json"), JSON.stringify({ secretGuard: false }));
-    assert.equal(guard('git commit -m "x"', r.dir).decision, "allow");
-    writeFileSync(join(r.dir, ".claude", "kit.json"), JSON.stringify({ auto: false }));
-    assert.equal(guard('git commit -m "x"', r.dir).decision, "allow");
+    for (const cfg of [{ secretGuard: false }, { auto: false }]) {
+      writeFileSync(join(r.dir, ".claude", "kit.json"), JSON.stringify(cfg));
+      assert.equal(guard('git commit -m "x"', r.dir).decision, "deny", "a switch the user has not approved must be ignored");
+      trustEntries(r.dir, entriesOf(cfg));
+      assert.equal(guard('git commit -m "x"', r.dir).decision, "allow", "an approved switch is honoured");
+    }
   } finally {
     r.cleanup();
   }

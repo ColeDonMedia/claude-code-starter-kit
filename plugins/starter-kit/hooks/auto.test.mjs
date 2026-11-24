@@ -57,7 +57,7 @@ test("session-start: set-up project gets workflow routing and lean mode, not the
     s.put("CLAUDE.md", MANAGED);
     const ctx = contextOf(runHook(SESSION, {}, s.dir));
     assert.match(ctx, /STARTER KIT WORKFLOWS/);
-    for (const cmd of ["spec", "feature", "tdd", "review", "research", "full-scan", "vet", "debug"]) {
+    for (const cmd of ["spec", "feature", "tdd", "review", "research", "full-scan", "vet", "debug", "audit"]) {
       assert.ok(ctx.includes(`/starter-kit:${cmd}`), `routing should mention /starter-kit:${cmd}`);
     }
     assert.match(ctx, /Never ask the user to type a command/);
@@ -209,15 +209,20 @@ test("push-gate: inactive in projects that are not set up", () => {
   }
 });
 
-test('push-gate: off when .claude/kit.json has "autoGate": false', () => {
+test('push-gate: off when .claude/kit.json has "autoGate": false AND the user approved it', () => {
   const s = sandbox();
+  const data = mkdtempSync(join(tmpdir(), "auto-trust-"));
   try {
     s.put("CLAUDE.md", MANAGED);
     s.put(".claude/kit.json", '{"autoGate":false}');
     s.initRepo();
-    assert.equal(runHook(GATE, bash("git push"), s.dir).status, 0);
+    const env = { KIT_DATA_DIR: data };
+    assert.equal(spawnSync("node", [GATE], { input: JSON.stringify(bash("git push")), encoding: "utf8", env: { ...process.env, ...env, CLAUDE_PROJECT_DIR: s.dir } }).status, 2, "unapproved switch must be ignored");
+    spawnSync("node", [join(HERE, "..", "scripts", "trust.mjs"), "--project", s.dir], { encoding: "utf8", env: { ...process.env, ...env } });
+    assert.equal(spawnSync("node", [GATE], { input: JSON.stringify(bash("git push")), encoding: "utf8", env: { ...process.env, ...env, CLAUDE_PROJECT_DIR: s.dir } }).status, 0, "approved switch is honoured");
   } finally {
     s.cleanup();
+    rmSync(data, { recursive: true, force: true });
   }
 });
 

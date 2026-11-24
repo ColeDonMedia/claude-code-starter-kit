@@ -32,6 +32,22 @@ brief and in the project's files.
    build every state, not just the happy one (empty, loading, error, success); make it work at phone width
    (about 375px) and desktop; every input needs a label, everything must work by keyboard, and text contrast
    must be at least 4.5:1. Handle bad input and failed requests with a message a person can understand.
+   Secure by default, every time (these are the mistakes that become breaches):
+   - Check who is asking on every endpoint, action and query: authenticate, then authorize (can THIS user touch THIS
+     record?). Never trust an id, role, price or flag sent by the browser.
+   - Validate all input on the server (type, length, range, format) and encode output. Use parameterized queries or
+     the ORM, never string-built SQL or shell commands from user text.
+   - Keep secrets out of code, logs and front-end bundles: read them from environment variables, and put `.env` in
+     `.gitignore`. Never hard-code a key, even a test key.
+   - Store passwords only as a slow salted hash from a vetted library; never invent your own crypto or tokens.
+   - Rate-limit sign-in, password reset and costly endpoints. Set safe cookie flags (`HttpOnly`, `Secure`,
+     `SameSite`) and sensible response headers. Error messages shown to users must not reveal internals.
+   - Uploads: limit type and size, store outside the web root or in a private bucket, never use the original filename as a path.
+   - Add a test for each security criterion in the brief (for example "user A cannot read user B's record").
+   New dependencies: add only what you need. Before adding one you haven't used, confirm it exists and is
+   established (`node "<plugin>/scripts/pkg-check.mjs" npm <name>`, or pypi / cargo); a package guard also checks
+   automatically and will stop a name that doesn't exist. Never invent a package name; look up the real one in the
+   official docs. Commit the lockfile so versions are exact.
 6. Run the FULL test suite, plus typecheck and lint if the project has them. All must be green.
 7. Commit your work on your branch with a clear message. Never push, never merge, never switch the main
    checkout's branch.

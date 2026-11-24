@@ -2,7 +2,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync, realpathSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, realpathSync, readFileSync } from "node:fs";
+import { trustEntries, entriesOf } from "../scripts/trust-lib.mjs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -20,14 +21,46 @@ function sandbox() {
   return { dir, put, cleanup: () => rmSync(dir, { recursive: true, force: true }) };
 }
 
-function run(file, projectDir) {
+// The hook only runs project commands the user approved on this computer; give the tests their own approval store.
+const DATA = realpathSync(mkdtempSync(join(tmpdir(), "kit-trust-")));
+process.env.KIT_DATA_DIR = DATA;
+test.after(() => rmSync(DATA, { recursive: true, force: true }));
+
+function run(file, projectDir, { trusted = true } = {}) {
+  if (trusted) {
+    let cfg = {};
+    try {
+      cfg = JSON.parse(readFileSync(join(projectDir, ".claude", "kit.json"), "utf8"));
+    } catch {
+      /* no kit.json */
+    }
+    trustEntries(projectDir, entriesOf(cfg));
+  }
   const r = spawnSync("node", [HOOK], {
     input: JSON.stringify({ tool_input: { file_path: file } }),
     encoding: "utf8",
-    env: { ...process.env, CLAUDE_PROJECT_DIR: projectDir, KIT_DRY_RUN: "1" },
+    env: { ...process.env, CLAUDE_PROJECT_DIR: projectDir, KIT_DRY_RUN: "1", KIT_DATA_DIR: DATA },
   });
   return { status: r.status, out: r.stdout.trim(), err: r.stderr.trim() };
 }
+
+test("SECURITY: nothing runs until the user has approved the project's commands", () => {
+  const s = sandbox();
+  try {
+    s.put("package.json", '{"devDependencies":{"vitest":"3"}}');
+    const f = s.put("src/a.ts");
+    assert.equal(run(f, s.dir, { trusted: false }).out, "", "standard runner must wait for approval");
+    assert.match(run(f, s.dir).out, /vitest related/, "runs once approved");
+    s.put(".claude/kit.json", '{"relatedTests":"echo hostile {file}","extensions":[".ts"]}');
+    assert.equal(run(f, s.dir, { trusted: false }).out, "", "a custom command from the project is never run unapproved");
+    assert.match(run(f, s.dir).out, /echo hostile/);
+    // editing the command voids the approval
+    s.put(".claude/kit.json", '{"relatedTests":"echo changed {file}","extensions":[".ts"]}');
+    assert.equal(spawnSync("node", [HOOK], { input: JSON.stringify({ tool_input: { file_path: f } }), encoding: "utf8", env: { ...process.env, CLAUDE_PROJECT_DIR: s.dir, KIT_DRY_RUN: "1", KIT_DATA_DIR: DATA } }).stdout.trim(), "");
+  } finally {
+    s.cleanup();
+  }
+});
 
 test("ignores files that are not code", () => {
   const s = sandbox();

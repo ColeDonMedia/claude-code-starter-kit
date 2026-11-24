@@ -162,7 +162,21 @@ test("the starter-kit plugin itself scans clean of HIGH findings", () => {
 test("the safety guard stays passive: only reads files, no network, no process spawning, no writes", () => {
   const src = readFileSync(join(HERE, "..", "hooks", "safety-guard.mjs"), "utf8");
   const imports = [...src.matchAll(/^import .* from "(.+)";$/gm)].map((m) => m[1]).sort();
-  assert.deepEqual(imports, ["node:fs", "node:path"]);
+  assert.deepEqual(imports, ["../scripts/trust-lib.mjs", "node:fs", "node:path"]);
   assert.match(src, /import \{ existsSync, readFileSync \} from "node:fs"/);
   assert.doesNotMatch(src, /\b(fetch|spawn|spawnSync|exec|execSync|writeFile|writeFileSync|appendFile|unlink|rmSync)\s*\(/);
+  // ...and the one library it imports (the approval store) may touch only the approval file, never the network or processes.
+  const lib = readFileSync(join(HERE, "trust-lib.mjs"), "utf8");
+  const libImports = [...lib.matchAll(/^import .* from "(.+)";$/gm)].map((m) => m[1]).sort();
+  assert.deepEqual(libImports, ["node:crypto", "node:fs", "node:os", "node:path"]);
+  assert.doesNotMatch(lib, /\b(fetch|spawn|spawnSync|exec|execSync)\s*\(/);
+});
+
+test("approval store, trust script and package check never run project code", () => {
+  for (const [file, banned] of [
+    ["trust.mjs", /\b(spawn|spawnSync|exec|execSync|fetch)\s*\(/],
+    ["pkg-check.mjs", /\b(spawn|spawnSync|exec|execSync|writeFile|writeFileSync|unlink|rmSync)\s*\(/],
+  ]) {
+    assert.doesNotMatch(readFileSync(join(HERE, file), "utf8"), banned, file);
+  }
 });

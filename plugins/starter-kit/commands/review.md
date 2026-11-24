@@ -1,5 +1,5 @@
 ---
-description: Fresh-context correctness review of the current changes, plus a UI/UX review when they touch UI.
+description: Use after finishing code changes made directly in this conversation (not needed after /starter-kit:feature, which reviews itself). Fresh-context correctness review of the current changes, plus a UI/UX review when they touch UI.
 ---
 
 Review the current changes with fresh subagents, launched in parallel.

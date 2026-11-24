@@ -15,10 +15,11 @@ tell the user right away — deleting it in a later commit does not remove it fr
 - `plugins/starter-kit/.claude-plugin/plugin.json` — plugin manifest (bump `version` on every change)
 - `plugins/starter-kit/agents/` — implementer (worktree-isolated), reviewer, security-reviewer, ui-reviewer (the reviewers are read-only)
 - `plugins/starter-kit/commands/` — init, feature, tdd, review, full-scan
-- `plugins/starter-kit/hooks/` — hooks.json + test-related.mjs (related-tests hook)
+- `plugins/starter-kit/hooks/` — hooks.json; test-related.mjs (related tests after edits), session-start.mjs (nudge to run init), push-gate.mjs (blocks `git push` until /full-scan passed)
+- `.claude/kit.json` — turns the automatic hooks off for this repo itself (it is not a managed project)
 
 # Rules
 - No project names, frameworks or package managers hard-coded in agents or commands; they read the project's CLAUDE.md.
 - The CLAUDE.md template lives inside `commands/init.md` — edit it there.
-- After changing the hook, run its tests: `node --test plugins/starter-kit/hooks/test-related.test.mjs` (add a test for every bug you fix).
+- After changing a hook, run its tests: `node --test plugins/starter-kit/hooks/test-related.test.mjs plugins/starter-kit/hooks/auto.test.mjs` (add a test for every bug you fix).
 - Validate before committing: `claude plugin validate .`

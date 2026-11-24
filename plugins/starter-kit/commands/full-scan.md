@@ -1,5 +1,5 @@
 ---
-description: Full pre-ship sweep — entire test suite, typecheck, lint, build, then the security review.
+description: Use before the user pushes, opens a pull request, deploys, releases or otherwise ships (a hook blocks `git push` until it has passed). Full pre-ship sweep — entire test suite, typecheck, lint, build, then the security review.
 ---
 
 Run the full pre-ship sweep using the commands listed under "Commands" in CLAUDE.md:
@@ -26,3 +26,8 @@ Rules:
 - Report each step's real output.
 - Ship only when every applicable step is green AND security-reviewer returns APPROVE.
   If anything fails, fix it and re-run the full sweep.
+
+When — and only when — every applicable step is green and security-reviewer returned APPROVE, record it
+so the push gate lets the push through: `git rev-parse HEAD > .claude/last-full-scan`. Never write that
+file on a failing or partial run. If there are uncommitted changes, tell the user the scan covers only
+the committed code at HEAD.

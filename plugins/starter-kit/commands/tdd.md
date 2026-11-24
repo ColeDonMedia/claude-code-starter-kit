@@ -1,5 +1,5 @@
 ---
-description: Run one strict TDD cycle (red → green → refactor) for a single feature or fix.
+description: Use for small code changes made directly in this conversation (a few lines, one file). Runs one strict TDD cycle (red → green → refactor) for a single fix or tweak.
 ---
 
 Run ONE TDD cycle for: $ARGUMENTS

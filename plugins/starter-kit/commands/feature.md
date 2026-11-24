@@ -1,5 +1,5 @@
 ---
-description: Build one feature in an isolated branch/worktree with a subagent, review it, then merge it into the main branch. Keeps the main conversation small.
+description: Use when the user asks to build a new feature, add functionality, or fix a non-trivial bug (more than a few lines, or touching several files). Builds it in an isolated branch/worktree with a subagent, reviews it, then merges it into the main branch. Keeps the main conversation small.
 ---
 
 Build this in isolation and merge it when it's proven: $ARGUMENTS

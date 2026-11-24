@@ -1,5 +1,5 @@
 ---
-description: Set this project up for the starter kit — detect the stack, write CLAUDE.md, permissions, and hook config.
+description: Use when a code project has no starter-kit CLAUDE.md yet (the session-start hook will say so). Sets the project up — detects the stack, writes CLAUDE.md, permissions, and hook config.
 ---
 
 Set up the current project for the starter kit. Work from what the project actually contains; where
@@ -23,7 +23,8 @@ Merge into the existing file if there is one; never drop existing entries.
 - deny: `Read(./.env)`, `Read(./.env.*)`, `Read(./**/*.pem)`, `Read(./**/*.key)`.
 Also add the install command to `allow`.
 If the project uses git, add these lines to `.gitignore` (create it if missing, skip any already present):
-`.claude/settings.local.json` and `.claude/worktrees/` (where `/starter-kit:feature` builds features).
+`.claude/settings.local.json`, `.claude/worktrees/` (where `/starter-kit:feature` builds features) and
+`.claude/last-full-scan` (written by `/starter-kit:full-scan`).
 
 ## 4. Related-tests hook (`.claude/kit.json`)
 The plugin's hook runs the tests related to each edited file. It auto-detects Vitest, Jest, pytest and
@@ -33,6 +34,8 @@ Go. For anything else, write `.claude/kit.json`:
 ```
 Use `{ "relatedTests": false }` if the project has no fast way to run a subset of tests.
 Skip this file when auto-detection already covers the project.
+The same file can switch off the automatic behaviour: `"autoGate": false` stops the push gate,
+`"auto": false` stops the session-start nudge and the gate. Only the user decides that — never set it yourself.
 
 ## 5. Preview (only for projects with a web UI)
 Offer to create `.claude/launch.json` with the real dev command and port.
@@ -42,6 +45,7 @@ List every file you created or changed, the commands you detected, and every `TO
 
 ## CLAUDE.md template
 ```markdown
+<!-- starter-kit:managed — this marker tells the starter-kit hooks the project is set up. Keep it. -->
 # Project
 <name> — <what it does, one line>. Stack: <language, framework, test runner, data store, hosting>.
 
@@ -78,6 +82,13 @@ Anything with logic — pricing, validation, auth, business rules — is never e
 - Branches: <naming, and whether direct commits to main are allowed>
 - Commits: <message style>
 - Commit or push only when asked.
+
+# Automatic workflow (follow this without being asked)
+- New feature, added functionality, or a non-trivial bug fix → run `/starter-kit:feature` (Skill tool).
+- Small tweak in one file → `/starter-kit:tdd`, then `/starter-kit:review` when done.
+- About to push, open a PR, deploy or release → run `/starter-kit:full-scan` first. A hook blocks `git push` until it has passed.
+- Questions, explanations, docs and config edits → just do them, no ceremony.
+- Never ask the user to type these commands; run them yourself and say in one line what you ran.
 
 # Reviews
 - After each feature: reviewer (correctness), plus ui-reviewer only when UI files changed.

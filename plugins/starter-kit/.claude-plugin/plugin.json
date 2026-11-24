@@ -1,5 +1,5 @@
 {
   "name": "starter-kit",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Project-agnostic foundation for Claude Code: strict TDD, read-only reviewers, a pre-ship sweep, and a hook that runs related tests after each edit."
 }

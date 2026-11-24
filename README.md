@@ -32,9 +32,21 @@ Restart Claude Code afterwards. Update later with `claude plugin marketplace upd
 If the `owner/repo` form fails because SSH isn't set up, use the full URL
 `https://github.com/ColeDonMedia/claude-code-starter-kit.git`.
 
-## Use in a project
-Run `/starter-kit:init` once in each project. After that, per feature: `/starter-kit:feature <what you want>`.
-Before shipping: `/starter-kit:full-scan`. For a tiny change you can skip `feature` and use `/starter-kit:tdd`.
+## Use in a project — mostly automatic
+You don't need to remember the commands:
+1. **Setup:** open a code project that isn't set up and Claude says so and offers to run `/starter-kit:init`. Say yes.
+2. **Building:** the generated `CLAUDE.md` tells Claude to use `/starter-kit:feature` for features and bigger
+   fixes, and `/starter-kit:tdd` plus `/starter-kit:review` for small tweaks. Just ask for what you want.
+3. **Shipping:** a hook blocks `git push` and `gh pr create` until `/starter-kit:full-scan` has passed for the
+   exact commit being pushed. Claude runs the scan, then the push goes through. A new commit means a new scan.
+
+You can still type any command yourself.
+
+**Turning it off** (per project, in `.claude/kit.json`): `{ "autoGate": false }` stops the push gate;
+`{ "auto": false }` stops the setup nudge and the gate. Claude is told never to change this itself.
+
+The automatic behaviour is instructions plus two hooks, so it is reliable but not magic: the push gate is
+enforced by a hook, while "use `/feature` for features" is guidance Claude follows.
 
 ## Branches and worktrees, in plain words
 - A **branch** is a separate line of work inside your project's history. `main` is the good, working copy.
@@ -56,7 +68,7 @@ Before shipping: `/starter-kit:full-scan`. For a tiny change you can skip `featu
 - Never downloads a test runner (`npx --no-install`), and skips file names containing shell-special characters.
 - A file edited inside a git worktree is tested against that worktree's own files.
 - Requires Node.js on the PATH. Without it the hook does nothing useful and can be ignored.
-- Hook tests: `node --test plugins/starter-kit/hooks/test-related.test.mjs`
+- Hook tests: `node --test plugins/starter-kit/hooks/test-related.test.mjs plugins/starter-kit/hooks/auto.test.mjs`
 
 ## What a plugin can't carry
 Plugins don't ship `CLAUDE.md` or permission rules, which is why `/starter-kit:init` writes those

@@ -1,7 +1,8 @@
 # Improvement plan — implementation handoff
 
-Written 2026-11-25 against version 2.12.0, after a full audit of the plugin. This is a work list for the next
-implementing session (Opus or Sonnet). It is ordered: do the phases in order, one release per phase.
+Written 2026-11-25 against version 2.12.0, after a full audit of the plugin; extended the same day after a second audit
+against 2.14.0 (one-click shipping, Phase OC). This is a work list for the next implementing session (Opus or Sonnet). It is
+ordered: follow "Order of work" under Progress, one release per phase.
 
 **How to use this file.** Read `CLAUDE.md`, `HANDOFF.md` and this file. Do one phase, release it, tick its tasks here,
 then stop and report. Do not start the next phase in the same release.
@@ -12,8 +13,13 @@ then stop and report. Do not start the next phase in the same release.
 |---|---|---|
 | 0 — safety and correctness | 2.12.1 | **Done** (P0-1 to P0-9). D1 decided: keep the merged runner, with the canary, self-check and fail-closed net. |
 | Owner requests | 2.12.2–2.14.0 | **Done**: payment keys (2.12.2); sizing an app to its users (2.13.0); design library and WCAG 2.2 AA testing (2.14.0). |
-| 1 — verifiable | 2.15.0 | Next. Needs owner decisions D2 and D3. When P2-4 moves rule blocks into references, the WCAG list in `scripts/wcag.mjs` is the source for the accessibility reference. |
-| 2, 3, 4 | — | Not started. Phase 2 waits for one live trial (P1-6). When P2-1 (rigor dial) is built, combine it with the scale profile: one question pair in `/spec` sets both. |
+| Audit 2 | — | **Done** (2026-11-25, against 2.14.0): findings F1–F11 below, and the new one-click phase (OC). |
+| 1 — verifiable | 2.15.0 | **Next.** Needs owner decisions D2, D3 and D7. When P2-4 moves rule blocks into references, the WCAG list in `scripts/wcag.mjs` is the source for the accessibility reference. |
+| OC — one-click shipping | 2.16.0, 2.17.0 | Not started. Waits for the first live trial (P1-6), whose flight report decides the order inside the phase. Absorbs P2-1, P2-2, P2-3, P2-5 and P4-2. |
+| 2, 3, 4 | — | Not started. What is left of Phase 2 after OC follows it. |
+
+**Order of work, from here:** P1-1 and P1-2 (tests on GitHub, a stable channel) → P1-6 (the first live trial) → OC-1 to OC-12
+(one-click shipping, in two releases) → the rest of Phase 2 → Phase 3 → Phase 4 only if the trials justify it.
 
 **Answers from the official docs (2026-11-25, hooks reference, sub-agents page, plugins reference):**
 - V1. The tool is `PowerShell`; its input has the command in `tool_input.command`, like Bash. The docs advise `Bash|PowerShell` matchers.
@@ -28,6 +34,12 @@ then stop and report. Do not start the next phase in the same release.
 - V7. Not checked yet (needed for P2-4).
 - V8. Exit 0 = go ahead (JSON fields apply); exit 2 = block, stderr goes to Claude; any other code = a non-blocking error, the action goes
   ahead. So failing closed must use exit 2 (it does). Hooks for one event run in parallel; the default timeout is 600 s.
+- V9. Not checked yet (needed for OC-3): do PreToolUse hooks still run, and can they still deny, for a command that a permission
+  `allow` rule lets through without a prompt? The one-click plan depends on "yes".
+- V10. Not checked yet (needed for OC-3): the exact syntax of Bash permission rules (prefix `:*` matching, wildcards inside paths,
+  quoting), so the kit's own scripts can be allowed by folder without allowing every `node` command.
+- V11. Not checked yet (needed for OC-4): what Claude Code offers for continuing work without a person typing (scheduled tasks,
+  `/loop`, resuming after a usage limit, background sessions), and which of these a plugin may start versus only the user.
 
 ## Ground rules for the implementer
 
@@ -81,6 +93,27 @@ Checked on 2026-11-25 on a Windows machine with Node 24. Each line says how it w
 
 **Correction to earlier notes:** a restart alone does not load a new version. Auto-update checks once every 24 hours when a
 session starts, in the background, and the new version takes effect on the session after that.
+
+## Second audit: what stands between the kit and one-click shipping (2026-11-25, version 2.14.0)
+
+The owner asked what would make this a "one-click and ship" plugin. A literal single click is not possible and should not be: creating
+accounts, adding a payment method, entering secret keys, buying a domain, legal sign-off and taste stay with the owner. The realistic
+target is **one conversation, one owner checklist, and one approval per milestone plus one to go live**, with the build running by
+itself in between. These findings are what stands in the way. Each was checked on this machine and in the repository.
+
+| # | Finding | How it was verified |
+|---|---|---|
+| F1 | **Nothing built since 2.6.0 has run in a real session.** Nine versions of the kit exist only in unit tests. | `claude plugin list`: 2.6.0 installed; the newest cached copy is 2.6.0; the self-check's "version seen" file was never written; the flight recorder has no log for any project. |
+| F2 | **The instructions keep growing.** About 21,000 words across 28 command and agent files. The five largest (`init` 2,396, `spec` 2,064, `feature` 1,593, `implementer` 1,575, `full-scan` 1,172) total about 8,800 words; the plan's target was under 4,500. They name 33 different kit scripts 70 times. | `wc -w`, `grep`. |
+| F3 | **The ship check is 17 prose steps**, and the "passed" marker is still written by Claude by hand. | `commands/full-scan.md`. |
+| F4 | **A build cannot run unattended.** After setup only the project's own test and build commands and `git status/diff/log` run without a permission prompt: every kit script, commit, branch, merge and install asks. Nothing carries a build across sessions or past a usage limit. | `commands/init.md` step 4; no file mentions scheduling or resuming. |
+| F5 | **There is no golden path to production.** `/launch` is a checklist; no tested stack or host preset exists, so every project re-decides and re-wires both. | No `presets/` or equivalent; `commands/launch.md`. |
+| F6 | **Projects get cluttered.** Up to 9 settings and results files under `.claude/` (`kit.json`, `speed.json`, `scale.json`, `a11y.json`, four results files, `launch.json`) and about 13 record files in the project root. | `grep` of every file the kit writes. |
+| F7 | **Releases reach every machine untested.** Every push to `main` installs itself everywhere within a day; there are no tests on GitHub; only Windows has been tried. | No `.github/`; `hooks/auto-update.mjs`. |
+| F8 | **Some blocking checks are judgement, not proof:** the focus-ring detection in the accessibility test, the API pattern scan, the UI reviewer's score. A wrong block means an app that never ships. | `a11y-check.mjs`, `full-scan.md`, `ui-reviewer.md`. |
+| F9 | **The owner's decisions are scattered through the flow:** about 20 stopping points across 11 commands (plan questions, approvals, milestone OKs, accepted risks, launch steps), arriving one at a time instead of together. | `grep` for "ask the owner/user", "wait for", "go-ahead" and similar. |
+| F10 | **"Large" means two things:** `Size: large` in `CLAUDE.md` is about the codebase; the scale profile's `large` tier is about users. | `onboard.md`, `scale-profile.mjs`. |
+| F11 | **Three owner decisions are still open** (D2 tests on GitHub, D3 how to run the first trial) and the push policy for this repository was asked but not answered (now D7). | This file; the conversation. |
 
 ---
 
@@ -212,7 +245,7 @@ Small, urgent, low-risk. Nothing here adds a feature.
 
 ---
 
-## Phase 1 — make the kit verifiable (release 2.13.0)
+## Phase 1 — make the kit verifiable (release 2.15.0)
 
 Nothing here changes what the kit does for a project. It makes failures visible before they reach a machine.
 
@@ -257,14 +290,140 @@ Nothing here changes what the kit does for a project. It makes failures visible 
 - **How (no API tokens):** the owner runs trial 1 from `DOGFOOD.md` in a normal session. Alternative, only with the owner's
   yes: the implementing session starts a separate normal app session in a new empty folder with the trial prompt, then reads
   the flight report afterwards. **OWNER DECISION D3.**
-- **Then:** fix what broke, each fix with a test, and log it in `DOGFOOD.md`. **Do not start Phase 2 until one trial has run.**
-  Phase 2 should be shaped by what the trial shows.
+- **Then:** fix what broke, each fix with a test, and log it in `DOGFOOD.md`. **Do not start Phase OC or Phase 2 until one trial
+  has run.** Both should be shaped by what the trial shows.
+- **Before the trial:** update this machine to the newest version (it was still on 2.6.0 at the second audit, F1), start one
+  session so the self-check runs, and confirm `starter-kit-canary` is refused with each shell tool.
+
+### P1-7. Push policy for this repository — Sonnet, S (OWNER DECISION D7)
+- **Why:** F7, F11. Every push to `main` installs itself on every machine within a day.
+- **Change (recommended answer to D7):** commit each release locally, with tests, changelog and handoff, and push only when the owner
+  says so; after P1-2, machines follow the `stable` branch, which moves only when the GitHub tests pass. Update the EVERY RELEASE rule
+  in `CLAUDE.md` to say "push when the owner asks, or let the stable channel promote it".
+- **Test:** the docs test checks the rule text in `CLAUDE.md`.
 
 ---
 
-## Phase 2 — less weight, more reliability (release 2.14.0)
+## Phase OC — one-click shipping (releases 2.16.0 and 2.17.0)
 
-### P2-1. A rigor dial — Opus (design), Sonnet (edits), M
+**Goal:** the owner describes the app once, answers one batch of questions, does one checklist of things only they can do (accounts,
+payment method, keys in the host's settings), and then only approves milestones and the launch. Between those moments the build
+runs by itself, and each milestone arrives as a link to click. Everything that keeps the kit safe stays: the guards still check
+every command, nothing ships without the checks passing, and nothing is pushed, deployed or charged without the owner's yes.
+
+**Release 2.16.0** = OC-1 to OC-6 (fewer interruptions, deterministic checks). **Release 2.17.0** = OC-7 to OC-12 (golden paths,
+previews, one go-live, tidier projects). Do the verifications V9, V10 and V11 first.
+
+### OC-1. One intake — Opus (design), Sonnet (edits), M (absorbs P2-1, the rigor dial)
+- **Why:** F9. Questions arrive one at a time across the flow.
+- **Change:** `/spec` sends ONE message that covers everything the plan needs, each with a default: what it is and who it is for, the
+  one thing it must do well, must-haves versus later, the size question (2.13.0), two or three apps whose look they like (2.14.0),
+  and how careful to be (`prototype`, `product`, `critical`: P2-1's rigor dial, merged here). A new `scripts/intake.mjs --write` takes
+  the answers and writes the scale profile, the rigor level and the design references in one step, so nothing is asked twice later.
+  The owner then approves one plan. Every later question must be one that could not have been asked at the start.
+- **Test:** `intake.mjs` writes all three files from one answer set; a docs test checks that `/spec` asks one message and names
+  every input; the flight recorder (OC-12) counts the questions in a trial.
+
+### OC-2. The owner's checklist, up front — Sonnet, M
+- **Why:** F4, F9. Account creation and keys today surface in the middle of the build or at launch, and stop it there.
+- **Change:** `scripts/owner-todo.mjs` turns the approved plan (its stack, host and services: payments, email, sign-in, database,
+  analytics, domain) into `OWNER-TODO.md`: each item in plain words (what to create, where the key goes, what it costs, and that a
+  key is never pasted into the chat), with a checkbox, and which milestone first needs it. It is shown right after the plan is
+  approved, so the owner does it once while the build runs. The build only waits when a milestone actually needs an unticked item.
+  Service details (sign-up pages, setting names, prices) are checked on the provider's own pages at the time, never from memory.
+- **Test:** checklists generated for three plan shapes; an item blocks only the milestone that needs it; the session note lists open
+  items without repeating them every turn.
+
+### OC-3. Pre-approved safe commands — Opus, M (after V9 and V10; OWNER DECISION D8)
+- **Why:** F4. Every kit script, commit, branch and merge asks for permission, so the build stops whenever nobody is watching.
+- **Change:** setup offers ONE yes/no (merged with today's question) that adds allow rules for: the kit's own scripts (by folder,
+  using V10's syntax, never `node` in general), local git (`add`, `commit`, `branch`, `switch`/`checkout`, `merge --no-ff`,
+  `worktree add/remove`, `stash`, `status`, `diff`, `log`, `show`), and the project's install, test, build and lint commands.
+  Never allowed this way: push, publish, deploy, anything that deletes outside the project, package installs from outside the
+  public registry, and any database command. The guards keep running on every allowed command (V9 must confirm this first; if
+  hooks do not run on allowed commands, stop and redesign).
+- **Test:** the generated rule list contains none of the forbidden commands; a guard still denies `rm -rf /` and a push when the
+  rules are in place (unit test with the real hook payload); trust approval is still required for project-supplied commands.
+
+### OC-4. A build that keeps going — Opus, L (absorbs P4-2; after V11)
+- **Why:** F4. A long build stops at the end of every session and after every usage limit, and resuming relies on reading notes.
+- **Change:** `scripts/next.mjs` holds the pipeline as states (brief → build → review round n → merge → prove → records →
+  checkpoint → milestone), keeps the current state in `.claude/kit-state.json`, prints only the instructions for the current state,
+  and refuses a step whose evidence is missing (no branch, no merge commit, no review verdict). The session note says exactly where
+  to resume. It stops only for: a milestone to accept, an owner-checklist item a step needs, a check that fails three rounds in a
+  row, or a decision only the owner can make. Use whatever V11 shows Claude Code allows for continuing without a person typing
+  (for example the user starting `/loop`, or a scheduled task the owner sets up); the kit never schedules itself without the owner's yes.
+- **Test:** state transitions with and without evidence; resume after a simulated cut-off continues at the right step; the four
+  stop conditions; `feature.md` shrinks to "ask next.mjs what to do".
+
+### OC-5. One check script, proof-only blockers — Opus, L (absorbs P2-2 and P2-3)
+- **Why:** F3, F8. 17 prose steps, and some blocks are opinions.
+- **Change:** as P2-2 describes (`scripts/check.mjs --stage feature|checkpoint|ship`, which works out what applies, runs every kit
+  check, lists the project commands Claude must also run, and writes the ship marker itself when nothing blocks), with P2-3's rule:
+  only what a script can prove blocks. Opinions (UI score, API pattern scan, the accessibility focus-ring heuristic, delivery
+  hints) are advice; the UI reviewer gets two rounds, then the remaining points go to the owner at acceptance.
+- **Test:** table-driven, as P2-2 lists; the marker cannot be written by hand (file guard and safety guard, both shell tools).
+
+### OC-6. One word for each meaning — Sonnet, S
+- **Why:** F10.
+- **Change:** rename `Size: large` to `Codebase: large` everywhere (CLAUDE.md template, `onboard`, builder, reviewer, feature, tests;
+  keep reading the old line); the scale profile keeps "large" for users.
+- **Test:** docs test that no instruction uses `Size: large`; the old line still switches on scoped tests.
+
+### OC-7. Golden paths — Opus, L (OWNER DECISION D9)
+- **Why:** F5. Every project re-decides its stack and host, and setup and deploy are improvised each time.
+- **Change:** `presets/` with three or four tested recipes, one per common kind of app: a website or landing page; a web app with
+  sign-in and a database; a desktop app with an installer and GitHub releases; an API. Each preset is: the official scaffolding
+  command (pinned version, vetted with `pkg-check.mjs`), the test, browser, speed and accessibility set-up, the GitHub checks
+  workflow, the host's deploy settings, a runbook skeleton, and the list of settings and accounts that feeds OC-2. The plan picks a
+  preset when one fits (the owner never chooses technology) and falls back to today's free choice when none does. `/maintain`
+  re-checks preset versions.
+- **Test:** each preset scaffolds a fresh folder and passes its own checks in a test run (network allowed for the package
+  registry only); a docs test that every preset lists its settings and accounts.
+
+### OC-8. A link to click at every milestone — Sonnet, M (needs OC-7)
+- **Why:** F9. Acceptance today means starting the app on the owner's computer.
+- **Change:** each milestone is deployed to the host's preview environment (test keys and test data only, never production) and
+  `/accept` gives the owner the link plus the five to eight things to try. Fallback with no host yet: the local address, as now.
+- **Test:** `accept.md` and the presets; a check that preview settings never point at production keys or databases.
+
+### OC-9. One "go live" — Sonnet, M (needs OC-5 and OC-7)
+- **Why:** `/launch` is a 1,378-word checklist run by hand.
+- **Change:** with a preset, launching becomes: the owner's checklist complete (OC-2), `check.mjs --stage ship` clean, a final
+  preview the owner has accepted, then ONE question ("Go live now? It will cost about …, and here is how to undo it.") and the
+  preset's own production deploy, smoke test and rollback. Without a preset, today's `/launch` stays.
+- **Test:** the go-live step refuses while any checklist item, blocker or unaccepted milestone remains.
+
+### OC-10. Tidier projects — Sonnet, M (absorbs P2-5; OWNER DECISION D4)
+- **Why:** F6.
+- **Change:** all kit settings in one `.claude/kit.json` (sections for speed, scale, accessibility) and all results in
+  `.claude/results/`; record files in `docs/` (D4) with one owner per fact (P2-5's table), `MAINTENANCE.md` folded into `RUNBOOK.md`
+  and `AREAS.md` into `ARCHITECTURE.md`. `scripts/records.mjs` is the single place that knows every path, and old locations are still
+  read, so existing projects keep working.
+- **Test:** every script finds its files through `records.mjs`; an old-layout project still works; a new one has at most
+  `CLAUDE.md`, `README.md` and `docs/` at the root from the kit.
+
+### OC-11. Instructions on a diet — Sonnet, L (absorbs the targets of P2-4 and P2-9)
+- **Why:** F2. After OC-4 and OC-5 most procedure lives in scripts, so the prose can shrink.
+- **Change:** as P2-4 and P2-9: rule blocks into references read on demand; `feature`, `full-scan`, `launch` point at `next.mjs`
+  and `check.mjs`; the session note under 400 words.
+- **Test:** word ceilings in `docs.test.mjs`: the five largest files under 4,500 words together, every command under 1,000.
+
+### OC-12. Count the interruptions — Sonnet, S
+- **Why:** the goal of this phase is a number: how often the owner is needed.
+- **Change:** the flight recorder also logs when the kit asks the owner something (the question tool), when it waits for an owner
+  checklist item, and each milestone acceptance; `flight-report.mjs` prints them. Target for a trial app: one intake, one
+  checklist, one acceptance per milestone and one go-live, with nothing else unless something genuinely needed the owner.
+- **Test:** the counts from a synthetic log; a trial's report shows the numbers.
+
+---
+
+## Phase 2 — less weight, more reliability (release after Phase OC)
+
+**Merged into Phase OC:** P2-1 → OC-1, P2-2 and P2-3 → OC-5, P2-4 and P2-9 → OC-11, P2-5 → OC-10. P4-2 → OC-4. The rest of
+Phase 2 (P2-6, P2-7, P2-8, P2-10) follows Phase OC.
+
+### P2-1. MERGED into OC-1 — A rigor dial — Opus (design), Sonnet (edits), M
 - **Why:** E9, E17. A to-do app gets the same process as a paid product. That costs time and plan usage, and long
   instructions are followed less reliably.
 - **Change:** `"rigor": "prototype" | "product" | "critical"` in `.claude/kit.json`, chosen in `/spec` with one plain question
@@ -283,7 +442,7 @@ Nothing here changes what the kit does for a project. It makes failures visible 
   The exact table is the implementer's to refine; keep it to one screen.
 - **Test:** the orchestrator (P2-2) selects the right checks per level.
 
-### P2-2. One script that runs every applicable check — Opus, L
+### P2-2. MERGED into OC-5 — One script that runs every applicable check — Opus, L
 - **Why:** E8, E9, E11. Today prose tells Claude to run up to 25 scripts in the right order and to write the ship marker by hand.
 - **Change:** `scripts/check.mjs --stage feature|checkpoint|ship --project . [--base <commit>]`:
   - works out what applies (rigor, has a screen, has migrations, `Size: large`, which record files exist);
@@ -298,7 +457,7 @@ Nothing here changes what the kit does for a project. It makes failures visible 
   marker not writable by hand through either shell tool or the edit tools.
 - **Done when:** `full-scan.md` is under 400 words and names no kit script except `check.mjs`.
 
-### P2-3. Advice versus blockers — Sonnet, S
+### P2-3. MERGED into OC-5 — Advice versus blockers — Sonnet, S
 - **Why:** E17.
 - **Change:** blocking = things a script can prove (a failing test, a secret, a HIGH migration finding, a broken note link,
   an over-budget measured page, an unaccepted milestone). Advice = pattern scans and model opinions: `api-check` (all
@@ -306,7 +465,7 @@ Nothing here changes what the kit does for a project. It makes failures visible 
   remaining points go to the owner at acceptance. A query-count test, where one exists, is the blocking proof for N+1.
 - **Test:** `check.mjs` classification; `ui-reviewer.md` and `feature.md` state the two-round rule.
 
-### P2-4. Shorter instructions through on-demand references — Sonnet, L (after V7)
+### P2-4. MERGED into OC-11 — Shorter instructions through on-demand references — Sonnet, L (after V7)
 - **Why:** E9.
 - **Change:** move the long rule blocks out of `implementer.md` and `spec.md` into reference files read only when relevant:
   `references/security.md`, `speed.md`, `database.md`, `screens.md`, `records.md`. The agent prompt keeps a five-line summary
@@ -315,7 +474,7 @@ Nothing here changes what the kit does for a project. It makes failures visible 
 - **Targets:** `implementer.md` under 600 words, `feature.md` under 800, `spec.md` under 1,200, `init.md` under 1,400.
 - **Test:** word-count ceilings in `docs.test.mjs`; the dead-reference test covers the new files.
 
-### P2-5. One owner for every fact — Sonnet, M
+### P2-5. MERGED into OC-10 — One owner for every fact — Sonnet, M
 - **Why:** E10.
 - **Change:** add this table to `init.md` and enforce it in the templates:
 
@@ -353,7 +512,7 @@ Nothing here changes what the kit does for a project. It makes failures visible 
 - **Change:** fold `perf-budget.mjs` into `speed-check.mjs` as a "build size" section (keep the module, drop the separate
   instruction lines). `/speed` and `check.mjs` call one script.
 
-### P2-9. Put the session note on a diet — Sonnet, M
+### P2-9. MERGED into OC-11 — Put the session note on a diet — Sonnet, M
 - **Why:** E9. It is at 517 of 520 words, and the routing table repeats what the 20 command descriptions already say.
 - **Change:** keep only what the descriptions cannot express: precedence (plan before building; scan before shipping; map
   before changing unknown code; vet before installing), the evidence rule, the records rule, lean mode, plain language.
@@ -368,7 +527,7 @@ Nothing here changes what the kit does for a project. It makes failures visible 
 
 ---
 
-## Phase 3 — real capability gaps (release 2.15.0)
+## Phase 3 — real capability gaps (release after Phase 2)
 
 ### P3-1. Trustworthy speed numbers — Sonnet, M
 - **Why:** E16.
@@ -428,7 +587,7 @@ Do not start these without evidence from at least two trial runs.
   `stdin`/`exit`/`stdout` swapping in `inprocess.mjs` goes away. Tests call the functions (the fuzz suites become much faster)
   and a few still start the real process. Prove equivalence by running every existing corpus through both paths before
   deleting the old one.
-- **P4-2. A workflow state file — Opus, L.** If the trials show steps being skipped in long builds:
+- **P4-2. MOVED to OC-4 (a build that keeps going). A workflow state file — Opus, L.** If the trials show steps being skipped in long builds:
   `scripts/next.mjs` holds the feature pipeline as states (brief → build → review round n → merge → prove → records →
   checkpoint), stores the current state in `.claude/kit-state.json`, prints only the instructions for the current state, and
   refuses a transition whose evidence is missing (no branch, no merge commit, no review verdict recorded). `feature.md`
@@ -456,6 +615,10 @@ roadmap proof rule, milestone acceptance, the vetting workflow. They are small a
 | D4 | Move the project record files into one `docs/` folder? | Yes, now, while nothing depends on the layout. |
 | D5 | May Playwright be installed (several hundred megabytes) so the speed test can be run for real once? | Yes, if the disk has room. |
 | D6 | May the Postgres rehearsal use a vetted library or Docker? | Yes to the library, after vetting. |
+| D7 | For this repository: push every release as now, or commit each release and push only when you say so (plus the stable channel once it exists)? | Push only when you say so. |
+| D8 | During setup, may the kit's own scripts, local git (commit, branch, merge) and the project's install, test and build commands run without asking each time? Push, deploy and anything risky would still always ask, and the guards still check every command. | Yes, once V9 confirms the guards still run. |
+| D9 | For the ready-made recipes: which host should the kit prefer by default for websites and web apps (cost and simplicity first)? | Decide after checking current prices and free tiers on the hosts' own pages; ask with a short comparison. |
+| D10 | May each milestone be put on a private preview link on the host (test keys and test data only), so you check it by clicking a link? | Yes, once a host is chosen. |
 
 ## Definition of done for the whole plan
 
@@ -465,3 +628,7 @@ roadmap proof rule, milestone acceptance, the vetting workflow. They are small a
 - The five longest instruction files (`init`, `spec`, `feature`, `implementer`, `full-scan`) total under 4,500 words (about
   8,000 today), and the session note is under 400.
 - Every blocking check is something a script can prove.
+- One-click: a trial app built from a preset needs the owner for one intake, one checklist, one acceptance per milestone (each a link
+  to click) and one go-live, and for nothing else unless the flight report shows a genuine reason (OC-12 counts it).
+- A build left alone keeps going until a milestone, a checklist item or a real decision needs the owner, and resumes at the right
+  step after a session ends or a usage limit is hit.

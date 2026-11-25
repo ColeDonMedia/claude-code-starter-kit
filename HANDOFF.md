@@ -38,8 +38,10 @@ Rewrite this file at the end of every session; keep it under 55 lines and true.
 - Fake keys in tests must be built from pieces: GitHub push protection refuses key-shaped text written out in full.
 
 ## Do this first next session
-1. Ask the owner whether the first session on the new version refused the canary with both shell tools.
-2. Phase 1 of `IMPROVEMENT-PLAN.md` (needs owner decisions D2 and D3). Do not start Phase 2 until one trial run has happened.
+1. Ask the owner the open decisions D2 (tests on GitHub), D3 (how to run the first trial) and D7 (push policy), in one message.
+2. Follow "Order of work" in `IMPROVEMENT-PLAN.md`: P1-1 and P1-2, then update this machine (it was still on 2.6.0) and run
+   the first trial (P1-6), then Phase OC (one-click shipping, from the second audit), then the rest of Phase 2.
+3. After any update, ask whether the first session on the new version refused the canary with both shell tools.
 
 ## Rules that must not regress
 - Nothing from a project's own files may run or take effect without the user's approval on this computer (see `CLAUDE.md`).

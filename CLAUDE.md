@@ -19,6 +19,8 @@ the owner's trial runs in a normal session (`docs/trials.md`) and by the hook ca
 # Layout
 - `.claude-plugin/marketplace.json` — marketplace manifest; `plugins/starter-kit/.claude-plugin/plugin.json` — plugin manifest.
 - `plugins/starter-kit/commands/` — the workflows Claude picks by itself (their descriptions are loaded every session: keep each to two sentences).
+- `plugins/starter-kit/workflows/` — a command's full procedure, read on demand by whoever runs it (the `conductor` agent in a
+  fresh context, or the main conversation as the fallback). The command file stays a short dispatcher. Checked like commands.
 - `plugins/starter-kit/agents/` — subagents. Reviewers are read-only; the implementer and red team work in their own worktrees.
 - `plugins/starter-kit/hooks/` — `hooks.json` starts `gate.mjs`, which runs the individual hook scripts in one process
   (`scripts/inprocess.mjs`): guards before shell commands and edits, the session note, the flight recorder, related tests,
@@ -48,7 +50,9 @@ the owner's trial runs in a normal session (`docs/trials.md`) and by the hook ca
 - HAIKU RULE: a Haiku agent finds and points. It never writes code, gives a verdict (review, security, vetting, legal) or writes a
   record another session will trust, and it has no write, shell or agent tools (a test enforces it). It hands over `path:lines`
   pointers with a quoted line, checked by `scripts/pointer-check.mjs`, never summaries.
-- No kit agent may start other agents: an allow-list leaves `Agent` out, a deny-list names it (a test enforces it).
+- Only the `conductor` may start other agents (it runs a whole feature workflow in a fresh context). Every other agent's allow-list
+  leaves `Agent` out, or its deny-list names it; `hooks/agent-route.mjs` lets the conductor start only the kit's own agents, never
+  another conductor, and refuses launches by any other kit agent (tests enforce both).
 - The kit's users are not programmers: every command and agent must do the work itself and report in plain words, never hand the user a command to run.
 - RED-TEAM RULE: every time a guard or the scanner is bypassed (or blocks something harmless), add the exact command or text to the
   fuzz tests FIRST (`guard-fuzz.test.mjs`, `guard-fuzz-powershell.test.mjs`, `secret-fuzz.test.mjs`), watch it fail, then fix.

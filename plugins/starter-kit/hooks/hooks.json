@@ -17,9 +17,23 @@
     ],
     "SubagentStop": [
       {
-        "matcher": "^starter-kit:scout$",
+        "matcher": "^starter-kit:(scout|conductor)$",
         "hooks": [
           { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/gate.mjs\" substop", "timeout": 30 }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/gate.mjs\" precompact", "timeout": 20 }
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "hooks": [
+          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/gate.mjs\" postcompact", "timeout": 20 }
         ]
       }
     ],

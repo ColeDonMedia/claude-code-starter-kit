@@ -96,8 +96,11 @@ test("every hook is registered, and every registered hook exists", () => {
 // ---- no dead references: the instructions must only point at things that exist ----
 const commandNames = readdirSync(join(PLUGIN, "commands")).map((f) => f.replace(/\.md$/, ""));
 const agentNames = readdirSync(join(PLUGIN, "agents")).map((f) => f.replace(/\.md$/, ""));
+// workflows/ holds a command's full procedure, read on demand by whoever runs it (the conductor, or the main conversation)
+const workflowFiles = readdirSync(join(PLUGIN, "workflows")).map((f) => join(PLUGIN, "workflows", f));
 const textFiles = [
   ...readdirSync(join(PLUGIN, "commands")).map((f) => join(PLUGIN, "commands", f)),
+  ...workflowFiles,
   ...readdirSync(join(PLUGIN, "agents")).map((f) => join(PLUGIN, "agents", f)),
   join(PLUGIN, "hooks", "session-start.mjs"),
   join(PLUGIN, "hooks", "docs-gate.mjs"),
@@ -115,7 +118,7 @@ test("every script that a command or agent tells Claude to run really exists", (
 });
 
 test("commands and agents name the kit's files only through ${CLAUDE_PLUGIN_ROOT}, never an undefined placeholder", () => {
-  for (const f of textFiles.filter((x) => /[\\/](commands|agents)[\\/]/.test(x))) {
+  for (const f of textFiles.filter((x) => /[\\/](commands|agents|workflows)[\\/]/.test(x))) {
     const t = readFileSync(f, "utf8");
     for (const bad of ["<SCRIPTS>", "<plugin>"]) assert.ok(!t.includes(bad), `${f.replace(REPO, "")} still uses ${bad}`);
     for (const m of t.matchAll(/\$\{CLAUDE_PLUGIN_ROOT\}\/([a-z]+)\//g)) assert.ok(existsSync(join(PLUGIN, m[1])), `${f.replace(REPO, "")} points at ${m[1]}/, which the plugin does not have`);
@@ -146,7 +149,7 @@ test("every /starter-kit:command that anything mentions really exists", () => {
 });
 
 test("every agent that a command launches really exists, and the routing table can reach every workflow command", () => {
-  for (const f of textFiles.filter((x) => x.includes("commands"))) {
+  for (const f of textFiles.filter((x) => /[\\/](commands|workflows)[\\/]/.test(x))) {
     for (const m of readFileSync(f, "utf8").matchAll(/`(researcher|reviewer|ui-reviewer|security-reviewer|implementer|red-team|challenger|[a-z-]+)` agent/g)) {
       assert.ok(agentNames.includes(m[1]), `${f.replace(REPO, "")} launches the "${m[1]}" agent, which does not exist`);
     }
@@ -188,18 +191,26 @@ test("agent headers are valid YAML, complete, and read-only agents cannot write"
 // name, so it must name Agent; and a Haiku agent (the cheapest model, which reads untrusted text) may only read.
 const WRITE_OR_RUN = ["Write", "Edit", "MultiEdit", "NotebookEdit", "Bash", "PowerShell", "Agent"];
 const listOf = (v) => v.split(",").map((s) => s.trim()).filter(Boolean);
-test("no kit agent can start another agent, and a Haiku agent can only read", () => {
+// The one exception is the conductor, which runs a whole feature workflow in its own context and must start the builder and the
+// reviewers. It must use an allow-list, may not run on Haiku, and has no web tools; hooks/agent-route.mjs limits what it may start.
+test("only the conductor can start other agents, and a Haiku agent can only read", () => {
+  const starters = [];
   for (const n of agentNames) {
     const head = frontmatter(readFileSync(join(PLUGIN, "agents", `${n}.md`), "utf8"));
     const field = (k) => new RegExp(`^${k}:\\s*(.+)$`, "m").exec(head)?.[1]?.trim() ?? "";
     const tools = listOf(field("tools"));
     const denied = listOf(field("disallowedTools"));
-    if (tools.length) assert.ok(!tools.includes("Agent") && !tools.includes("Task"), `agents/${n}.md may start other agents`);
-    else assert.ok(denied.includes("Agent"), `agents/${n}.md uses a deny-list without Agent, so it can start other agents`);
+    if (n === "conductor") {
+      assert.ok(tools.includes("Agent") && tools.includes("SendMessage"), "the conductor needs Agent and SendMessage in its allow-list");
+      assert.ok(!tools.some((t) => /^Web/.test(t)) && field("model") !== "haiku", "the conductor may not read the web or run on Haiku");
+    }
+    if (tools.includes("Agent") || tools.includes("Task")) starters.push(n);
+    else if (!tools.length) assert.ok(denied.includes("Agent"), `agents/${n}.md uses a deny-list without Agent, so it can start other agents`);
     if (field("model") === "haiku") {
       for (const t of WRITE_OR_RUN) assert.ok(tools.length ? !tools.includes(t) : denied.includes(t), `agents/${n}.md runs on Haiku but can use ${t}`);
     }
   }
+  assert.deepEqual(starters, ["conductor"], "only the conductor may start other agents");
 });
 
 // The MODEL RULE: models are decided in scripts/model-route.mjs. Each agent file carries that script's starting model and effort,
@@ -215,15 +226,30 @@ test("every agent file starts on the model and effort that model-route.mjs gives
 });
 
 test("every workflow that launches a routed agent asks model-route.mjs first, and the builder escalates once", () => {
-  const routed = /`(implementer|reviewer|challenger|ui-reviewer|investigator|red-team|security-reviewer|scout)` agent/;
-  for (const n of commandNames) {
-    const t = readFileSync(join(PLUGIN, "commands", `${n}.md`), "utf8");
-    if (routed.test(t)) assert.match(t, /scripts\/model-route\.mjs/, `commands/${n}.md launches a kit agent without asking model-route.mjs which model`);
+  const routed = /`(conductor|implementer|reviewer|challenger|ui-reviewer|investigator|red-team|security-reviewer|scout)` agent/;
+  for (const f of [...commandNames.map((n) => join(PLUGIN, "commands", `${n}.md`)), ...workflowFiles]) {
+    const t = readFileSync(f, "utf8");
+    if (routed.test(t)) assert.match(t, /scripts\/model-route\.mjs/, `${f.replace(PLUGIN, "")} launches a kit agent without asking model-route.mjs which model`);
   }
-  const feature = readFileSync(join(PLUGIN, "commands", "feature.md"), "utf8");
-  assert.match(feature, /--attempt 3/, "feature.md must escalate the builder after two failed rounds");
+  const feature = readFileSync(join(PLUGIN, "workflows", "feature.md"), "utf8");
+  assert.match(feature, /--attempt 3/, "the feature workflow must escalate the builder after two failed rounds");
   const words = readFileSync(join(PLUGIN, "agents", "challenger.md"), "utf8").split(/\s+/).length;
   assert.ok(words <= 650, `challenger.md is ${words} words`);
+});
+
+// /starter-kit:feature is a short dispatcher: the procedure lives in workflows/feature.md and runs in a fresh conductor context,
+// with the main conversation as the fallback, so the main conversation grows by a short report per feature.
+test("the feature command dispatches to a fresh conductor, keeps the old flow as a fallback, and stays short", () => {
+  const cmd = readFileSync(join(PLUGIN, "commands", "feature.md"), "utf8");
+  const words = cmd.replace(/^---[\s\S]*?---/, "").split(/\s+/).filter(Boolean).length;
+  assert.ok(words <= 260, `commands/feature.md is ${words} words; the procedure belongs in workflows/feature.md`);
+  for (const must of [/build-state\.mjs" --project \. --plan/, /`conductor` agent/, /--role conductor/, /NEEDS OWNER/, /CANNOT DELEGATE/, /workflows\/feature\.md/, /RUN HERE/]) assert.match(cmd, must);
+  const conductor = readFileSync(join(PLUGIN, "agents", "conductor.md"), "utf8");
+  assert.ok(conductor.split(/\s+/).length <= 330, "the conductor's instructions stay short");
+  for (const must of [/workflows\/feature\.md/, /RESULT: MERGED/, /CANNOT DELEGATE/, /never start another conductor/i]) assert.match(conductor, must);
+  const flow = readFileSync(join(PLUGIN, "workflows", "feature.md"), "utf8");
+  assert.match(flow, /build-state\.mjs" --project \. --set/);
+  assert.ok(!/\$ARGUMENTS/.test(flow), "a workflow file is read, not invoked: it has no $ARGUMENTS");
 });
 
 test("token savings stay in the instructions: re-review only the fix, edit instead of rewriting, a small CLAUDE.md template", () => {

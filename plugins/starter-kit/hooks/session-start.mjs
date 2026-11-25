@@ -17,6 +17,7 @@ import { checkDrift } from "../scripts/drift-check.mjs";
 import { checkpointStatus } from "../scripts/checkpoint.mjs";
 import { stallStatus } from "../scripts/flight-report.mjs";
 import { readLog } from "../scripts/flight-lib.mjs";
+import { cutOffLine } from "../scripts/build-state.mjs";
 
 // The commands and agents call the kit's helper scripts "${CLAUDE_PLUGIN_ROOT}/scripts/…", which Claude Code fills in when it
 // loads them. Say the real folder too, so a session can still find them if that ever does not happen, and so it can pass the
@@ -193,6 +194,14 @@ if (roadmap) {
   } catch {
     /* never let a bad roadmap break session start */
   }
+}
+
+// A feature build that was cut off (a session ended, a usage limit, a compaction): say where, so "continue" resumes it exactly.
+try {
+  const cut = cutOffLine(root);
+  if (cut) parts.push(cut);
+} catch {
+  /* never let this break session start */
 }
 
 // Planning, debugging and database work happen in the main conversation, so a build run on the cheapest model is weaker where it

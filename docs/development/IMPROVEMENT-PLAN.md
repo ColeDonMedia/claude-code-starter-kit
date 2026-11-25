@@ -16,14 +16,15 @@ then stop and report. Do not start the next phase in the same release.
 | Owner requests | 2.12.2–2.14.0 | **Done**: payment keys (2.12.2); sizing an app to its users (2.13.0); design library and WCAG 2.2 AA testing (2.14.0). |
 | Audit 2 | — | **Done** (2026-11-25, against 2.14.0): findings F1–F11 below, and the new one-click phase (OC). |
 | M — models and delegation | 2.14.1 (part A), 2.15.0 (part B) | **Done** except M-14 (needs a trial). D11 and D12 decided as recommended (the owner asked for all of it, 2026-11-25). Absorbed P3-6. Built before the first trial, so there is no before-and-after comparison. |
-| S — savings and a small main conversation | 2.16.0 (part A), 2.17.0 (part B) | **Next.** Part A is free savings and can go at once. Part B changes how every feature is built: see D14 (a trial first is recommended). Needs D13. Delivers the state record OC-4 builds on. |
+| S — savings and a small main conversation | 2.16.0 (part A), 2.17.0 (part B) | **Done** except S-12 (needs a trial). The owner said "do all" (2026-11-25): D13 yes; D14 build now, with the old flow as the automatic fallback. Not run live. |
 | 1 — verifiable | 2.18.0 | Not started. Needs owner decisions D2, D3 and D7. When P2-4 moves rule blocks into references, the WCAG list in `scripts/wcag.mjs` is the source for the accessibility reference. |
 | OC — one-click shipping | 2.19.0, 2.20.0 | Not started. Waits for the first live trial (P1-6), whose flight report decides the order inside the phase. Absorbs P2-1, P2-2, P2-3, P2-5 and P4-2. |
 | 2, 3, 4 | — | Not started. What is left of Phase 2 after OC follows it. |
 
-**Order of work, from here:** S-1 to S-5 (part A) → P1-6 (the first live trial; recommended before part B, see D14; its flight
-report gives M-14 and S-12 their numbers) → S-6 to S-11 (part B) → P1-1 and P1-2 (tests on GitHub, a stable channel) → M-14 and
-S-12 → OC-1 to OC-12 (one-click shipping, in two releases) → the rest of Phase 2 → Phase 3 → Phase 4 only if the trials justify it.
+**Order of work, from here:** P1-6 (the first live trial: it now tests Phase M and Phase S together, and its flight report gives
+M-14 and S-12 their numbers; if the conductor misbehaves, `{ "freshContext": false }` restores the old flow while it is fixed) →
+P1-1 and P1-2 (tests on GitHub, a stable channel) → M-14 and S-12 → OC-1 to OC-12 (one-click shipping, in two releases) → the
+rest of Phase 2 → Phase 3 → Phase 4 only if the trials justify it.
 
 **Answers from the official docs (2026-11-25, hooks reference, sub-agents page, plugins reference):**
 - V1. The tool is `PowerShell`; its input has the command in `tool_input.command`, like Bash. The docs advise `Bash|PowerShell` matchers.
@@ -645,6 +646,13 @@ at full price again.
 new hook scripts (`quiet-output.mjs`, `compact-notes.mjs`, `conductor-check.mjs`), one new folder (`workflows/`). `commands/feature.md`
 shrinks to a dispatcher under 200 words. The session note grows by nothing; its new lines are conditional.
 
+**As built (2.16.0, 2.17.0), where it differs from the tasks below:** the dispatcher is about 240 words (it keeps the precondition
+checks, so the workflow file has none; the test allows 260). `init` writes `autoCompactWindow` without a question (it changes
+only when chats are summarised) and keeps a value already there. The builder already commits after each passing criterion from
+2.16.0. The conductor runs a due checkpoint itself and reports milestones in NEXT. `{ auto: false }` silences the compaction notes.
+Not built: the builder making its own worktree when started without one (S-6 (1)); add it if the trial shows nested launches lose
+`isolation: worktree`.
+
 ### Part A — release 2.16.0: free savings (no change to how features are built)
 
 ### S-1. DONE in 2.16.0 — Quiet command output, enforced — Opus, M (after V25)
@@ -723,7 +731,7 @@ shrinks to a dispatcher under 200 words. The session note grows by nothing; its 
 
 ### Part B — release 2.17.0: a fresh context for every feature (changes how features are built; see D14)
 
-### S-6. The conductor: one roadmap item, one fresh context — Opus, L (after V25)
+### S-6. DONE in 2.17.0 — The conductor: one roadmap item, one fresh context — Opus, L (after V25)
 - **Why:** the owner's idea, finished. Builders already work in their own worktree and context, but the main conversation still
   runs the workflow, writes every brief, reads every report and edits every record. A subagent starts fresh and returns only its
   result (V24), so running the whole workflow inside one gives every feature a new context automatically, on every surface.
@@ -754,7 +762,7 @@ shrinks to a dispatcher under 200 words. The session note grows by nothing; its 
 - **Test:** docs tests (the dispatcher's length and the four things it must do; the workflow file passes every check the command
   did; the fallback sentence exists); model-route cases for the new role; the gate tests of S-8.
 
-### S-7. The build state: resume from the last verified step — Opus, M (the first slice of OC-4)
+### S-7. DONE in 2.17.0 — The build state: resume from the last verified step — Opus, M (the first slice of OC-4)
 - **Why:** a session that ends, a usage limit, a compaction or a conductor that cannot be resumed must not cost the feature.
 - **Change:** `scripts/build-state.mjs`. The state lives OUTSIDE the project (`<data folder>/state/<project key>.json`, like the
   flight log), so it can never be committed and never makes the main checkout "not clean". Fields: the roadmap item (its text and
@@ -773,7 +781,7 @@ shrinks to a dispatcher under 200 words. The session note grows by nothing; its 
 - **Test:** set, show and clear; `--plan` with no state, a live state and the switch; `--resume` with a missing branch, a missing
   worktree, uncommitted files and a clean tree; nothing is written inside the project; the note's line appears only when it should.
 
-### S-8. Only the conductor may start agents, and its "merged" is checked — Opus, M
+### S-8. DONE in 2.17.0 — Only the conductor may start agents, and its "merged" is checked — Opus, M
 - **Why:** M-1's rule was "no kit agent may start another agent". The conductor is the one exception, and an exception needs a guard.
 - **Change:**
   - `docs.test.mjs`: exactly one agent, `conductor`, may list `Agent`; it must use an allow-list, must not be on Haiku, and must
@@ -789,7 +797,7 @@ shrinks to a dispatcher under 200 words. The session note grows by nothing; its 
   conductor → conductor refused, scout → anything refused, main → as before); the report check with a real temporary repository
   (a true merge passes, an invented commit is sent back once, never twice); all of it through the gate.
 
-### S-9. Compaction as the safety net, steered by the kit — Sonnet, M (OWNER DECISION D13)
+### S-9. DONE in 2.17.0 — Compaction as the safety net, steered by the kit — Sonnet, M (OWNER DECISION D13)
 - **Why:** the owner asked for an automatic clear at a threshold. This is the form of it that exists (V19, V20, V21).
 - **Change:**
   - `hooks/compact-notes.mjs` on PreCompact (both matchers, through `gate.mjs`): prints the instructions for the summary, about
@@ -805,13 +813,13 @@ shrinks to a dispatcher under 200 words. The session note grows by nothing; its 
 - **Test:** the hook's output is under 10,000 characters and exit 0 for both triggers; the recorder's new event; `init.md` names
   the setting inside the one question; the note after `compact` contains the resume line when a state exists.
 
-### S-10. Documentation and release — Sonnet, S
+### S-10. DONE in 2.17.0 — Documentation and release — Sonnet, S
 - `docs/how-it-works.md`: "A fresh context for every feature" and "When a chat gets long" in plain words, including the honest
   line that the kit cannot clear a chat or open a new one by itself, and what the desktop app adds. `docs/settings.md`:
   `quietOutput`, `freshContext`. `README.md` agents table (ten agents). `CLAUDE.md`: the changed agent rule, the `workflows/`
   folder in the layout. Changelog, handoff, version, all tests both ways, `claude plugin validate`.
 
-### S-11. Fold the result back into OC-4 and OC-11 — Sonnet, S
+### S-11. DONE in 2.17.0 — Fold the result back into OC-4 and OC-11 — Sonnet, S
 - Mark in OC-4 that the state record exists (S-7) and what is left (the state machine, refusing a step without evidence, the stop
   conditions). Mark in OC-11 that `workflows/` exists, and move the next longest command there if a trial shows it loaded often.
 
@@ -933,6 +941,8 @@ previews, one go-live, tidier projects). Do the verifications V9, V10 and V11 fi
   `CLAUDE.md`, `README.md` and `docs/` at the root from the kit.
 
 ### OC-11. Instructions on a diet — Sonnet, L (absorbs the targets of P2-4 and P2-9)
+- **Builds on Phase S:** `workflows/` exists (S-6) and is loaded only by whoever runs it. Move the next longest command there when
+  a trial shows it loaded often.
 - **Why:** F2. After OC-4 and OC-5 most procedure lives in scripts, so the prose can shrink.
 - **Change:** as P2-4 and P2-9: rule blocks into references read on demand; `feature`, `full-scan`, `launch` point at `next.mjs`
   and `check.mjs`; the session note under 400 words.

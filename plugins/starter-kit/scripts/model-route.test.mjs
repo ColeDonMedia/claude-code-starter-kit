@@ -27,8 +27,11 @@ function project(files = {}) {
 const cli = (args, env = {}) => spawnSync(process.execPath, [SCRIPT, ...args], { encoding: "utf8", env: { ...process.env, ...env } });
 
 test("each role starts where the plan says", () => {
-  const want = { scout: "haiku", researcher: "haiku", implementer: "sonnet", reviewer: "opus", challenger: "sonnet", "ui-reviewer": "sonnet", investigator: "sonnet", "red-team": "opus", "security-reviewer": "opus" };
+  const want = { scout: "haiku", researcher: "haiku", conductor: "sonnet", implementer: "sonnet", reviewer: "opus", challenger: "sonnet", "ui-reviewer": "sonnet", investigator: "sonnet", "red-team": "opus", "security-reviewer": "opus" };
   for (const [role, model] of Object.entries(want)) assert.equal(baseline(role).model, model, role);
+  assert.equal(route({ role: "conductor", size: "L" }).model, "opus");
+  assert.equal(route({ role: "conductor", size: "M", risk: true }).model, "opus");
+  assert.equal(route({ role: "conductor", size: "M" }).model, "sonnet");
   assert.equal(baseline("scout").effort, "low");
   assert.equal(baseline("researcher").effort, "medium");
   assert.equal(baseline("reviewer").effort, "high");

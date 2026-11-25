@@ -22,11 +22,11 @@
 - **Runs the right workflow by itself.** You describe what you want in plain words; Claude picks the plan, build, test, review or
   ship workflow and says in one line what it ran. You never type a command.
 - **Plans before it builds.** A new app gets researched, sized, designed and broken into a checklist you approve once.
-- **Builds test-first, in isolation.** Each feature is built in its own branch, reviewed by separate reviewers, and merged only
-  when the tests pass.
-- **Guards your computer and your secrets.** Dangerous commands, leaked keys, invented packages, remote databases and unchecked
-  pushes are stopped before they happen.
-- **Remembers where it left off.** Project records keep any session able to say "continue" and pick up exactly where the last one stopped.
+- **Builds test-first, in isolation.** Each feature is built in its own branch and its own fresh context, reviewed separately, and
+  merged only when the tests pass, so your chat stays small.
+- **Guards your computer and secrets.** Dangerous commands, leaked keys, invented packages, remote databases and unchecked pushes
+  are stopped.
+- **Remembers where it left off.** Say "continue" and it resumes from the last verified step.
 
 ## Install
 
@@ -37,7 +37,7 @@ claude plugin marketplace add ColeDonMedia/claude-code-starter-kit
 claude plugin install starter-kit@starter-kit-marketplace
 ```
 
-Restart Claude Code. That's it: the kit updates itself once a day from this repository.
+Restart Claude Code. The kit then updates itself daily from this repository.
 
 <details>
 <summary>Install trouble?</summary>
@@ -46,8 +46,7 @@ Restart Claude Code. That's it: the kit updates itself once a day from this repo
 - If the `owner/repo` form fails because SSH isn't set up, use
   `https://github.com/ColeDonMedia/claude-code-starter-kit.git` instead.
 - Update by hand: `claude plugin marketplace update starter-kit-marketplace`.
-- If something seems off, tell Claude the kit is misbehaving. It runs the kit's health check (Node, git, the hooks, the guards)
-  and tells you in plain words what's wrong.
+- Something seems off? Tell Claude the kit is misbehaving: it runs a health check and explains.
 </details>
 
 ## How you use it
@@ -57,11 +56,11 @@ Open a project folder in Claude Code and talk normally.
 | You say | What happens |
 |---|---|
 | *(open a project that isn't set up)* | It detects the stack, writes the project's `CLAUDE.md`, and asks you one yes/no question. |
-| "Build me an app that…" | A plan with research, size, design and a roadmap. You approve it once, then it builds feature by feature. |
+| "Build me an app that…" | A plan with research, size, design and a roadmap. You approve it once; it builds feature by feature. |
 | "Add a…" / "Fix the…" | The feature is built test-first in its own branch, reviewed, and merged when green. |
-| "This error keeps happening" | It finds the root cause with evidence before changing code, then adds a test so it can't come back. |
-| "Continue" | It reads the records and carries on with the next item on the roadmap. |
-| "Where are we?" | Progress, what's next, risks, and exactly what it needs from you. |
+| "This error keeps happening" | It finds the root cause with evidence, then adds a test so it can't come back. |
+| "Continue" | It carries on with the next roadmap item, or resumes one that was cut off. |
+| "Where are we?" | Progress, what's next, risks, and what it needs from you. |
 | "Ship it" | The full pre-ship scan runs first; pushes and deploys are blocked until it passes. |
 
 More in [How it works](docs/how-it-works.md).
@@ -96,10 +95,11 @@ Claude starts these itself; you can also type them.
 | | `/starter-kit:maintain` | The monthly check-up |
 | | `/starter-kit:status` | Where things stand, in plain words |
 
-### 9 agents
+### 10 agents
 
 | Agent | Model | Job |
 |---|---|---|
+| `conductor` | Sonnet; Opus for large or risky features | Runs one feature's whole build in a fresh context and reports back briefly |
 | `implementer` | Sonnet; Opus for medium, large or risky features | Builds one feature in its own branch and folder |
 | `scout` | Haiku | In big projects, finds the files and lines a job needs; a script checks each pointer |
 | `researcher` | Haiku | Searches and reads the web, returns a short sourced report |
@@ -138,7 +138,7 @@ Details: [Safety and security](docs/safety.md).
 
 ## What's proven and what isn't
 
-- **Proven:** 473 automated tests over the hooks and scripts, including fuzz tests that throw hundreds of disguised attacks at
+- **Proven:** 499 automated tests over the hooks and scripts, including fuzz tests that throw hundreds of disguised attacks at
   the guards. They run before every release.
 - **Not yet proven:** a full real-world build from idea to launch. [Trial runs](docs/trials.md) describe how that is being tested.
 - Tested on Windows so far; macOS and Linux are intended.

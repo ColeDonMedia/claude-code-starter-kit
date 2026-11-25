@@ -4,6 +4,26 @@ What changed in each release of the starter-kit plugin, newest first, in plain w
 repository's history. Every release bumps `version` in `plugins/starter-kit/.claude-plugin/plugin.json`; a test
 fails if this file has no entry for the current version.
 
+## [2.17.0] — 2026-11-25
+A fresh context for every feature, so the main chat stays small, and builds that resume from their last verified step (plan
+Phase S, part B).
+- **The conductor (new agent).** `/starter-kit:feature` is now a short dispatcher. It hands the roadmap item to a `conductor` that
+  runs the whole build in its own fresh context (builder, reviewers, merge, proof, records) and returns about a dozen lines, so the
+  main chat grows by a short report per feature instead of every brief, report and test result. The procedure moved, unchanged in
+  substance, to `workflows/feature.md`. When the conductor needs the owner it stops and hands back the question; the main chat asks
+  and sends the answer back. If the conductor cannot start agents, or `{ "freshContext": false }` is set, the same workflow runs in
+  the main chat as before.
+- **Guards for it.** Only the conductor may start agents (a test), only the kit's own and never another conductor (the model-check
+  hook, which now knows who is launching). Its "MERGED <commit>" is checked against git before anyone believes it; a wrong report is
+  sent back once.
+- **The build state.** Each feature's stage, branch, worktree, last passing commit and pending question are kept outside the project.
+  After a session ends, a usage limit or a compaction, the session note says where the build stopped and "continue" resumes it;
+  git is trusted over the record (a vanished branch clears it; uncommitted work in the worktree is shown to the next builder).
+- **Compaction, steered.** New projects compact their chats at 300,000 tokens instead of near a million. Before every compaction the
+  kit tells the summary what to keep (the feature in progress, questions for the owner, unrecorded decisions, anything unverified)
+  and what to drop (tool output, file contents, finished features). Compactions are counted in the flight report.
+- The kit cannot clear a chat or open a new session by itself (Claude Code does not allow it); the docs now say so plainly.
+
 ## [2.16.0] — 2026-11-25
 Token savings that cost no code quality (plan Phase S, part A).
 - **Noisy output is shortened, enforced.** When a test run, install or build succeeds and prints more than 120 lines, Claude now

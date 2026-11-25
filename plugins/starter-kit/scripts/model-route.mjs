@@ -16,7 +16,7 @@ export const rank = (m) => ORDER.indexOf(m);
 const atLeast = (m, floor) => (rank(m) >= rank(floor) ? m : floor);
 
 // The lowest model each role may ever run on (before a plan's ceiling). Unknown roles have no minimum.
-export const FLOOR = { scout: "haiku", researcher: "haiku", implementer: "sonnet", reviewer: "sonnet", challenger: "sonnet", "ui-reviewer": "sonnet", investigator: "sonnet", "red-team": "sonnet", "security-reviewer": "opus" };
+export const FLOOR = { scout: "haiku", researcher: "haiku", conductor: "sonnet", implementer: "sonnet", reviewer: "sonnet", challenger: "sonnet", "ui-reviewer": "sonnet", investigator: "sonnet", "red-team": "sonnet", "security-reviewer": "opus" };
 export const EFFORT = { scout: "low", researcher: "medium" }; // every other role: high
 export const RIGORS = ["prototype", "product", "critical"];
 export const REACH = 10; // a file with this many dependents makes a change far-reaching
@@ -58,6 +58,9 @@ export function route(f) {
       model = rigor === "critical"
         ? when(true, "critical project") && "opus"
         : any([when(f.mode === "plan", "checking the plan"), when(size === "L" && Boolean(f.size), "large feature"), when(f.risk, risk), when(attempt >= 3, "third attempt after two failed reviews")]) ? "opus" : "sonnet";
+      break;
+    case "conductor": // it runs the workflow and judges the reports; the builder and reviewers get their own models
+      model = any([when(rigor === "critical", "critical project"), when(size === "L" && Boolean(f.size), "large feature"), when(f.risk, risk)]) ? "opus" : (when(true, "runs the workflow; the agents it starts get their own models"), "sonnet");
       break;
     case "investigator":
       model = any([when(rigor === "critical", "critical project"), when(f.mode === "emergency", "live emergency"), when(attempt >= 2, "a first hypothesis failed"), when(f.risk, risk)]) ? "opus" : "sonnet";

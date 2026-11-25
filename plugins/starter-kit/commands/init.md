@@ -26,6 +26,9 @@ and a first commit. It is local, nothing is uploaded, and the build workflow nee
 ## 4. Permissions (`.claude/settings.json`)
 Merge into the existing file if there is one; never drop existing entries.
 - deny (add without asking — these only restrict): `Read(./.env)`, `Read(./.env.*)`, `Read(./**/*.pem)`, `Read(./**/*.key)`.
+- `"autoCompactWindow": 300000` (add without asking; it only changes when long chats here are summarised, not what runs): long
+  chats compact at 300,000 tokens instead of near a million, so every message stops re-sending a huge history. Mention it in one
+  line. Keep a value that is already there.
 - allow: this lets commands run without a permission prompt, so ask the user ONE plain yes/no question first
   ("May I run this project's own test and build commands without asking each time?"), listing the commands:
   the install, test, typecheck, lint and build commands you found (as `Bash(<command>:*)`), plus

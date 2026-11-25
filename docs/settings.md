@@ -18,6 +18,7 @@ protection, you approve it in a permission prompt.
 | `{ "relatedTests": false }` | Stops running related tests after each edit (see [How it works](how-it-works.md)). |
 | `{ "scout": false }` | Never launches the Haiku scout, even in a big project. |
 | `{ "quietOutput": false }` | Lets long test, install and build output reach Claude in full. |
+| `{ "freshContext": false }` | Runs each feature's build in your chat instead of a fresh conductor context (the old way). |
 | `{ "rigor": "critical" }` | Puts every builder and reviewer on the strongest model the kit uses (Opus). |
 
 ## Protections (need your approval on this computer before they count)

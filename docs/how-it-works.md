@@ -43,6 +43,32 @@ The routing note lives in the plugin, so updates reach every project automatical
 - Claude then builds the roadmap one feature at a time, ticking each off with proof.
 - Every later session starts by telling Claude how far the roadmap is and what's next, so "continue" is all you need to say.
 
+## A fresh context for every feature
+
+Every message in a chat re-sends the whole conversation, so a chat that builds twenty features gets slower and costlier with each
+one. The kit keeps your chat small instead:
+
+- **Each feature runs in its own fresh context.** `/starter-kit:feature` hands the roadmap item to a `conductor` agent, which runs the
+  whole build there: the builder, the reviewers, the merge, the proof and the records. Your chat gets back about a dozen lines: what
+  works, how to see it, anything left as is.
+- **Questions still reach you.** An agent can't ask you anything directly, so the conductor stops and hands back the question; your
+  chat asks you and sends the answer back to the same conductor.
+- **"Merged" is checked.** A hook confirms the commit the conductor names really exists on your main branch before anyone believes it.
+- **The old way is the fallback.** If the conductor can't start agents, or you switch it off with `{ "freshContext": false }`,
+  the same workflow runs in your chat as before.
+
+## When a chat gets long
+
+- **The kit can't clear a chat or open a new one by itself.** Claude Code doesn't let plugins do that. The desktop app can start a
+  separate session when you ask, but terminal and web users can't, so the kit doesn't rely on it.
+- **What it does instead:** setup tells each project's chats to compact (summarise themselves) at 300,000 tokens rather than near a
+  million, and the kit tells the summary what to keep (the feature in progress, questions waiting for you, decisions not yet written
+  down, anything unverified) and what to drop (tool output, file contents, finished features already in the records).
+- **A cut-off build resumes from its last verified step.** The kit records each feature's stage, branch, worktree and last commit
+  whose tests passed, outside your project. Builders commit after every passing test. After a session ends, a usage limit or a
+  compaction, "continue" picks up there; anything left uncommitted is shown to the next builder, and the tests decide.
+- **Starting a new chat is always fine:** the project's records and the build state carry everything over.
+
 ## Branches and worktrees, in plain words
 
 - A **branch** is a separate line of work inside your project's history. `main` is the good, working copy.

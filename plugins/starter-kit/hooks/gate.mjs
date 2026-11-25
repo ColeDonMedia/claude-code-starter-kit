@@ -5,9 +5,11 @@
 //                             for file edits: file guard; for agent launches: the model check. The first block ends the run.
 //   post  (after any tool)    flight recorder; after file edits: related tests; after shell commands: quiet output.
 //   stop  (a turn ends)       flight recorder, verify gate, docs gate.
-//   start (a session starts)  session note (startup, clear, compact), flight recorder, auto-update (startup only).
+//   start (a session starts)  session note (startup, clear, compact; resume and fork: only the resume-cost line), flight
+//                             recorder, auto-update (startup only).
 //   subagent (one starts)     tells starter-kit subagents where the kit's scripts are.
-//   substop  (one finishes)   checks the scout's pointers before anyone relies on them.
+//   substop  (one finishes)   checks the scout's pointers, and the conductor's "merged" claim, before anyone relies on them.
+//   precompact / postcompact  what a compaction summary must keep; a record that one happened.
 // Every hook stays a normal script that is tested alone and through here. A hook that crashes is reported, not skipped silently.
 import { pathToFileURL } from "node:url";
 import { dirname, join, resolve } from "node:path";
@@ -30,7 +32,9 @@ export function pipeline(mode, input) {
   // A resumed or forked chat already holds the note; session-start then only says what resuming costs, when it is worth saying.
   if (mode === "start") return [...(["startup", "clear", "compact", "resume", "fork", undefined].includes(input?.source) ? ["session-start"] : []), "flight-recorder", ...(input?.source === "startup" ? ["auto-update"] : [])];
   if (mode === "subagent") return ["subagent-start"];
-  if (mode === "substop") return ["scout-check"];
+  if (mode === "substop") return ["scout-check", "conductor-check"];
+  if (mode === "precompact") return ["compact-notes"];
+  if (mode === "postcompact") return ["flight-recorder"];
   return [];
 }
 

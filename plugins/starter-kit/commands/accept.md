@@ -14,7 +14,9 @@ Nothing counts as accepted because the tests pass. The owner has to see it and s
 3. **Say exactly what to try**, in plain words and in order, taken from the acceptance criteria of that milestone's features:
    "Create an account. Sign out and back in. Save a recipe and find it in your list." Five to eight steps at most, each one a thing a
    non-programmer can do and see. Include what they should see if it works.
-4. **Ask for a verdict:** works, or what's wrong or different from what they wanted. Wait for their answer.
+4. **Ask for a verdict:** works, or what's wrong or different from what they wanted. For anything with a screen also ask:
+   "Which screen feels least like the apps you like, and what feels off?" Taste is theirs: write their answer into
+   `DESIGN.md` (References or a "Never" list) so every later screen follows it. Wait for their answer.
 5. **Record it.**
    - They are happy: set the milestone's line to `Accepted: yes (<today's date>) — owner said: "<their own words, shortened if long>"`.
      Quote them truthfully; never write an acceptance they did not give. Commit it.

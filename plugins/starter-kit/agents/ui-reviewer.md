@@ -22,6 +22,11 @@ How to look:
 If the project has a `DESIGN.md`, check the screens against it (colors, fonts, spacing, component rules) and
 report every place that drifts from it.
 
+Score every screen you saw from 1 to 5 against the `Quality bar` and `References` in DESIGN.md (hierarchy, one clear primary
+action, consistent spacing, real empty/loading/error states, no placeholder text, specific wording, restrained motion, nothing
+that looks like an unstyled default). List each screen with its score and the one change that would raise it. Any screen below 4
+means CHANGES REQUESTED. If there is no DESIGN.md, say so: that is itself a finding for a project with screens.
+
 Check: visual consistency, spacing/typography, broken or overflowing layouts, responsive behavior,
 loading/error/empty states, user-flow dead ends.
 

@@ -3,9 +3,10 @@
 Read this, then `CLAUDE.md` (how to work on this repo), `README.md` (what the kit does) and `CHANGELOG.md` (history).
 Rewrite this file at the end of every session; keep it under 40 lines and true.
 
-## State at version 2.6.0 (2026-11-24)
+## State at version 2.7.0 (2026-11-24)
 - Public repo `ColeDonMedia/claude-code-starter-kit`, MIT, installed from GitHub; machines self-update daily.
-- The plugin lives in `plugins/starter-kit/`: 17 commands, 7 agents, 11 hooks, helper scripts, ~285 tests.
+- The plugin lives in `plugins/starter-kit/`: 18 commands, 7 agents, 10 hook scripts, helper scripts, ~305 tests.
+- OWNER RULE: never spend API tokens (no `claude -p`, no npx claude-code runs). Test with unit tests only; live trials are run by the owner in a normal session (`DOGFOOD.md`).
 - Everything is unit-tested against real git repositories and (for packages) the live registries.
 
 ## Not verified (be honest about this)
@@ -28,6 +29,7 @@ Rewrite this file at the end of every session; keep it under 40 lines and true.
 
 - NEVER RUN LIVE: `/launch` and `/maintain` (the checks behind them are unit-tested). They need real accounts and a real host, so they will need adjusting on first real use.
 
+- NEVER RUN LIVE: the flight recorder (tested with Claude Code's payload shape; whether `PreToolUse`/`PostToolUse` carry `tool_use_id` and `Stop` runs for subagents is unconfirmed), `/dogfood`, the design quality bar and scoring, the context pack inside `/feature`. No trial in `DOGFOOD.md` has been run yet.
 - NEVER RUN LIVE: `/legal` (conversation and drafting). The checkers are unit-tested. The drafts are AI-written and need a lawyer.
 
 ## Known risks
@@ -35,7 +37,7 @@ Rewrite this file at the end of every session; keep it under 40 lines and true.
 - Third-party skills are never bundled; `VETTED.md` lists what was reviewed (commits pinned).
 
 ## Do this first next session
-1. If credit is available, run a real small project through plan → build → ship and fix what breaks.
+1. The owner runs trial 1 from `DOGFOOD.md` in a normal session; read its flight report, fix what broke, log it in `DOGFOOD.md`.
 2. Watch for false positives from the guards (safety, package, secret, docs) and loosen rules with tests.
 
 ## Rules that must not regress

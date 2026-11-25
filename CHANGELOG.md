@@ -4,6 +4,19 @@ What changed in each release of the starter-kit plugin, newest first, in plain w
 repository's history. Every release bumps `version` in `plugins/starter-kit/.claude-plugin/plugin.json`; a test
 fails if this file has no entry for the current version.
 
+## [2.7.0] — 2026-11-24
+Trial runs, a flight recorder, taste, and memory for long builds. No API calls anywhere: everything runs locally or in your normal session.
+- New flight recorder hook (`hooks/flight-recorder.mjs`, `scripts/flight-lib.mjs`): a private log of names only (workflows, agents, tools, the
+  program a shell command started), stored outside the project. Actions that started but never finished are the blocked or failed ones.
+  Never records prompts, code, arguments, paths or secrets (tested with a planted secret). Off with `{ "flightLog": false }`.
+- New `/dogfood` and `scripts/flight-report.mjs`: reads the log, compares with what should have happened (plan, builder, reviewer, challenger,
+  acceptance), and turns gaps into fixes or a `KIT-FEEDBACK.md`. New `DOGFOOD.md`: three trial apps to run in a normal session.
+- Taste: the plan asks which apps you like and dislike; `DESIGN.md` gains References and a Quality bar; new `scripts/design-check.mjs` checks the
+  sections and color contrast (WCAG math); the UI reviewer scores each screen 1 to 5 and blocks below 4; acceptance asks what feels off;
+  `/full-scan` runs the design check.
+- Long builds: append-only `DECISIONS.md` (newest shown at session start), a `## Map` in `PROJECT.md`, and `scripts/context-pack.mjs`, which gives each
+  builder only the roadmap item, decisions, related map lines and design brief that matter.
+
 ## [2.6.0] — 2026-11-24
 Legal, licenses, analytics and feedback.
 - New `/legal`: builds the data inventory, works out which rules apply from current sources (privacy, terms, cookies, children, data rights,

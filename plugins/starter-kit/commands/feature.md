@@ -23,7 +23,9 @@ yourself unless something fails.
 
 ## 1. Implement (subagent, own worktree)
 Launch the starter-kit `implementer` agent. It runs in a new git worktree on its own branch. It cannot
-see this conversation, so write it a complete brief:
+see this conversation, so write it a complete brief. Start it from `node "<SCRIPTS>/context-pack.mjs" --project . --feature "<the feature>"`,
+which pulls the roadmap item, the latest decisions, the related parts of the code map and the design brief out of the
+project's records, so a big project doesn't mean a big brief. Then add:
 - what to build, why, the acceptance criteria, relevant files or areas, anything already decided here
 - MAIN and BASE, so it can confirm its worktree starts from BASE
 - the reminder that it must install dependencies first (a new worktree has none)
@@ -79,7 +81,9 @@ Done is something you can show, not something you say. Before reporting or ticki
     `→ test: <file>::<test name>` (or `→ manual: <how it was checked by hand>` for things a test can't show, such as how a screen looks).
     Run `node "<SCRIPTS>/roadmap-check.mjs" --project .` and fix anything it reports; it checks the commit and tests are real.
   - `CHANGELOG.md`: one plain-words entry with the commit id.
-  - `PROJECT.md`: update current state, the architecture map, any decision made (with the reason), known problems, next steps.
+  - `PROJECT.md`: update current state, the architecture map (one line per folder or key file under a `## Map` heading: `- path — what it is for`), known problems, next steps.
+  - `DECISIONS.md`: one new line per decision made (`- <date> — <decision>, because <reason>; rejected: <alternative>`). Append only; it is
+    what later sessions read first, so keep each line short.
   - `HANDOFF.md`: rewrite it for the next session, and set its `Covers-through:` line to the newest code commit
     (`git log -1 --format=%H -- . ':(exclude)*.md' ':(exclude).claude'`).
   Write only what is true. If something was not verified, say so in "Failed or not verified" instead of leaving it out.

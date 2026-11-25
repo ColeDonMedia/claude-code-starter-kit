@@ -8,6 +8,11 @@
         ]
       },
       {
+        "hooks": [
+          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/flight-recorder.mjs\"", "timeout": 5 }
+        ]
+      },
+      {
         "matcher": "startup",
         "hooks": [
           { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/auto-update.mjs\"", "timeout": 10 }
@@ -15,6 +20,12 @@
       }
     ],
     "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/flight-recorder.mjs\"", "timeout": 5 }
+        ]
+      },
       {
         "matcher": "Bash",
         "hooks": [
@@ -34,12 +45,19 @@
     "Stop": [
       {
         "hooks": [
+          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/flight-recorder.mjs\"", "timeout": 5 },
           { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/verify-gate.mjs\"", "timeout": 300 },
           { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/docs-gate.mjs\"", "timeout": 30 }
         ]
       }
     ],
     "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/flight-recorder.mjs\"", "timeout": 5 }
+        ]
+      },
       {
         "matcher": "Edit|Write|MultiEdit",
         "hooks": [

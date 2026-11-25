@@ -13,7 +13,8 @@ Read CLAUDE.md and skim the project (manifest, folders, existing screens or rout
 ## 2. Ask once, with defaults
 Send ONE message with at most 6 plain-language questions, each with your proposed default so the user can just
 say "yes". Ask only about what they'd care about: who it's for, the one thing it must do well, must-haves versus
-later, phone, computer or both, whether people sign in, anything it must connect to, budget or deadline.
+later, phone, computer or both, whether people sign in, anything it must connect to, budget or deadline, and (if it
+has a screen) two or three apps whose look they like and one they dislike.
 Never ask them to choose technology. Then wait. If they say "you decide", use your defaults and say so.
 
 ## 3. Research (new apps and unfamiliar territory; skip for a small feature)
@@ -61,10 +62,17 @@ Spend a few minutes thinking like an attacker, before any code, and write the re
   security review as soon as they're built, not only at the end.
 
 ## 7. Design brief (anything with a screen)
-Write `DESIGN.md` (about 15 lines) so every screen looks like one product: the feel in three words, colors
-(background, text, one accent, success/warning/error; contrast at least 4.5:1), one or two fonts and a size
-scale, spacing scale, corner and shadow style, component rules (buttons, inputs, cards), and the layout at phone
-and desktop widths. Use the project's existing design system if it has one. Every later screen follows this file.
+Write `DESIGN.md` (about 25 lines, each part under its own heading: Feel, Colors, Type, Spacing, Components, References, Quality bar) so every screen looks like one product. "High end" is taste, so start from the user's:
+ask in step 2 which two or three apps they like the look of and one they dislike, look at those (use a browser tool if you
+have one, otherwise the product's own pages) and write what you see into a `References` section: what each does well
+(spacing, hierarchy, density, motion) and what to avoid. Then write: the feel in three words, colors as lines like
+`background: #ffffff`, `text: #111111`, `muted: #555555`, `accent: #2563eb`, `error: #b00020` (text at least 4.5:1 on the
+background), one or two fonts and a size scale, spacing scale, corner and shadow style, component rules (buttons, inputs,
+cards), the layout at phone and desktop widths, and a `Quality bar` section: one primary action per screen, a clear visual
+hierarchy, a real empty/loading/error state on every screen, no placeholder text, specific microcopy ("Save recipe", not
+"Submit"), motion short and subtle, nothing that looks like an unstyled browser default. Use the project's existing design
+system if it has one. Run `node "<SCRIPTS>/design-check.mjs" --project .` and fix what it reports. Every later screen follows this
+file, and the ui-reviewer scores each screen against the Quality bar.
 
 ## 8. Present the plan — short, plain words
 - **Goal** — one sentence
@@ -104,6 +112,8 @@ On approval, write the project's memory so any later session can pick up with fu
 - `PROJECT.md` (the master document): what it is, the stack and why, how to run it, the architecture map, the
   decisions made in this planning (with the reasons and what was rejected), current state, known problems, next steps,
   plus `## Success measures` and `## Risks` (one line each, as agreed in the plan).
+- `DECISIONS.md`: append-only, one line per decision (`- <date> — <decision>, because <reason>; rejected: <alternative>`); record the
+  planning decisions in it now. Add a `## Map` heading to `PROJECT.md` (one line per folder or key file) as soon as code exists.
 - `HANDOFF.md` and `CHANGELOG.md`: start them as described in `/starter-kit:init` if they don't exist.
 Commit them. Then build the items in order with `/starter-kit:feature`, one at a time: after each merge the records
 are updated (see that command), tell the user in a line or two what now works and how to see it, and carry on to

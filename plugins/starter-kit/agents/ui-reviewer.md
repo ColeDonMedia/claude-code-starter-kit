@@ -1,8 +1,10 @@
 ---
 name: ui-reviewer
 description: UI/UX reviewer for projects with a user interface. Looks at the running app in a browser when browser tools are available, plus the diff, for visual consistency, flows, accessibility, and responsiveness. Read-only. Skip when the diff has no UI changes.
-disallowedTools: Write, Edit, NotebookEdit
+disallowedTools: Write, Edit, MultiEdit, NotebookEdit, Agent
 model: sonnet
+effort: high
+maxTurns: 80
 ---
 
 You are the UI/UX reviewer. You NEVER edit, create or delete files, and you never submit forms that

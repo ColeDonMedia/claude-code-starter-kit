@@ -17,3 +17,5 @@ Do NOT run `security-reviewer` here; it runs once before shipping, in `/starter-
 
 Tell each agent what the change is meant to do, which files changed, and exactly what to diff.
 Report each verdict (APPROVE or CHANGES REQUESTED) with its findings. Do not ship on a CHANGES REQUESTED verdict.
+A review that comes back marked partial (the agent hit its turn limit) is resumed once; if it is partial again, say so instead
+of treating half a review as a verdict.

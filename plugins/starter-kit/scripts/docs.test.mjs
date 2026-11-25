@@ -184,6 +184,33 @@ test("agent headers are valid YAML, complete, and read-only agents cannot write"
   }
 });
 
+// A subagent can start subagents of its own unless the Agent tool is taken away. A deny-list keeps every tool it does not
+// name, so it must name Agent; and a Haiku agent (the cheapest model, which reads untrusted text) may only read.
+const WRITE_OR_RUN = ["Write", "Edit", "MultiEdit", "NotebookEdit", "Bash", "PowerShell", "Agent"];
+const listOf = (v) => v.split(",").map((s) => s.trim()).filter(Boolean);
+test("no kit agent can start another agent, and a Haiku agent can only read", () => {
+  for (const n of agentNames) {
+    const head = frontmatter(readFileSync(join(PLUGIN, "agents", `${n}.md`), "utf8"));
+    const field = (k) => new RegExp(`^${k}:\\s*(.+)$`, "m").exec(head)?.[1]?.trim() ?? "";
+    const tools = listOf(field("tools"));
+    const denied = listOf(field("disallowedTools"));
+    if (tools.length) assert.ok(!tools.includes("Agent") && !tools.includes("Task"), `agents/${n}.md may start other agents`);
+    else assert.ok(denied.includes("Agent"), `agents/${n}.md uses a deny-list without Agent, so it can start other agents`);
+    if (field("model") === "haiku") {
+      for (const t of WRITE_OR_RUN) assert.ok(tools.length ? !tools.includes(t) : denied.includes(t), `agents/${n}.md runs on Haiku but can use ${t}`);
+    }
+  }
+});
+
+test("every agent pins its effort, and turn limits are whole numbers", () => {
+  for (const n of agentNames) {
+    const head = frontmatter(readFileSync(join(PLUGIN, "agents", `${n}.md`), "utf8"));
+    assert.match(head, /^effort: (low|medium|high|xhigh|max)$/m, `agents/${n}.md has no valid effort`);
+    const turns = /^maxTurns:\s*(.+)$/m.exec(head)?.[1];
+    if (turns !== undefined) assert.match(turns.trim(), /^[1-9]\d{0,3}$/, `agents/${n}.md has a bad maxTurns`);
+  }
+});
+
 test("every command file has a description that says WHEN to use it (that is what makes Claude pick it)", () => {
   for (const n of commandNames) {
     const d = /^description:\s*(.+)$/m.exec(readFileSync(join(PLUGIN, "commands", `${n}.md`), "utf8"))?.[1] ?? "";

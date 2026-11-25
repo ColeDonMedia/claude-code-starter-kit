@@ -33,6 +33,7 @@ export function analyze(events) {
       if (["Edit", "Write", "MultiEdit"].includes(e.tool)) edits++;
     }
   }
+  const models = modelUse(events);
   for (const t of tries.values()) unfinished.push(t.tool === "Skill" ? `Skill ${short(t.skill)}` : t.tool === "Bash" ? `Bash (${t.prog || "?"})` : t.tool === "Agent" ? `Agent ${short(t.agent)}` : t.tool);
   const flow = skills.filter((s, i) => s !== skills[i - 1]);
   const notes = [];
@@ -44,7 +45,36 @@ export function analyze(events) {
   if (ran("feature") && !ran("accept") && stops > 0 && (flow.filter((s) => s === "feature").length >= 3)) notes.push("Several features were built and no milestone acceptance was run.");
   if (ran("spec") && !agents.researcher) notes.push("The plan was written but no researcher agent ran (no competitor research).");
   if (unfinished.length) notes.push(`${unfinished.length} action(s) started but never finished (blocked by a guard, refused, or failed): ${[...new Set(unfinished)].slice(0, 8).join(", ")}.`);
-  return { starts, stops, edits, flow, agents, unfinished, notes, events: events.length };
+  return { starts, stops, edits, flow, agents, unfinished, notes, models, events: events.length };
+}
+
+// Which models the agents asked for and ran on, the tokens per model, and review rounds per build (reviewer launches after each
+// builder launch: follow-up rounds reuse the same builder, so a new builder launch starts a new count). The numbers a trial needs
+// to judge the kit's model choices (plan task M-14).
+export function modelUse(events) {
+  const asked = {};
+  const tokens = {};
+  const rounds = [];
+  const scout = { runs: 0, ok: 0, bad: 0 };
+  const misses = [];
+  for (const e of events) {
+    const isAgent = e.tool === "Agent" || e.tool === "Task";
+    if (e.ev === "try" && isAgent && e.agent) {
+      const a = short(e.agent);
+      asked[a] ??= {};
+      asked[a][e.ask || "default"] = (asked[a][e.ask || "default"] ?? 0) + 1;
+      if (a === "implementer") rounds.push(0);
+      else if (a === "reviewer" && rounds.length) rounds[rounds.length - 1]++;
+    }
+    if (e.ev === "ok" && isAgent && e.ran && Number(e.tok) > 0) tokens[e.ran] = (tokens[e.ran] ?? 0) + Number(e.tok);
+    if (e.ev === "ok" && isAgent && e.miss !== undefined) misses.push(Number(e.miss));
+    if (e.ev === "scout") {
+      scout.runs++;
+      scout.ok += Number(e.ok) || 0;
+      scout.bad += Number(e.bad) || 0;
+    }
+  }
+  return { asked, tokens, rounds, scout, misses };
 }
 
 // A build is stalled when the same roadmap item has been "next" at the start of `sessions` sessions in a row, or when one
@@ -76,6 +106,13 @@ export function report(events, { all = false } = {}) {
     `Workflows run, in order: ${a.flow.length ? a.flow.join(" -> ") : "none"}`,
     `Agents launched: ${Object.keys(a.agents).length ? Object.entries(a.agents).map(([k, v]) => `${k} x${v}`).join(", ") : "none"}`,
   ];
+  const m = a.models;
+  const fmt = (o) => Object.entries(o).map(([k, v]) => `${k} ${v}`).join(", ");
+  if (Object.keys(m.asked).length) lines.push(`Models asked for: ${Object.entries(m.asked).map(([k, v]) => `${k} (${fmt(v)})`).join("; ")}`);
+  if (Object.keys(m.tokens).length) lines.push(`Agent tokens by model: ${Object.entries(m.tokens).map(([k, v]) => `${k} ${v.toLocaleString("en-US")}`).join(", ")}`);
+  if (m.rounds.length) lines.push(`Review rounds per build: ${m.rounds.join(", ")}`);
+  if (m.scout.runs) lines.push(`Scout: ${m.scout.runs} run(s); pointers checked ${m.scout.ok} good, ${m.scout.bad} wrong`);
+  if (m.misses.length) lines.push(`Files builders had to find for themselves: ${m.misses.join(", ")}`);
   const st = stallStatus(events);
   if (st.stalled) a.notes.push(...st.msgs.map((m) => m + "."));
   lines.push(a.notes.length ? "Look at:\n" + a.notes.map((n) => `- ${n}`).join("\n") : "Nothing looks off.");

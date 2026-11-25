@@ -3,6 +3,8 @@ name: reviewer
 description: Code reviewer. Reviews a diff for correctness, edge cases, and regressions, and runs the tests. Read-only — never edits code.
 tools: Read, Grep, Glob, Bash
 model: sonnet
+effort: high
+maxTurns: 80
 ---
 
 You are the code reviewer. You NEVER edit, create or delete files. Bash is only for read-only git

@@ -129,6 +129,62 @@ test("code edited with no workflow at all is flagged; an empty log says so", () 
   assert.match(report([]), /Nothing recorded/);
 });
 
+test("agent launches record the model asked for, the model that ran and the tokens, and never the prompt", () => {
+  const s = sandbox();
+  try {
+    const secret = ["sk", "ant", "api03", "SECRET".repeat(4)].join("-");
+    const ti = { subagent_type: "starter-kit:reviewer", prompt: `review this, key ${secret}`, description: "private client work", model: "opus", effort: "high" };
+    fire(s.dir, s.logs, { hook_event_name: "PreToolUse", tool_name: "Agent", tool_use_id: "a1", tool_input: ti });
+    fire(s.dir, s.logs, { hook_event_name: "PostToolUse", tool_name: "Agent", tool_use_id: "a1", tool_input: ti, tool_response: { resolvedModel: "claude-opus-5-5", totalTokens: 41234.4, content: [{ type: "text", text: `APPROVE ${secret}` }] } });
+    // a model field carrying something that is not a model name is recorded as "other"
+    fire(s.dir, s.logs, { hook_event_name: "PreToolUse", tool_name: "Agent", tool_use_id: "a2", tool_input: { ...ti, model: secret, effort: "turbo" } });
+    fire(s.dir, s.logs, { hook_event_name: "SessionStart", source: "startup", model: { id: "claude-haiku-5-5", display_name: `Haiku ${secret}` } });
+    const text = readFileSync(logPath(s.dir), "utf8");
+    assert.ok(!/sk-ant|private|client|review this|APPROVE|Haiku /.test(text), text);
+    const log = readLog(s.dir);
+    assert.equal(log[0].ask, "opus");
+    assert.equal(log[0].eff, "high");
+    assert.equal(log[1].ran, "claude-opus-5-5");
+    assert.equal(log[1].tok, "41234");
+    assert.equal(log[2].ask, "other");
+    assert.equal(log[2].eff, undefined);
+    assert.equal(log[3].model, "claude-haiku-5-5");
+  } finally {
+    s.done();
+  }
+});
+
+test("an agent payload without model or token fields records nothing extra and never fails", () => {
+  const s = sandbox();
+  try {
+    assert.equal(fire(s.dir, s.logs, { hook_event_name: "PostToolUse", tool_name: "Agent", tool_use_id: "b", tool_input: { subagent_type: "x" }, tool_response: "plain text" }).status, 0);
+    assert.equal(fire(s.dir, s.logs, { hook_event_name: "PostToolUse", tool_name: "Agent", tool_use_id: "c", tool_input: { subagent_type: "x" } }).status, 0);
+    for (const e of readLog(s.dir)) assert.ok(e.ran === undefined && e.tok === undefined && e.ask === undefined);
+  } finally {
+    s.done();
+  }
+});
+
+test("the report shows models asked for, tokens per model and review rounds per build", () => {
+  const e = (o) => ({ t: "x", sid: "s", ...o });
+  const events = [
+    e({ ev: "start" }),
+    e({ ev: "try", tool: "Agent", agent: "starter-kit:implementer", ask: "sonnet", id: "1" }), e({ ev: "ok", tool: "Agent", id: "1", ran: "claude-sonnet-5-5", tok: "30000", miss: "2" }),
+    e({ ev: "try", tool: "Agent", agent: "starter-kit:reviewer", ask: "opus", id: "2" }), e({ ev: "ok", tool: "Agent", id: "2", ran: "claude-opus-5-5", tok: "12000" }),
+    e({ ev: "try", tool: "Agent", agent: "starter-kit:reviewer", ask: "opus", id: "3" }), e({ ev: "ok", tool: "Agent", id: "3", ran: "claude-opus-5-5", tok: "8000" }),
+    e({ ev: "try", tool: "Agent", agent: "starter-kit:implementer", id: "4" }), e({ ev: "ok", tool: "Agent", id: "4" }),
+    e({ ev: "try", tool: "Agent", agent: "starter-kit:reviewer", ask: "opus", id: "5" }), e({ ev: "ok", tool: "Agent", id: "5" }),
+    e({ ev: "scout", ok: "9", bad: "1" }),
+  ];
+  const r = report(events);
+  assert.match(r, /implementer \(sonnet 1, default 1\)/);
+  assert.match(r, /claude-opus-5-5 20,000/);
+  assert.match(r, /claude-sonnet-5-5 30,000/);
+  assert.match(r, /Review rounds per build: 2, 1/);
+  assert.match(r, /Scout: 1 run\(s\); pointers checked 9 good, 1 wrong/);
+  assert.match(r, /find for themselves: 2/);
+});
+
 test("the report covers only the latest session unless asked for all", () => {
   const e = (o) => ({ t: "x", ...o });
   const events = [e({ sid: "old", ev: "try", tool: "Skill", skill: "starter-kit:debug", id: "1" }), e({ sid: "old", ev: "ok", tool: "Skill", id: "1" }), e({ sid: "new", ev: "start" })];

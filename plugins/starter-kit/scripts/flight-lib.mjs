@@ -19,10 +19,23 @@ export function logPath(root) {
   return join(logDir(), `${id}.jsonl`);
 }
 
+// Model names are recorded only when they look like one: an alias the Agent tool takes, or a Claude model id. Anything else
+// (a mistake, or text that should never be in a log) becomes "other", so a model field can never carry a secret.
+const ALIASES = new Set(["haiku", "sonnet", "opus", "fable", "inherit", "default", "best"]);
+export function modelName(v) {
+  const s = typeof v === "string" ? v : typeof v?.id === "string" ? v.id : null;
+  if (!s) return undefined;
+  const m = s.trim().toLowerCase();
+  if (ALIASES.has(m)) return m;
+  return /^claude-[a-z]+(-[0-9]+){1,3}(-[0-9]{8})?(\[[0-9a-z]+\])?$/.test(m) ? m : "other";
+}
+export const effortName = (v) => (["low", "medium", "high", "xhigh", "max"].includes(v) ? v : undefined);
+export const count = (v) => (Number.isFinite(v) && v >= 0 ? Math.round(v) : undefined);
+
 // Keep only harmless fields. Anything not on this list is dropped.
 export function sanitize(e) {
   const out = { t: e.t ?? new Date().toISOString() };
-  for (const k of ["ev", "tool", "skill", "agent", "prog", "src", "id", "sid", "stop", "item"]) {
+  for (const k of ["ev", "tool", "skill", "agent", "prog", "src", "id", "sid", "stop", "item", "ask", "eff", "ran", "tok", "model", "miss", "ok", "bad"]) {
     if (e[k] !== undefined && e[k] !== null) out[k] = String(e[k]).replace(/[^\w:.\-/ ]/g, "").slice(0, 60);
   }
   return out;

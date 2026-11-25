@@ -4,6 +4,18 @@ What changed in each release of the starter-kit plugin, newest first, in plain w
 repository's history. Every release bumps `version` in `plugins/starter-kit/.claude-plugin/plugin.json`; a test
 fails if this file has no entry for the current version.
 
+## [2.14.1] — 2026-11-25
+Safer agents, steady effort, and a record of which model did what (plan Phase M, part A).
+- Closed a hole: the researcher (which reads untrusted web pages on the cheapest model) and the UI reviewer could start other
+  agents, including ones that can write files, and the researcher could run PowerShell commands. Both are now refused. A test
+  checks every agent: none may start another agent, and an agent on Haiku may only read.
+- Every agent now sets its own effort level (high for builders and reviewers, medium for the researcher), so a session set to low
+  effort no longer weakens a security review. Reviewers and the red team get a turn limit; an agent that stops at it is resumed
+  once and otherwise reported, never trusted half-done.
+- The flight recorder now notes, per agent launch, the model asked for, the model that actually ran and the tokens used (names and
+  numbers only; anything in a model field that is not a model name is recorded as "other"). The flight report shows models per
+  agent, tokens per model and review rounds per build: the numbers needed to judge model choices after a trial.
+
 ## Repository tidy-up — 2026-11-25 (documentation only; the plugin is unchanged, so no new version)
 - New logo, and a short README (about 1,400 words instead of 7,000): what it does, install, how you use it, every workflow and
   agent in tables, the guards, what still needs you, and what is proven.

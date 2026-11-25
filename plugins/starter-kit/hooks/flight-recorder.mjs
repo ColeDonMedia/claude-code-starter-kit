@@ -6,7 +6,7 @@
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { record } from "../scripts/flight-lib.mjs";
+import { count, effortName, modelName, record } from "../scripts/flight-lib.mjs";
 
 let raw = "";
 for await (const chunk of process.stdin) raw += chunk;
@@ -33,7 +33,7 @@ if (off) process.exit(0);
 const ev = input.hook_event_name;
 const e = { sid: input.session_id };
 if (ev === "SessionStart") {
-  Object.assign(e, { ev: "start", src: input.source });
+  Object.assign(e, { ev: "start", src: input.source, model: modelName(input.model) });
   // A short fingerprint (not the text) of the next unfinished roadmap item, so a report can tell when the same item has
   // been "next" for session after session: a stalled build.
   try {
@@ -48,7 +48,18 @@ else if (ev === "PreToolUse" || ev === "PostToolUse") {
   const ti = input.tool_input ?? {};
   Object.assign(e, { ev: ev === "PreToolUse" ? "try" : "ok", tool: input.tool_name, id: input.tool_use_id });
   if (input.tool_name === "Skill") e.skill = ti.skill ?? ti.name;
-  if (input.tool_name === "Agent" || input.tool_name === "Task") e.agent = ti.subagent_type;
+  if (input.tool_name === "Agent" || input.tool_name === "Task") {
+    // Which model was asked for, which one ran and how many tokens it used: names and numbers only, never the prompt.
+    e.agent = ti.subagent_type;
+    if (ev === "PreToolUse") Object.assign(e, { ask: modelName(ti.model), eff: effortName(ti.effort) });
+    else {
+      const r = input.tool_response && typeof input.tool_response === "object" ? input.tool_response : {};
+      Object.assign(e, { ran: modelName(r.resolvedModel), tok: count(r.totalTokens) });
+      // A builder ends its report with "PACK MISSES: <n>" (files it had to find without the brief's pointers).
+      const m = /PACK MISSES:\s*(\d{1,4})\b/.exec(JSON.stringify(r));
+      if (m && String(e.agent).endsWith(":implementer")) e.miss = Number(m[1]);
+    }
+  }
   if (input.tool_name === "Bash" && typeof ti.command === "string") {
     // the program only: the first word, never what follows it
     e.prog = (ti.command.trim().match(/^[\w./\\:-]+/) ?? [""])[0].split(/[\\/]/).pop();

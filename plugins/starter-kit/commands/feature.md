@@ -62,6 +62,9 @@ If a reviewer says CHANGES REQUESTED:
   was given, and instead work in the existing WORKTREE path on the existing BRANCH.
 - Then review again. Stop after 3 rounds and ask the user.
 
+An agent whose report comes back marked partial (it hit its turn limit) is resumed once; if it is partial again, report that
+instead of trusting half a build or half a review.
+
 ## 3. Merge
 Only when the implementer reported a green full suite AND the reviewer said APPROVE AND the challenger's findings
 that block "done" are resolved (and, for high-risk features, no red-team break is left unfixed):

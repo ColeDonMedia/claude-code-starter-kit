@@ -4,16 +4,19 @@ Read this, then `IMPROVEMENT-PLAN.md` (the work list, next to this file), the ro
 `CHANGELOG.md` (history). The README is a short front page; topic detail lives in `docs/`.
 Rewrite this file at the end of every session; keep it under 55 lines and true.
 
-## State at version 2.14.0 (2026-11-25)
+## State at version 2.14.1 (2026-11-25)
 - Public repo, MIT, installed from GitHub. Auto-update checks once per 24 hours at session start, in the background; a new
   version takes effect on the session AFTER that (a single restart is not enough). This machine was still on 2.6.0 at the audit.
 - `plugins/starter-kit/`: 21 commands, 7 agents, 13 hook scripts (`gate.mjs` runs the rest), 39 helper scripts, 2 templates,
-  vetted data in `library/`, 445 tests (unit tests only, one Windows machine). Hook tests also pass through the gate (`KIT_VIA_GATE=1`).
+  vetted data in `library/`, 450 tests (unit tests only, one Windows machine). Hook tests also pass through the gate (`KIT_VIA_GATE=1`).
 - OWNER RULE: never spend API tokens (no `claude -p`, no npx claude-code runs, no `claude plugin eval`). `CLAUDE.md` says so.
 - Plan Phase 0 is DONE (2.12.1). Owner decision D1: keep the merged hook runner, with the canary, self-check and fail-closed net.
 - Owner requests since, outside the plan: payment keys (2.12.2), sizing apps to their users (2.13.0), design and accessibility (2.14.0).
 
 ## Recent work, and how far it is verified
+- 2.14.1 (Phase M part A): the researcher and UI reviewer can no longer start other agents, and the researcher can no longer run
+  PowerShell; every agent pins its effort (and a turn limit); the flight log records the model asked for, the model that ran and
+  tokens per agent launch. Unit tests only. NOT verified live: the payload fields `resolvedModel` and `totalTokens` (V15).
 - After 2.14.0 (docs only, no version bump): README rewritten as a short front page with the logo; detail split into `docs/`;
   DOGFOOD.md, VETTED.md, HANDOFF.md and IMPROVEMENT-PLAN.md moved into `docs/`. A test checks every relative link.
 - 2.14.0: vetted MIT design data from ui-ux-pro-max (data only; `docs/vetted.md` says what was left out and why), `style-library.mjs`,
@@ -41,9 +44,11 @@ Rewrite this file at the end of every session; keep it under 55 lines and true.
 - Fake keys in tests must be built from pieces: GitHub push protection refuses key-shaped text written out in full.
 
 ## Do this first next session
-1. Ask the owner the open decisions D2 (tests on GitHub), D3 (how to run the first trial) and D7 (push policy), in one message.
-2. Follow "Order of work" in `IMPROVEMENT-PLAN.md`: P1-1 and P1-2, then update this machine (it was still on 2.6.0) and run
-   the first trial (P1-6), then Phase OC (one-click shipping, from the second audit), then the rest of Phase 2.
+1. Ask the owner the open decisions in one message: D2 (tests on GitHub), D3 (how to run the first trial), D7 (push policy),
+   D11 (Opus for medium, large and risky features) and D12 (never pick Fable by itself).
+2. Follow "Order of work" in `IMPROVEMENT-PLAN.md`: Phase M part A first (M-1 closes a hole: the researcher and UI reviewer can
+   start other agents today), then P1-1 and P1-2, then update this machine (it was still on 2.6.0) and run the first trial
+   (P1-6), then Phase M part B (model routing, the Haiku scout, the investigator), then Phase OC, then the rest of Phase 2.
 3. After any update, ask whether the first session on the new version refused the canary with both shell tools.
 
 ## Rules that must not regress

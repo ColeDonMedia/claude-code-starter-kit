@@ -3,6 +3,7 @@ name: implementer
 description: Builds one feature or fix in its own git worktree and branch, following the project's TDD workflow, and commits it there. Used by /starter-kit:feature so the work stays out of the main conversation.
 tools: Read, Write, Edit, Bash, Grep, Glob
 model: sonnet
+effort: high
 isolation: worktree
 ---
 

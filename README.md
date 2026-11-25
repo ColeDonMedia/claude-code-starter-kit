@@ -120,6 +120,18 @@ download (several hundred MB), `scripts/disk-free.mjs` checks the drive has room
 it doesn't. Limits: the speed check measures the whole build, not one page's first load, and cannot see server speed; real
 phones and slow networks are not tested.
 
+**Going live properly, and staying healthy afterwards.** An agency doesn't launch by pushing a button and hoping. For the first
+public launch `/starter-kit:launch` sets up what they set up, and writes it into `RUNBOOK.md`: separate test and live environments
+with their own keys, deploys that come from git, error tracking, an uptime check that emails you, daily backups that have actually been
+restored once, a rollback that has been practised, the domain and HTTPS, and a cost estimate with spending alerts. A checker
+(`scripts/runbook-check.mjs`) refuses an incomplete runbook: every section must be filled in, the restore test and the rollback
+practice must carry dates, and no secret value may appear. Claude does the technical work and guides you only through what needs
+your hands (creating accounts, adding a payment method), and asks before anything that costs money or goes public. After launch,
+`/starter-kit:maintain` is the monthly visit: updates (major versions are left for you to decide), a security re-check, backup and
+restore dates, errors, speed and cost, logged in `MAINTENANCE.md`. The session start tells Claude when 30 days have passed since the last
+visit, so you don't have to remember. Limits: Claude can't create accounts or pay for you, a restore test needs a real scratch
+database, and the cost figures are estimates from the pricing pages of the day.
+
 **Adversarial review: someone is always trying to prove it wrong.**
 - *The challenger* (`challenger` agent) joins every feature review with one job: assume the work is NOT done and prove it.
   It checks the builder's claims against the files, hunts tests that couldn't fail, missing cases and collateral damage,

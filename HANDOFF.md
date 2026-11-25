@@ -3,9 +3,9 @@
 Read this, then `CLAUDE.md` (how to work on this repo), `README.md` (what the kit does) and `CHANGELOG.md` (history).
 Rewrite this file at the end of every session; keep it under 40 lines and true.
 
-## State at version 2.4.0 (2026-11-24)
+## State at version 2.5.0 (2026-11-24)
 - Public repo `ColeDonMedia/claude-code-starter-kit`, MIT, installed from GitHub; machines self-update daily.
-- The plugin lives in `plugins/starter-kit/`: 14 commands, 7 agents, 11 hooks, helper scripts, ~280 tests.
+- The plugin lives in `plugins/starter-kit/`: 16 commands, 7 agents, 11 hooks, helper scripts, ~290 tests.
 - Everything is unit-tested against real git repositories and (for packages) the live registries.
 
 ## Not verified (be honest about this)
@@ -25,6 +25,8 @@ Rewrite this file at the end of every session; keep it under 40 lines and true.
 - NEVER RUN LIVE: `/accept` and `/status` (the scripts behind them are unit-tested; the conversation flow isn't).
 
 - NEVER RUN LIVE: the browser-test setup (Playwright install, config, screenshots) and the UI reviewer reading screenshots. `perf-budget.mjs` and `disk-free.mjs` are unit-tested.
+
+- NEVER RUN LIVE: `/launch` and `/maintain` (the checks behind them are unit-tested). They need real accounts and a real host, so they will need adjusting on first real use.
 
 ## Known risks
 - The GitHub repo is the source of code that auto-runs on every computer: keep two-factor on for that account.

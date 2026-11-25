@@ -57,7 +57,7 @@ test("session-start: set-up project gets workflow routing and lean mode, not the
     s.put("CLAUDE.md", MANAGED);
     const ctx = contextOf(runHook(SESSION, {}, s.dir));
     assert.match(ctx, /STARTER KIT WORKFLOWS/);
-    for (const cmd of ["spec", "feature", "tdd", "review", "research", "full-scan", "vet", "debug", "audit", "redteam", "status", "accept"]) {
+    for (const cmd of ["spec", "feature", "tdd", "review", "research", "full-scan", "vet", "debug", "audit", "redteam", "status", "accept", "launch", "maintain"]) {
       assert.ok(ctx.includes(`/starter-kit:${cmd}`), `routing should mention /starter-kit:${cmd}`);
     }
     assert.match(ctx, /Never ask the user to type a command/);
@@ -338,6 +338,22 @@ test("session-start: a finished milestone waiting for the owner is called out be
     const done = ["## Milestone 1 — People can sign in", "Accepted: pending", "- [x] Sign in", "  - [x] sign up", ""].join("\n");
     s.put("ROADMAP.md", done);
     assert.match(contextOf(runHook(SESSION, {}, s.dir)), /Milestone 1 \("People can sign in"\) is finished and waiting for the owner's OK: run \/starter-kit:accept/);
+  } finally {
+    s.cleanup();
+  }
+});
+
+test("session-start: a launched app that is overdue for maintenance is called out; a fresh one and an unlaunched one are not", () => {
+  const s = sandbox();
+  try {
+    s.put("package.json", "{}");
+    s.put("CLAUDE.md", MANAGED);
+    assert.doesNotMatch(contextOf(runHook(SESSION, {}, s.dir)), /maintenance/i, "not launched: nothing due");
+    const today = new Date().toISOString().slice(0, 10);
+    s.put("RUNBOOK.md", ["# Runbook", `Launched: ${today}`, ""].join("\n"));
+    assert.doesNotMatch(contextOf(runHook(SESSION, {}, s.dir)), /maintenance is overdue/i, "just launched: not due");
+    s.put("RUNBOOK.md", ["# Runbook", "Launched: 2020-01-01", ""].join("\n"));
+    assert.match(contextOf(runHook(SESSION, {}, s.dir)), /Routine maintenance is overdue: \d+ days since the launch\. Offer to run \/starter-kit:maintain/);
   } finally {
     s.cleanup();
   }

@@ -4,6 +4,17 @@ What changed in each release of the starter-kit plugin, newest first, in plain w
 repository's history. Every release bumps `version` in `plugins/starter-kit/.claude-plugin/plugin.json`; a test
 fails if this file has no entry for the current version.
 
+## [2.5.0] — 2026-11-24
+Operations: launching properly and staying healthy afterwards.
+- New `/launch`: separate test and live environments, git-driven deploys, error tracking, uptime alerts, daily backups that are
+  restored once, a practised rollback, domain and HTTPS, cost estimate with spending alerts, written into `RUNBOOK.md`. Asks before
+  anything that costs money or goes public; secrets never go in the chat or in files.
+- New `scripts/runbook-check.mjs`: every runbook section filled in, the restore test and rollback practice dated, no secret values.
+  The pre-ship scan requires it for a first public launch.
+- New `/maintain` and `scripts/maintenance-due.mjs`: updates through the normal feature pipeline (major versions left for the owner),
+  security re-check, backup and restore dates, errors, speed, cost, logged in `MAINTENANCE.md`. The session start flags a launched
+  app 30+ days since its last maintenance or launch.
+
 ## [2.4.0] — 2026-11-24
 Real-world testing for apps with a screen.
 - `/init` sets up end-to-end browser tests (Playwright, phone 375 px and desktop 1280 px) after checking the drive has room; `CLAUDE.md`

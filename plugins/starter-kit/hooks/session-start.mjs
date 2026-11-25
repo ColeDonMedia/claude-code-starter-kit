@@ -8,6 +8,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { checkRoadmap } from "../scripts/roadmap-check.mjs";
+import { maintenanceStatus } from "../scripts/maintenance-due.mjs";
 
 // The commands call the kit's helper scripts "<SCRIPTS>"; say where that is, as a real path (command text can't be
 // relied on to expand a placeholder).
@@ -66,7 +67,7 @@ const parts = [
     "- Feature or non-trivial bug fix -> /starter-kit:feature. One-file tweak -> /starter-kit:tdd, then /starter-kit:review.\n" +
     "- Unclear bug, error or failing test -> /starter-kit:debug. Competitors, market -> /starter-kit:research.\n" +
     "- Where are we, progress, status -> /starter-kit:status. A milestone is finished -> /starter-kit:accept (the owner tries it) before more building.\n" +
-    "- Ship, release, deploy, publish, push, PR -> /starter-kit:full-scan (hooks block pushes and deploys until it passes).\n" +
+    "- Ship, release, deploy, publish, push, PR -> /starter-kit:full-scan (hooks block pushes and deploys until it passes). First public launch -> /starter-kit:launch after it. Launched app, keep it up to date -> /starter-kit:maintain.\n" +
     "- Secure? harden? existing codebase with users -> /starter-kit:audit. Break it, hack it, red team, pen test, or a first launch handling sign-in, payments or personal data -> /starter-kit:redteam (local copy only).\n" +
     "- A link to a skill, plugin or MCP server, or a request to install one -> /starter-kit:vet first; never install it yourself.\n" +
     "- Never say done, fixed or passing without running the check this turn and quoting it. Commit verified work locally; never push unasked.\n" +
@@ -125,6 +126,20 @@ if (roadmap) {
   } catch {
     /* never let a bad roadmap break session start */
   }
+}
+
+// A launched app needs regular care; say so when it is overdue (30+ days since the last maintenance or the launch).
+try {
+  const m = maintenanceStatus(root);
+  if (m.overdue) {
+    parts.push(
+      m.days === null
+        ? "This app is launched but no maintenance or launch date is recorded. Offer to run /starter-kit:maintain (updates, security, backups, errors)."
+        : `Routine maintenance is overdue: ${m.days} days since ${m.since}. Offer to run /starter-kit:maintain (updates, security, backups, errors).`,
+    );
+  }
+} catch {
+  /* never let this break session start */
 }
 
 if (cfg.lean !== false) {

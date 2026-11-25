@@ -1,48 +1,47 @@
 # Handoff — starter-kit plugin (for the next session, human or bot)
 
-Read this, then `CLAUDE.md` (how to work on this repo), `README.md` (what the kit does) and `CHANGELOG.md` (history).
-Rewrite this file at the end of every session; keep it under 50 lines and true.
+Read this, then `IMPROVEMENT-PLAN.md` (the work list), `CLAUDE.md` (how to work on this repo) and `CHANGELOG.md` (history).
+Rewrite this file at the end of every session; keep it under 55 lines and true.
 
 ## State at version 2.12.0 (2026-11-25)
-- Public repo `ColeDonMedia/claude-code-starter-kit`, MIT, installed from GitHub; machines self-update daily.
-- `plugins/starter-kit/`: 21 commands, 7 agents, 12 hook scripts (gate.mjs runs the rest), helper scripts, ~385 tests (all unit tests, local only).
-- OWNER RULE: never spend API tokens (no `claude -p`, no npx claude-code runs). Live trials are run by the owner in a
-  normal session (`DOGFOOD.md`); read the flight report afterwards (`/dogfood`).
-- This session added: 2.7 flight recorder, taste bar, decisions memory; 2.8 drift/compaction/checkpoints/stalls;
-  2.9 code index, impact, scoped tests, `/onboard`; 2.10 database guard, migration check, rehearsal, `/db`;
-  2.11 schema map, architecture map, linked notes with decision status (Obsidian export);
-  2.12 speed budget, speed test template, delivery/API checks, `/speed`, and ONE merged hook process (`hooks/gate.mjs`).
+- Public repo, MIT, installed from GitHub. Auto-update checks once per 24 hours at session start, in the background; a new
+  version takes effect on the session AFTER that (a single restart is not enough).
+- `plugins/starter-kit/`: 20 commands, 7 agents, 12 hook scripts (`gate.mjs` runs the rest), 33 helper scripts, 379 tests
+  (378 pass, 1 skipped; unit tests only, run on one Windows machine).
+- OWNER RULE: never spend API tokens (no `claude -p`, no npx claude-code runs, no `claude plugin eval`). One line in
+  `CLAUDE.md` still says to test with a headless run: IGNORE IT (plan task P0-2 removes it).
+- An audit on 2026-11-25 produced `IMPROVEMENT-PLAN.md`: 20 findings with evidence, then tasks in phases 0 to 4.
+
+## Confirmed bugs, found live (fix first: Phase 0 of the plan)
+- The `challenger` and `security-reviewer` agents load with no description and ALL tools: unquoted `: ` in their YAML.
+- No guard sees the PowerShell tool. On Windows every protection can be bypassed by using it instead of Bash.
+- Subagents are told to run `<plugin>/scripts/…` and nothing tells them where that is.
+- Since 2.7.0 every tool call (Read, Grep, Glob too) starts Node twice: about 0.6 s of added wait per call on Windows.
+- The push gate's "passed" marker is written by Claude from a prose instruction.
+- The approval-file rule blocks any command that merely mentions the file's name.
 
 ## What was verified, and how
-- Code index: read-only on a real 9.2M-line Python install (31k files; impact and hubs correct; 3.5 min first build;
-  ~30 s re-index outside git on Windows, ~2 s for 10k committed files thanks to git hashes).
-- Long builds: a simulated 50-session project (session note flat, nothing lost, checkpoints on time, drift caught).
-- Databases: real SQLite with 100k users / 200k orders (missing index found, fix proven, original file untouched).
-  No Postgres or MySQL on this machine: the Postgres plan parser is tested on sample `EXPLAIN` JSON only.
-- Database guard: 16 deny, 14 allow, 7 ask cases. Expect real-world commands it misreads; add them to `db.test.mjs` first.
-
-- Gate: all 225 hook tests also pass through `gate.mjs` (`KIT_VIA_GATE=1`); merged is ~10-30% faster per shell command (Node start is ~0.3 s here).
+- Hook tests: all 225 also pass through `gate.mjs` (`KIT_VIA_GATE=1`). Merged is about 470 ms against 540 ms per shell command.
+- Code index: read-only on a real 9.2M-line Python install (correct impact and hubs; 3.5 min first build).
+- Long builds: a simulated 50-session project. Databases: real SQLite with 100k users and 200k orders.
+- Live in a real session: the safety guard denied a command twice (once correctly placed, once a false alarm).
 
 ## Not verified (be honest about this)
-- BIGGEST RISK: `hooks.json` now starts only `gate.mjs`. If the gate misbehaves inside real Claude Code (it swaps process.stdin/exit/stdout in-process), EVERY guard fails open. First thing next live session: confirm a guard still fires (try a harmless blocked command). Rollback = the 2.11.0 `hooks.json` in git history.
-- NEVER RUN LIVE: `templates/speed.spec.js` (Playwright not installed here), `speed-check`, `/speed`; `api-check` and `delivery-check` are pattern screens tested on synthetic code only.
-- The full pipeline (plan, research, multi-feature build, ship) has never run end to end live. Only the safety guard has
-  been seen firing in a live session; every other hook is tested with Claude Code's payload shape.
-- NEVER RUN LIVE: red-team, challenger, `/redteam`, `/accept`, `/status`, `/launch`, `/maintain`, `/legal`, `/dogfood`,
-  `/onboard`, `/db`, browser tests, the UI reviewer's scoring, scoped tests and impact checks inside `/feature`, the
-  session-start drift/checkpoint/stall warnings, the flight recorder (does `tool_use_id` arrive? does `Stop` fire for subagents?).
-- Whether command text expands `${CLAUDE_PLUGIN_ROOT}` is unknown (commands use `<SCRIPTS>`; the session note gives the path).
-- NEVER RUN LIVE: schema-map, arch-map, notes-graph in a real project (tested on synthetic repos; arch-map also read-only on npm's source). Schema parsing covers common SQL; Django/Alembic/Knex need a local DB copy.
-- The code index is pattern-based: dynamic imports, reflection, dependency injection and generated code are missed.
-- The database guard reads commands only: an app or script that connects by itself is not seen.
+- Nothing has run end to end. No trial in `DOGFOOD.md` has been run. Every workflow command, every agent, the flight
+  recorder, the session-start warnings, the speed test template (Playwright not installed) and the merged hook runner have
+  never been watched inside Claude Code.
+- If `gate.mjs` breaks in real use, every guard and the session note stop at once and nothing says so (plan task P0-6).
+- macOS and Linux: untested. Postgres and MySQL: only the plan parser is tested, on sample output.
+- The code index, the API check and the migration check match patterns; they are screens, not proof.
+- Open questions about Claude Code's own behaviour are listed in the plan under "Verify against the docs".
 
 ## Known risks
-- The GitHub repo is the source of code that auto-runs on every computer: keep two-factor on for that account.
+- The GitHub repo is the source of code that auto-runs on every computer, straight from `main`: keep two-factor on.
 - Third-party skills are never bundled; `VETTED.md` lists what was reviewed (commits pinned).
 
 ## Do this first next session
-1. The owner runs trial 1 from `DOGFOOD.md`; read its flight report, fix what broke, log it in `DOGFOOD.md`.
-2. Watch for false positives from the guards (safety, package, secret, database, docs); loosen rules with tests.
+1. Do Phase 0 of `IMPROVEMENT-PLAN.md` as release 2.12.1, in the order written. Ask the owner decision D1 first.
+2. Then Phase 1. Do not start Phase 2 until one trial run has happened.
 
 ## Rules that must not regress
 - Nothing from a project's own files may run or take effect without the user's approval on this computer (see `CLAUDE.md`).

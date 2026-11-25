@@ -32,6 +32,11 @@ brief and in the project's files.
    build every state, not just the happy one (empty, loading, error, success); make it work at phone width
    (about 375px) and desktop; every input needs a label, everything must work by keyboard, and text contrast
    must be at least 4.5:1. Handle bad input and failed requests with a message a person can understand.
+   If CLAUDE.md lists an "End-to-end (browser) tests" command, every feature a user can see or click gets an end-to-end test for
+   its user-facing criteria: the test opens the running app, does what a person would do, and checks what they would see,
+   at the phone (375 px) and desktop (1280 px) sizes. Save a screenshot of each state to `.claude/screens/<feature>/` for the
+   reviewers, and map the criterion to it as `→ test: e2e/<file>::<test name>`. If CLAUDE.md names a "Speed budget", run
+   `node "<plugin>/scripts/perf-budget.mjs" --dir <build folder>` after building and fix anything over budget before reporting.
    Secure by default, every time (these are the mistakes that become breaches):
    - Check who is asking on every endpoint, action and query: authenticate, then authorize (can THIS user touch THIS
      record?). Never trust an id, role, price or flag sent by the browser.

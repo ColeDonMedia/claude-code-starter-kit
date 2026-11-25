@@ -111,6 +111,15 @@ prove a test is a *good* test; the reviewer reads the test for that.
 - *Status report:* ask "where are we?" (`/starter-kit:status`) for progress, what's next, the rough forecast, risks, and
   exactly what Claude needs from you. Every line is built from the project's files and git history by a script.
 
+**Real-browser tests, screenshots and a speed budget.** For apps with a screen, setup installs Playwright and creates end-to-end
+tests that open the running app and click through it at phone (375 px) and desktop (1280 px) sizes. Every feature a person can see
+gets one, mapped to its acceptance criteria. Each test saves screenshots, and the UI reviewer opens the images and judges what a
+person would actually see, state by state. A speed check (`scripts/perf-budget.mjs`) totals the compressed size of the build and
+fails over a budget (JavaScript 300 KB, CSS 100 KB, any one image 500 KB by default), naming the biggest files. Before the browser
+download (several hundred MB), `scripts/disk-free.mjs` checks the drive has room and the install moves to another drive when
+it doesn't. Limits: the speed check measures the whole build, not one page's first load, and cannot see server speed; real
+phones and slow networks are not tested.
+
 **Adversarial review: someone is always trying to prove it wrong.**
 - *The challenger* (`challenger` agent) joins every feature review with one job: assume the work is NOT done and prove it.
   It checks the builder's claims against the files, hunts tests that couldn't fail, missing cases and collateral damage,

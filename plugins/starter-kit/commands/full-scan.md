@@ -23,7 +23,10 @@ Run the full pre-ship sweep using the commands listed under "Commands" in CLAUDE
    For that first launch of anything with sign-in, payments, personal data or uploads, also run `/starter-kit:redteam`
    (it attacks a local copy and checks the tests with mutation testing): a launch is blocked while any critical or
    high break it found is unfixed, and a low mutation score on the main logic is reported to the user.
-8. The owner's acceptance: run `node "<SCRIPTS>/roadmap-check.mjs" --project . --acceptance`. If any finished milestone is
+8. Real-browser tests and speed, only for projects with a browser UI: run CLAUDE.md's "End-to-end (browser) tests" command and,
+   if it names a "Speed budget", build and run `node "<SCRIPTS>/perf-budget.mjs" --dir <build folder>` (add its limits as flags).
+   A failing end-to-end test or an over-budget build blocks shipping; say in plain words which page or file and what to do.
+9. The owner's acceptance: run `node "<SCRIPTS>/roadmap-check.mjs" --project . --acceptance`. If any finished milestone is
    still waiting for the owner's OK, stop and run `/starter-kit:accept` first: nothing ships that its owner has not tried.
 
 Choosing what "since the last ship" means (never use a plain diff against the current branch — after
@@ -40,7 +43,7 @@ Rules:
 - If the project genuinely has no command for a step (for example no typecheck in a shell-script
   project), report that step as "not applicable" with the reason. Do not silently skip it.
 - Report each step's real output.
-- Ship only when every applicable step is green AND security-reviewer returns APPROVE (and step 7 has no FAIL and step 8 has nothing waiting).
+- Ship only when every applicable step is green AND security-reviewer returns APPROVE (and step 7 has no FAIL, step 8 is green, and step 9 has nothing waiting).
   If anything fails, fix it and re-run the full sweep.
 
 When — and only when — every applicable step is green and security-reviewer returned APPROVE, record it

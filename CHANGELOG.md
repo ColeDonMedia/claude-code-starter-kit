@@ -4,6 +4,16 @@ What changed in each release of the starter-kit plugin, newest first, in plain w
 repository's history. Every release bumps `version` in `plugins/starter-kit/.claude-plugin/plugin.json`; a test
 fails if this file has no entry for the current version.
 
+## [2.4.0] — 2026-11-24
+Real-world testing for apps with a screen.
+- `/init` sets up end-to-end browser tests (Playwright, phone 375 px and desktop 1280 px) after checking the drive has room; `CLAUDE.md`
+  records the "End-to-end (browser) tests" command and a "Speed budget".
+- Builder writes an end-to-end test for every user-visible feature, saves screenshots to `.claude/screens/`, and maps criteria to
+  `e2e/...` tests; the UI reviewer opens the screenshots and judges what a person would see, state by state.
+- New `scripts/perf-budget.mjs`: compressed size of the build against budgets (JS 300 KB, CSS 100 KB, image 500 KB, total 2000 KB),
+  naming the biggest files; ignores source maps. New `scripts/disk-free.mjs`: is there room for a big install, with a tight/not-enough answer.
+- The pre-ship scan runs the browser tests and the speed budget and blocks on failure; the plan names the user journeys that become tests.
+
 ## [2.3.0] — 2026-11-24
 Project-management discipline: success measures, estimates, risks, change control, milestone sign-off, status reports.
 - The plan now has measurable success goals, sized features (`[S]` `[M]` `[L]`), the top five risks with plans, and

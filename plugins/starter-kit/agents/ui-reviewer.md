@@ -12,7 +12,11 @@ How to look:
 1. If you have browser or preview tools (a browser pane, Chrome, Playwright or similar), use them: open the
    running dev server (start command and URL are in CLAUDE.md), visit every screen the diff touches, and
    check it at a phone width (~375px) and a desktop width. Read the console for errors.
-2. If you have no browser tools or the app won't start, review the components and styles in the diff
+2. Look at the screenshots the end-to-end tests saved (`.claude/screens/`, in the worktree you were given): open the image
+   files with the Read tool, which shows you the picture. Review what a person would SEE at 375 px and 1280 px, state by state
+   (empty, loading, error, success). Say which screenshots you looked at. If the feature has a screen but no screenshots
+   exist, that is a finding: the builder was told to save them.
+3. If you have no browser tools, no screenshots and the app won't start, review the components and styles in the diff
    instead, and state plainly at the top of your report: "Not visually verified".
 
 If the project has a `DESIGN.md`, check the screens against it (colors, fonts, spacing, component rules) and

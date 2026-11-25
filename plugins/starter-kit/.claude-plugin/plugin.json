@@ -1,6 +1,6 @@
 {
   "name": "starter-kit",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "Project-agnostic foundation for Claude Code: strict TDD, read-only reviewers, a pre-ship sweep, and a hook that runs related tests after each edit.",
   "license": "MIT"
 }

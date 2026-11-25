@@ -79,6 +79,9 @@ and desktop widths. Use the project's existing design system if it has one. Ever
 - **Roadmap** — 3 to 10 features in build order, smallest useful version first, each with its criteria and a size
   (`[S]` a few hours of work, `[M]` about a day, `[L]` several days: your honest guess, labelled as a guess), grouped
   into milestones of about three features. Each milestone ends with the user trying it and saying whether it is what they wanted.
+- **Real-world checks** — for anything with a screen: the three to five user journeys that must always work (sign up,
+  sign in, the core action) will be end-to-end tests that click through the running app at phone and desktop sizes, and the
+  app gets a speed budget (how big the download may be). Say so in the plan.
 - **Biggest risks** — the top five, each with what would trigger it and what you'd do (a service that may refuse
   approval, a hard feature, a cost that could grow, a rule that may apply, something only the user can supply)
 - **Not now** — what is deliberately left for later

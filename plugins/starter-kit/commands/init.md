@@ -31,7 +31,7 @@ Merge into the existing file if there is one; never drop existing entries.
   the install, test, typecheck, lint and build commands you found (as `Bash(<command>:*)`), plus
   `Bash(git status:*)`, `Bash(git diff:*)`, `Bash(git log:*)`. Add them only if the user says yes.
 Add these lines to `.gitignore` (skip any already present): `.claude/settings.local.json`,
-`.claude/worktrees/`, `.claude/last-full-scan`, `.claude/last-verified`, `.claude/last-docs-check`, and the secret files: `.env`, `.env.*`,
+`.claude/worktrees/`, `.claude/last-full-scan`, `.claude/last-verified`, `.claude/last-docs-check`, `.claude/screens/`, `e2e/test-results/`, `playwright-report/`, and the secret files: `.env`, `.env.*`,
 `*.pem`, `*.key`, `*.p12`, `*.pfx`, `credentials.json`. Then un-ignore only the templates with
 `!.env.example` (they hold no real values). Never put real keys or passwords in a tracked file: store them in
 `.env` (ignored) or the host's secret manager, and read them from the environment in code.
@@ -93,8 +93,22 @@ Adapt the setup and commands to the detected stack and leave out any step the pr
 add a third-party action. Tell the user the free protections they can switch on in GitHub's settings (secret
 scanning with push protection, Dependabot alerts) and that two-factor sign-in on their account matters most.
 
-## 9. Preview (only for projects with a web UI)
+## 9. Preview and real-browser tests (only for projects with a web UI)
 Create `.claude/launch.json` with the real dev command and port, so the app can be opened and looked at.
+
+Then set up end-to-end tests that open the real app in a browser and click through it, at phone and desktop sizes. Unit
+tests can all pass while the page is broken; this is what catches that.
+- First check there is room: `node "<SCRIPTS>/disk-free.mjs" --path . --need-mb 800`. The browser download is several hundred
+  megabytes. If it says NOT ENOUGH or TIGHT, tell the user in plain words and put the browsers on a drive with space
+  (set `PLAYWRIGHT_BROWSERS_PATH` to a folder there) instead of letting the install fail halfway.
+- Use Playwright (JavaScript or TypeScript projects: add `@playwright/test` as a dev dependency, then `npx playwright install chromium`; the package guard vets
+  the install). Other stacks: Playwright for Python, or the project's own browser-test tool.
+- Create `e2e/` with `playwright.config.*` that has two projects, a phone (375 x 812) and a desktop (1280 x 800), and a
+  `webServer` that starts the app with the dev command. Save screenshots under `.claude/screens/` (git-ignored) so reviewers can look at them.
+- Record the command in CLAUDE.md as `End-to-end (browser) tests: <command>` and put the build folder and limits in
+  `Speed budget:` (see the template). Add the e2e command to the GitHub checks workflow.
+- Write ONE smoke test now: the home page loads at both sizes and shows no console errors. `/starter-kit:feature` adds more per feature.
+Skip all of this, and write `none` in CLAUDE.md, for projects with no browser UI (a command-line tool, a library, an API only).
 
 ## 10. The project's memory: three short documents
 Create these if missing (never overwrite ones that exist), fill what you know and leave `TODO` for the rest. Any
@@ -164,6 +178,8 @@ Commit the new files locally. Then carry on with whatever the user originally as
 - Typecheck / static analysis: <command or "none">
 - Lint: <command or "none">
 - Build: <command or "none">
+- End-to-end (browser) tests: <command, or "none" if there is no browser UI>
+- Speed budget: <build folder and limits for `perf-budget.mjs`, e.g. dist (JS 300 KB, CSS 100 KB, images 500 KB each), or "none">
 
 # Workflow — TDD mode: strict
 <!-- Change "strict" to "relaxed" for prototypes: tests are then written alongside the code, not first. -->

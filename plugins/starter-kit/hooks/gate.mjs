@@ -3,7 +3,7 @@
 // roughly 0.7 s. This runs the same individual hook scripts inside one process (see scripts/inprocess.mjs), in order:
 //   pre   (before any tool)   flight recorder; for shell commands: safety, database, secret, push, package guards;
 //                             for file edits: file guard; for agent launches: the model check. The first block ends the run.
-//   post  (after any tool)    flight recorder; after file edits: related tests.
+//   post  (after any tool)    flight recorder; after file edits: related tests; after shell commands: quiet output.
 //   stop  (a turn ends)       flight recorder, verify gate, docs gate.
 //   start (a session starts)  session note (startup, clear, compact), flight recorder, auto-update (startup only).
 //   subagent (one starts)     tells starter-kit subagents where the kit's scripts are.
@@ -25,9 +25,10 @@ export function pipeline(mode, input) {
   const isEdit = ["Edit", "Write", "MultiEdit"].includes(tool) || (!tool && typeof ti.file_path === "string" && typeof ti.command !== "string");
   const isAgent = tool === "Agent" || tool === "Task";
   if (mode === "pre") return ["flight-recorder", ...(isShell ? ["safety-guard", "db-guard", "secret-guard", "push-gate", "package-guard"] : isEdit ? ["file-guard"] : isAgent ? ["agent-route"] : [])];
-  if (mode === "post") return ["flight-recorder", ...(isEdit ? ["test-related"] : [])];
+  if (mode === "post") return ["flight-recorder", ...(isEdit ? ["test-related"] : isShell ? ["quiet-output"] : [])];
   if (mode === "stop") return ["flight-recorder", "verify-gate", "docs-gate"];
-  if (mode === "start") return [...(["startup", "clear", "compact", undefined].includes(input?.source) ? ["session-start"] : []), "flight-recorder", ...(input?.source === "startup" ? ["auto-update"] : [])];
+  // A resumed or forked chat already holds the note; session-start then only says what resuming costs, when it is worth saying.
+  if (mode === "start") return [...(["startup", "clear", "compact", "resume", "fork", undefined].includes(input?.source) ? ["session-start"] : []), "flight-recorder", ...(input?.source === "startup" ? ["auto-update"] : [])];
   if (mode === "subagent") return ["subagent-start"];
   if (mode === "substop") return ["scout-check"];
   return [];

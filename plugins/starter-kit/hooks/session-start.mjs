@@ -7,7 +7,8 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { dataDir } from "../scripts/trust-lib.mjs";
+import { createHash } from "node:crypto";
+import { dataDir, projectKey } from "../scripts/trust-lib.mjs";
 import { remoteDbHosts } from "../scripts/db-lib.mjs";
 import { checkRoadmap } from "../scripts/roadmap-check.mjs";
 import { maintenanceStatus } from "../scripts/maintenance-due.mjs";
@@ -21,6 +22,7 @@ import { readLog } from "../scripts/flight-lib.mjs";
 // loads them. Say the real folder too, so a session can still find them if that ever does not happen, and so it can pass the
 // folder on to the agents it briefs.
 const SCRIPTS = fileURLToPath(new URL("../scripts", import.meta.url));
+const RESUME_TOKENS = 150_000; // above this, a resumed chat with an expired cache is worth a word to the owner
 const WHERE = `Kit scripts (\${CLAUDE_PLUGIN_ROOT}/scripts): ${SCRIPTS}. Include it in every starter-kit agent's brief.`;
 
 let raw = "";
@@ -53,6 +55,19 @@ const emit = (additionalContext) => {
   process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: "SessionStart", additionalContext } }));
   process.exit(0);
 };
+
+// A resumed chat already holds the note; it only needs to hear what resuming costs. After a pause the prompt cache has expired,
+// so the whole history is charged in full again, on every message.
+if (input.source === "resume" || input.source === "fork") {
+  const tokens = Number(input.context_tokens);
+  if (input.prompt_cache_likely_expired === true && Number.isFinite(tokens) && tokens > RESUME_TOKENS) {
+    emit(
+      `RESUMED CHAT: this conversation re-sends about ${Math.round(tokens / 1000)}K tokens with every message now that its cache has expired. ` +
+        "Tell the owner in one plain sentence that a new chat picks up from the project's records for much less, and offer to compact this one if they would rather stay.",
+    );
+  }
+  process.exit(0);
+}
 
 const MANIFESTS = ["package.json", "pyproject.toml", "requirements.txt", "go.mod", "Cargo.toml", "Gemfile", "pom.xml", "build.gradle", "composer.json", "Makefile"];
 const looksLikeProject = existsSync(join(root, ".git")) || MANIFESTS.some((m) => existsSync(join(root, m)));
@@ -185,6 +200,19 @@ if (roadmap) {
 const sessionModel = typeof input.model === "string" ? input.model : typeof input.model?.id === "string" ? input.model.id : "";
 if (roadmap && /haiku/i.test(sessionModel)) {
   parts.push("MODEL: this conversation runs on Haiku, and planning, debugging and database work happen here. Suggest once, in one plain sentence, that the owner switches to a stronger model (Opus) for this project.");
+}
+// Fable costs about twice Opus: right for planning a big app or a hard problem, rarely needed for the build itself. Said once per project.
+if (roadmap && /fable|mythos/i.test(sessionModel) && /^[-*] \[ \] /m.test(roadmap)) {
+  const marker = join(dataDir(), "notices", `${createHash("sha1").update(projectKey(root)).digest("hex").slice(0, 12)}-fable`);
+  if (!existsSync(marker)) {
+    parts.push("MODEL: this conversation runs on Fable, about twice the usage of Opus. Fine for planning or a hard problem; suggest once, in one plain sentence, that the owner uses Opus for building the roadmap.");
+    try {
+      mkdirSync(join(dataDir(), "notices"), { recursive: true });
+      writeFileSync(marker, new Date().toISOString());
+    } catch {
+      /* the note may repeat next time; harmless */
+    }
+  }
 }
 
 // A project being built with no size on record: the plan never asked how many people it is for (projects planned before 2.13).

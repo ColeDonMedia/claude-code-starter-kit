@@ -226,6 +226,16 @@ test("every workflow that launches a routed agent asks model-route.mjs first, an
   assert.ok(words <= 650, `challenger.md is ${words} words`);
 });
 
+test("token savings stay in the instructions: re-review only the fix, edit instead of rewriting, a small CLAUDE.md template", () => {
+  const feature = readFileSync(join(PLUGIN, existsSync(join(PLUGIN, "workflows", "feature.md")) ? "workflows" : "commands", "feature.md"), "utf8");
+  assert.match(feature, /only the fix, and only by the reviewers that objected/);
+  assert.match(readFileSync(join(PLUGIN, "agents", "implementer.md"), "utf8"), /small edits; write a whole file only when/);
+  assert.match(readFileSync(join(PLUGIN, "commands", "tdd.md"), "utf8"), /small edits rather than rewriting/);
+  // every agent launch re-reads the project's CLAUDE.md: keep the template init writes far under the official 200-line advice
+  const blocks = [...readFileSync(join(PLUGIN, "commands", "init.md"), "utf8").matchAll(/```markdown\n([\s\S]*?)```/g)].map((m) => m[1].split("\n").length);
+  assert.ok(Math.max(...blocks) <= 80, `the longest CLAUDE.md template block is ${Math.max(...blocks)} lines`);
+});
+
 test("every agent pins its effort, and turn limits are whole numbers", () => {
   for (const n of agentNames) {
     const head = frontmatter(readFileSync(join(PLUGIN, "agents", `${n}.md`), "utf8"));

@@ -15,6 +15,7 @@ Install only what you need. Official Anthropic plugins first, since Anthropic ma
 | Reviewing pull requests | `code-review`, `pr-review-toolkit` | official marketplace |
 | Real-browser testing and screenshots | `playwright` (MCP) | official marketplace |
 | Current library docs, so code uses real APIs | `context7` (MCP, runs an npm package via `npx`) | official marketplace |
+| Fewer file reads in typed languages (TypeScript, Python, Go, Rust, Java, C#) | the code-intelligence (language server) plugin for your language | official marketplace; Anthropic's cost advice recommends them |
 | Spec-driven development (heavier than `/spec`) | GitHub Spec Kit | github/spec-kit |
 
 Eighteen third-party repositories were cloned, scanned and read; results, pinned commits and cautions are in the

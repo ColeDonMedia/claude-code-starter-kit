@@ -9,7 +9,9 @@ finished). It holds no code, prompts or secrets and lives outside the project. N
 
 1. Run `node "${CLAUDE_PLUGIN_ROOT}/scripts/doctor.mjs" --project .` (is the kit able to run here at all?), then run the shell command
    `starter-kit-canary` with each shell tool you have: it must be blocked with "canary ok". If either fails, that is the first finding.
-   Then run `node "${CLAUDE_PLUGIN_ROOT}/scripts/flight-report.mjs" --project .` (add `--all` to include earlier sessions). Read it as it is.
+   Then run `node "${CLAUDE_PLUGIN_ROOT}/scripts/flight-report.mjs" --project .` (add `--all` to include earlier sessions). Read it as it is,
+   including its usage lines (tokens per model, shortened output, rewrites). Run `doctor.mjs --project . --plugins` too, and tell the
+   owner which other plugins load into every session here.
 2. Compare with what should have happened for what the user asked: a new app should show spec, then feature runs with the implementer,
    reviewer and challenger agents, then accept at each milestone and full-scan before any push. Anything else is a gap.
 3. For each gap and each action that was blocked or never finished, find out why: read the relevant command, hook or guard.

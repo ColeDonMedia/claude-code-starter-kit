@@ -104,11 +104,13 @@ test("pipeline: which hooks run for which events", () => {
   assert.deepEqual(pipeline("pre", { tool_name: "Edit", tool_input: { file_path: "a" } }), ["flight-recorder", "file-guard"]);
   assert.deepEqual(pipeline("pre", { tool_name: "Read", tool_input: { file_path: "a" } }), ["flight-recorder"]);
   assert.deepEqual(pipeline("post", { tool_name: "Write", tool_input: { file_path: "a" } }), ["flight-recorder", "test-related"]);
-  assert.deepEqual(pipeline("post", { tool_name: "Bash", tool_input: { command: "ls" } }), ["flight-recorder"]);
+  assert.deepEqual(pipeline("post", { tool_name: "Bash", tool_input: { command: "ls" } }), ["flight-recorder", "quiet-output"]);
+  assert.deepEqual(pipeline("post", { tool_name: "PowerShell", tool_input: { command: "npm test" } }), ["flight-recorder", "quiet-output"]);
+  assert.deepEqual(pipeline("pre", { tool_name: "Agent", tool_input: { subagent_type: "x" } }), ["flight-recorder", "agent-route"]);
   assert.deepEqual(pipeline("stop", {}), ["flight-recorder", "verify-gate", "docs-gate"]);
   assert.deepEqual(pipeline("start", { source: "startup" }), ["session-start", "flight-recorder", "auto-update"]);
   assert.deepEqual(pipeline("start", { source: "clear" }), ["session-start", "flight-recorder"]);
-  assert.deepEqual(pipeline("start", { source: "resume" }), ["flight-recorder"]);
+  assert.deepEqual(pipeline("start", { source: "resume" }), ["session-start", "flight-recorder"]); // only the resume-cost line, when due
   assert.deepEqual(pipeline("subagent", { agent_type: "starter-kit:reviewer" }), ["subagent-start"]);
 });
 

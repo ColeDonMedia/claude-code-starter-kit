@@ -57,6 +57,7 @@ export function modelUse(events) {
   const rounds = [];
   const scout = { runs: 0, ok: 0, bad: 0 };
   const misses = [];
+  const savings = { rewrites: 0, quiet: 0, linesIn: 0, linesKept: 0, compactions: 0, conductor: {} };
   for (const e of events) {
     const isAgent = e.tool === "Agent" || e.tool === "Task";
     if (e.ev === "try" && isAgent && e.agent) {
@@ -73,8 +74,16 @@ export function modelUse(events) {
       scout.ok += Number(e.ok) || 0;
       scout.bad += Number(e.bad) || 0;
     }
+    if (e.ev === "try" && e.tool === "Write" && e.rw) savings.rewrites++;
+    if (e.ev === "quiet") {
+      savings.quiet++;
+      savings.linesIn += Number(e.lines) || 0;
+      savings.linesKept += Number(e.kept) || 0;
+    }
+    if (e.ev === "compact") savings.compactions++;
+    if (e.ev === "conductor" && e.res) savings.conductor[e.res] = (savings.conductor[e.res] ?? 0) + 1;
   }
-  return { asked, tokens, rounds, scout, misses };
+  return { asked, tokens, rounds, scout, misses, savings };
 }
 
 // A build is stalled when the same roadmap item has been "next" at the start of `sessions` sessions in a row, or when one
@@ -113,6 +122,11 @@ export function report(events, { all = false } = {}) {
   if (m.rounds.length) lines.push(`Review rounds per build: ${m.rounds.join(", ")}`);
   if (m.scout.runs) lines.push(`Scout reports checked: ${m.scout.runs}; pointers ${m.scout.ok} good, ${m.scout.bad} wrong`);
   if (m.misses.length) lines.push(`Files builders had to find for themselves: ${m.misses.join(", ")}`);
+  const sv = m.savings;
+  if (sv.quiet) lines.push(`Noisy output shortened: ${sv.quiet} time(s), ${sv.linesIn.toLocaleString("en-US")} lines down to ${sv.linesKept.toLocaleString("en-US")}`);
+  if (sv.rewrites) lines.push(`Whole-file rewrites of existing files: ${sv.rewrites}`);
+  if (sv.compactions) lines.push(`Conversation compactions: ${sv.compactions}`);
+  if (Object.keys(sv.conductor).length) lines.push(`Feature runs in their own context: ${fmt(sv.conductor)}`);
   const st = stallStatus(events);
   if (st.stalled) a.notes.push(...st.msgs.map((m) => m + "."));
   lines.push(a.notes.length ? "Look at:\n" + a.notes.map((n) => `- ${n}`).join("\n") : "Nothing looks off.");

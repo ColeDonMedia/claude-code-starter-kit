@@ -9,7 +9,8 @@ stop and suggest running `/starter-kit:init` first.
 
 1. RED: write the failing test first. Run it. Show the output and confirm it FAILS for the right reason
    (the behavior is missing — not a typo or import error).
-2. GREEN: write the minimum code to make it pass. Show the passing output.
+2. GREEN: write the minimum code to make it pass, changing existing files with small edits rather than rewriting them. Show the
+   passing output.
 3. REFACTOR: clean up without changing behavior. Re-run the tests.
 
 When it's green and reviewed, commit it locally with a clear message (never push unless asked), then keep the

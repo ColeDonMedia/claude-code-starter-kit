@@ -66,7 +66,10 @@ If a reviewer says CHANGES REQUESTED:
   existing worktree. Do not launch a fresh implementer: that would create a second, empty worktree.
 - If the original implementer can't be resumed, launch a new one and tell it to ignore the worktree it
   was given, and instead work in the existing WORKTREE path on the existing BRANCH.
-- Then review again. If round 2 still fails, run model-route.mjs with `--attempt 3`: if it names a stronger model than the
+- Then review again, but only the fix, and only by the reviewers that objected: give each `git diff <the commit it reviewed>..BRANCH`
+  and its own earlier findings, to confirm each is resolved and that the fix broke nothing that depends on it. A reviewer that
+  approved is not re-run, except that a fix touching a risky area (the list above) also goes to the security reviewer, and a fix
+  larger than the original change is reviewed as new. The full suite still runs on the final commit. If round 2 still fails, run model-route.mjs with `--attempt 3`: if it names a stronger model than the
   builder had, start a new implementer on it in the existing WORKTREE and BRANCH (as above) with every finding so far. If that
   round fails too, or the model is no stronger, stop and ask the user.
 

@@ -48,6 +48,14 @@ else if (ev === "PreToolUse" || ev === "PostToolUse") {
   const ti = input.tool_input ?? {};
   Object.assign(e, { ev: ev === "PreToolUse" ? "try" : "ok", tool: input.tool_name, id: input.tool_use_id });
   if (input.tool_name === "Skill") e.skill = ti.skill ?? ti.name;
+  // Writing a whole existing file out again costs far more than editing it: count it (a 1, never the path).
+  if (ev === "PreToolUse" && input.tool_name === "Write" && typeof ti.file_path === "string") {
+    try {
+      if (existsSync(resolve(input.cwd || root, ti.file_path))) e.rw = 1;
+    } catch {
+      /* unreadable path: not counted */
+    }
+  }
   if (input.tool_name === "Agent" || input.tool_name === "Task") {
     // Which model was asked for, which one ran and how many tokens it used: names and numbers only, never the prompt.
     e.agent = ti.subagent_type;

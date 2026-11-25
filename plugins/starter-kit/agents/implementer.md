@@ -88,8 +88,9 @@ brief and in the project's files.
    them; when it prints FULL SUITE, run the full suite), and say in your report that the run was scoped and why. Before changing a
    function, type or file that other code uses, run `node "${CLAUDE_PLUGIN_ROOT}/scripts/code-index.mjs" --project . --impact <file>` and update the
    dependents it lists in the same change; find where things live with `--find <name>` instead of reading folders.
-7. Commit your work on your branch with a clear message. Never push, never merge, never switch the main
-   checkout's branch.
+7. Change existing files with small edits; write a whole file only when it is new or most of it really changes (rewriting costs
+   far more and invites accidental changes). Commit on your branch each time an acceptance criterion's test passes, with a clear
+   message, so a cut-off loses minutes, not the feature. Never push, never merge, never switch the main checkout's branch.
 
 If the brief is ambiguous or you hit something you cannot resolve, stop and report it instead of guessing.
 If the brief has "Start here" pointers, read the code they name first and search for yourself where they fall short; end your

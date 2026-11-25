@@ -4,6 +4,21 @@ What changed in each release of the starter-kit plugin, newest first, in plain w
 repository's history. Every release bumps `version` in `plugins/starter-kit/.claude-plugin/plugin.json`; a test
 fails if this file has no entry for the current version.
 
+## [2.16.0] — 2026-11-25
+Token savings that cost no code quality (plan Phase S, part A).
+- **Noisy output is shortened, enforced.** When a test run, install or build succeeds and prints more than 120 lines, Claude now
+  gets the start, every failure line with two lines of context, and the summary, instead of thousands of lines. The full output is
+  saved in `.claude/logs/` (a folder that ignores itself, newest ten kept) and the short version says where. The command itself is
+  never changed, git output is never shortened, and a failing command is never touched. Off with `{ "quietOutput": false }`.
+- **A second review round reads only the fix,** and only the reviewers that objected re-check it (a risky fix still goes to the
+  security reviewer; a fix larger than the change is reviewed as new).
+- **Edit, don't rewrite.** Builders change existing files with small edits and commit after each passing criterion; the flight
+  report counts whole-file rewrites.
+- **One-time notices** for what only the owner controls: reopening a large chat whose cache has expired (a new chat is cheaper),
+  and building on Fable (about twice Opus). `doctor.mjs --plugins` lists the other plugins that load into every session; `/dogfood`
+  reports them. Setup mentions the official code-intelligence plugin for typed languages.
+- A test keeps the `CLAUDE.md` template small, since every agent launch re-reads it.
+
 ## [2.15.0] — 2026-11-25
 The right model for each job, decided in one place; a Haiku scout that finds code for the stronger models; two new checks (plan
 Phase M, part B).

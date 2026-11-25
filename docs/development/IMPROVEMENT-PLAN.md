@@ -1,8 +1,9 @@
 # Improvement plan — implementation handoff
 
 Written 2026-11-25 against version 2.12.0, after a full audit of the plugin; extended the same day after a second audit
-against 2.14.0 (one-click shipping, Phase OC), and again with Phase M (which model does which job, and Haiku delegation). This is
-a work list for the next implementing session (Opus or Sonnet). It is ordered: follow "Order of work" under Progress, one release per phase.
+against 2.14.0 (one-click shipping, Phase OC), again with Phase M (which model does which job, and Haiku delegation), and again
+with Phase S (token savings that cost no code quality, and a main conversation that stays small). This is a work list for the
+next implementing session (Opus or Sonnet). It is ordered: follow "Order of work" under Progress, one release per phase.
 
 **How to use this file.** Read the root `CLAUDE.md`, `HANDOFF.md` (next to this file) and this file. Do one phase, release it, tick its tasks here,
 then stop and report. Do not start the next phase in the same release.
@@ -15,13 +16,14 @@ then stop and report. Do not start the next phase in the same release.
 | Owner requests | 2.12.2–2.14.0 | **Done**: payment keys (2.12.2); sizing an app to its users (2.13.0); design library and WCAG 2.2 AA testing (2.14.0). |
 | Audit 2 | — | **Done** (2026-11-25, against 2.14.0): findings F1–F11 below, and the new one-click phase (OC). |
 | M — models and delegation | 2.14.1 (part A), 2.15.0 (part B) | **Done** except M-14 (needs a trial). D11 and D12 decided as recommended (the owner asked for all of it, 2026-11-25). Absorbed P3-6. Built before the first trial, so there is no before-and-after comparison. |
-| 1 — verifiable | 2.16.0 | **Next.** Needs owner decisions D2, D3 and D7. When P2-4 moves rule blocks into references, the WCAG list in `scripts/wcag.mjs` is the source for the accessibility reference. |
-| OC — one-click shipping | 2.17.0, 2.18.0 | Not started. Waits for the first live trial (P1-6), whose flight report decides the order inside the phase. Absorbs P2-1, P2-2, P2-3, P2-5 and P4-2. |
+| S — savings and a small main conversation | 2.16.0 (part A), 2.17.0 (part B) | **Next.** Part A is free savings and can go at once. Part B changes how every feature is built: see D14 (a trial first is recommended). Needs D13. Delivers the state record OC-4 builds on. |
+| 1 — verifiable | 2.18.0 | Not started. Needs owner decisions D2, D3 and D7. When P2-4 moves rule blocks into references, the WCAG list in `scripts/wcag.mjs` is the source for the accessibility reference. |
+| OC — one-click shipping | 2.19.0, 2.20.0 | Not started. Waits for the first live trial (P1-6), whose flight report decides the order inside the phase. Absorbs P2-1, P2-2, P2-3, P2-5 and P4-2. |
 | 2, 3, 4 | — | Not started. What is left of Phase 2 after OC follows it. |
 
-**Order of work, from here:** P1-1 and P1-2 (tests on GitHub, a stable channel) → P1-6 (the first live trial; its flight report
-also gives M-14 its numbers) → M-14 → OC-1 to OC-12 (one-click shipping, in two releases) → the rest of Phase 2 → Phase 3 →
-Phase 4 only if the trials justify it.
+**Order of work, from here:** S-1 to S-5 (part A) → P1-6 (the first live trial; recommended before part B, see D14; its flight
+report gives M-14 and S-12 their numbers) → S-6 to S-11 (part B) → P1-1 and P1-2 (tests on GitHub, a stable channel) → M-14 and
+S-12 → OC-1 to OC-12 (one-click shipping, in two releases) → the rest of Phase 2 → Phase 3 → Phase 4 only if the trials justify it.
 
 **Answers from the official docs (2026-11-25, hooks reference, sub-agents page, plugins reference):**
 - V1. The tool is `PowerShell`; its input has the command in `tool_input.command`, like Bash. The docs advise `Bash|PowerShell` matchers.
@@ -72,6 +74,45 @@ summary, characters 79,900–139,950 and 219,850–279,900: re-read those before
 - Prices used for the reasoning in Phase M (API list prices per million tokens, input / output, as cached on 2026-11-03):
   Haiku 5.5 $0.10 / $0.50, Sonnet 5.5 $2 / $10, Opus 5.5 $4 / $20, Fable 5.2 $8 / $40. So Sonnet costs 20 times Haiku, Opus twice
   Sonnet, Fable twice Opus. The owner is on a subscription: treat the ratios as a guide to plan usage, not as exact.
+
+**Answers needed for Phase S (2026-11-25; pages: hooks, sub-agents, skills, scheduled-tasks, costs, settings, context-window,
+statusline read verbatim; model-config and settings-reference partly from a summary, marked "(s)"):**
+- V19. **Nothing lets a hook, a plugin or a setting clear the conversation, start a new session, or run `/clear` or `/compact`.**
+  A hook can stop a turn (`continue: false`) and can block or shape a compaction, never start one. What runs by itself:
+  auto-compaction as the context fills, and idle compaction of a conversation the user stepped away from (`idleCompaction`, on by default (s)).
+- V20. Auto-compaction: by default near the model's limit, about 967K tokens on a 1M-context model (s). `autoCompactWindow`
+  (a token count of 100000 or more) and `autoCompactEnabled` have scope "Any file", so a project's `.claude/settings.json` can set
+  them. Per session: `/autocompact 500k`, `CLAUDE_CODE_AUTO_COMPACT_WINDOW`. Agent files take `autoCompactWindow` too.
+- V21. PreCompact (matcher `manual` or `auto`): when it exits 0 its **stdout becomes instructions for the summary** (10,000
+  characters at most); exit 2 blocks the compaction (never do that for `auto`: at the limit the request then fails). PostCompact
+  receives `compact_summary` and controls nothing. After a compaction: the project-root `CLAUDE.md` is re-read, invoked skill
+  bodies are re-injected (5,000 tokens each, 25,000 in all), up to five recently changed files are re-read, SessionStart hooks
+  matching `compact` run and their output is added; everything hooks added earlier is summarised away. SessionStart sources:
+  `startup`, `resume`, `clear`, `compact`, `fork`. **On `resume` and `fork` SessionStart also receives `context_tokens`,
+  `seconds_since_last_response`, `prompt_cache_likely_expired` and `estimated_cache_write_usd`.**
+- V22. No other hook input carries the context size (the common fields are `session_id`, `prompt_id`, `transcript_path`, `cwd`,
+  `scratchpad_dir`, `permission_mode`, `effort`, `hook_event_name`). Only the status line gets `context_window.used_percentage`.
+  The transcript's format is not documented: do not build on parsing it.
+- V23. PostToolUse `updatedToolOutput` "replaces the tool's output with the provided value before it is sent to Claude"; for a
+  built-in tool a value that does not match the tool's output shape is ignored. The official costs page trims test output with a
+  PreToolUse `updatedInput` that appends `| tail -n 100`, which hides the command's exit code: do not copy that.
+- V24. Nested agents: up to three layers below the main conversation (`CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH`; at the limit the
+  Agent tool is withheld). A nested agent runs on its parent's model unless its file or the call names one. `SendMessage` resumes
+  an agent, which then reports back to whoever resumed it. `AskUserQuestion` is removed from every subagent; a foreground
+  subagent's permission prompts pass through to the user. A subagent starts fresh (its prompt, the task, `CLAUDE.md`, git status)
+  and never sees the parent's conversation. A plugin SKILL may set `context: fork`, `agent:` and `background:` to run in a new
+  subagent that gets the skill text as its task. Session-scoped scheduled tasks (`/loop`, `CronCreate`) only fire while the session
+  is open and idle; durable ones are cloud or desktop scheduled tasks, set up by the user.
+- V25. Answered (hooks, sub-agents, plugins-reference): Bash's `tool_response` is an object with `stdout`, `stderr`,
+  `interrupted`, `isImage`; `updatedToolOutput` must have that shape (the docs' example has all four) or it is ignored. PowerShell's
+  shape is not stated: S-1 treats it the same and leaves anything else alone. **A command that exits non-zero is a failed call: it
+  reaches PostToolUseFailure (an `Exit code N` text), not PostToolUse, so failing runs are never shortened.** Whether
+  `isolation: worktree` applies to an agent started by a subagent: not stated (S-6 has the builder make its own worktree if it has
+  none). `tools` is an allow-list, so the conductor lists `SendMessage` itself. Plugin `commands/*.md` frontmatter supports no
+  `context: fork` (only skills do), so S-6 keeps a dispatcher command.
+- Official advice the phase follows (costs page): clear between tasks; delegate verbose work to subagents; preprocess output with
+  hooks; keep `CLAUDE.md` under 200 lines (the kit's template is 46); disable unused MCP servers; code-intelligence plugins for
+  typed languages reduce file reads. "Thinking tokens are billed as output tokens."
 
 ## Ground rules for the implementer
 
@@ -277,7 +318,7 @@ Small, urgent, low-risk. Nothing here adds a feature.
 
 ---
 
-## Phase 1 — make the kit verifiable (release 2.16.0)
+## Phase 1 — make the kit verifiable (release 2.18.0)
 
 Nothing here changes what the kit does for a project. It makes failures visible before they reach a machine.
 
@@ -572,14 +613,231 @@ writes (it can only cap at Sonnet, and status and security reports show it).
 
 ---
 
-## Phase OC — one-click shipping (releases 2.17.0 and 2.18.0)
+## Phase S — spend tokens on code, not on noise; keep the main conversation small (releases 2.16.0 and 2.17.0)
+
+**Goal:** every token goes to the builder's thinking and writing, or to one strong independent review. Nothing is spent re-reading
+noise, re-reviewing what was approved, re-writing whole files, or carrying finished work around in the main conversation. The owner
+never has to clear a chat or start a new one to keep a long build affordable.
+
+**Not for sale in this phase:** the builder's model and effort, the Opus review, the tests, the security review. A saving that
+lowers any of them is a trade-off and belongs in S-12 (measure first).
+
+**The owner's three questions, answered (2026-11-25), so the implementer does not re-derive them:**
+1. *Can the kit create new sessions by itself?* No (V19). The Claude desktop app has its own tool that lets Claude start a session,
+   but that is the app, not the plugin: it asks the owner first unless they told it to, and terminal and web users do not have it.
+   The kit must not depend on it. What the kit CAN do on every surface is give each feature a fresh context: a subagent (V24).
+2. *Auto-clear at a threshold?* Not possible (V19), and it would be the wrong tool: a clear in the middle of a task throws away
+   what a compaction keeps. The equivalent that exists: a lower auto-compaction window for the project (V20), a summary the kit
+   steers (V21), and the session note and build state put back afterwards. With S-6 the main conversation grows by about a
+   thousand tokens per feature instead of tens of thousands, so even that is rarely reached.
+3. *Pick up from the last file edit?* Pick up from the last VERIFIED step instead. A half-written edit is not trustworthy, and
+   the builder's own context is gone anyway. The build state (S-7) names the stage, branch, worktree and last green commit; the
+   builder commits after every passing test, so a cut-off loses minutes; whatever is uncommitted in the worktree is shown to the
+   next builder, which finishes or discards it and lets the tests decide.
+
+**Why the main conversation grows today (read from `feature.md`; estimates, not measurements):** every feature adds the workflow
+text (1,759 words, loaded again on each invocation), a brief written for each of three to six agents, each agent's report, the merge
+and test output, and the reading and editing of five record files. All of it is re-sent on every later turn. On a 1M-context model
+nothing is compacted until about 967K tokens (V20), and after a pause longer than the cache lifetime the whole history is charged
+at full price again.
+
+**Weight budget:** one new agent (`conductor`, under 250 words), two new scripts (`quiet-lib.mjs`, `build-state.mjs`), three
+new hook scripts (`quiet-output.mjs`, `compact-notes.mjs`, `conductor-check.mjs`), one new folder (`workflows/`). `commands/feature.md`
+shrinks to a dispatcher under 200 words. The session note grows by nothing; its new lines are conditional.
+
+### Part A — release 2.16.0: free savings (no change to how features are built)
+
+### S-1. DONE in 2.16.0 — Quiet command output, enforced — Opus, M (after V25)
+- **Why:** tests, installs and builds print thousands of lines, and every agent that runs them reads them. The full suite runs
+  several times per feature (builder, reviewer, after the merge, the proof step). Today lean mode only ASKS Claude to trim. Expected
+  to be the biggest free saving; unmeasured.
+- **Change:** `scripts/quiet-lib.mjs` with a pure `trimOutput(text, opts)`, and `hooks/quiet-output.mjs` on PostToolUse for Bash and
+  PowerShell (through `gate.mjs`, `post` mode), which replaces a noisy command's output with a short version using
+  `updatedToolOutput` (V23). The command itself is never changed, so its exit code, the guards and the permission rules are untouched.
+  - **Which commands:** only the noise class. The program is on a list (npm, pnpm, yarn, bun, npx, pip, pytest, tox, go, cargo,
+    dotnet, mvn, gradle, tsc, eslint, vitest, jest, playwright, bundle, rspec, composer, phpunit, make and the like), or the
+    command starts with one of the test, install, build, typecheck or lint commands in the project's `CLAUDE.md` "Commands".
+    **Never** git (a reviewer needs the whole diff), never a command that prints a file, never the kit's own scripts.
+  - **When:** the output is over 120 lines or 12,000 characters (named constants).
+  - **What is kept:** the first 15 lines; every line that matches a failure pattern (fail, error, panic, traceback, exception,
+    assert, "not ok", ✗, ✖; not warnings) with two lines either side, 120 lines at most; the last 30 lines (runners print their
+    summary there). Overlaps merged, order preserved, a `[…]` marker where lines were dropped.
+  - **Nothing is lost:** the full output is saved to `<cwd>/.claude/logs/<program>-<time>.log` (the folder gets its own
+    `.gitignore` containing `*`, so it can never be committed, even in a project set up before this release; the newest ten files
+    are kept). The first line of the short version says so: `[starter-kit: N of M lines shown (failures and summary). Full output:
+    <path>. Read the part you need.]`
+  - **Shape:** return the same shape that came in (V25): if `tool_response` is an object with string `stdout`/`stderr`, the same
+    object with those strings replaced; if a string, a string. A shape that is not recognised is left alone (no saving, no harm).
+  - Switch: `{ "quietOutput": false }` (a comfort setting). The flight log records `{ ev: "quiet", lines, kept }` (numbers only).
+- **If the trial shows the replacement being ignored:** add `scripts/quiet.mjs -- <command>` (same function, exit code passed
+  through) and have `init` write the wrapped commands into `CLAUDE.md` "Commands". Not before.
+- **Test:** `trimOutput` on a passing run, a failing run, one huge line, CRLF, unicode, a failure in the middle of 5,000 lines;
+  the hook leaves git, short output, unknown programs and unrecognised shapes alone; the log file, its self-ignoring folder and the
+  ten-file limit; the switch; the same through the gate. A planted secret in the output appears in the local log only, never in
+  the flight log.
+
+### S-2. DONE in 2.16.0 — Re-review only the fix — Sonnet, S
+- **Why:** when one reviewer asks for changes, `feature.md` says "review again", and every reviewer reads the whole feature again.
+- **Change (in the feature workflow text):** each reviewer's verdict is recorded with the commit it looked at (S-7's state; until
+  S-7 exists, in the main conversation's notes). From round 2 on, only the reviewers that said CHANGES REQUESTED (or DOES NOT
+  HOLD UP) run again, each given `git diff <the commit it reviewed>..BRANCH`, its own earlier findings, and two jobs: confirm each
+  finding is resolved, and check the fix broke nothing that depends on it. A reviewer that approved is not re-run. Two exceptions:
+  a fix that touches a risky area (the list in step 2) goes back to the security reviewer, and a fix larger than the original
+  change is treated as a new review. The full test suite still runs on the final commit, as now.
+- **Test:** docs test for the wording; with S-7, the state keeps a `reviewed` commit per reviewer.
+
+### S-3. DONE in 2.16.0 — Edit, don't rewrite — Sonnet, S
+- **Why:** output costs five times input, and writing a whole file out again to change a few lines also invites accidental changes.
+- **Change:** one sentence in `implementer.md` and `tdd.md`: change an existing file with small edits; write a whole file only
+  when it is new or when most of it really changes. The flight recorder counts, per session, how often the Write tool targets a
+  file that already exists (`existsSync` on the path; a count, never the path), and the report prints "Whole-file rewrites: n".
+- **Only if a trial shows many rewrites:** let `file-guard` refuse a Write that leaves over 80% of an existing 150-line-plus file
+  unchanged, with "use Edit for this". Not before.
+- **Test:** the count from sample events; the privacy test still finds no path in the log.
+
+### S-4. DONE in 2.16.0 (the template test) — Shorter instructions: the numbers to beat — no new task, feeds OC-11
+- A feature build loads 4,449 words of kit instructions today (`feature.md` 1,759, `implementer.md` 1,617, `challenger.md` 615,
+  `reviewer.md` 458), before any code is read. OC-11 already sets the ceilings. Two additions for it: after S-6 the workflow text
+  is loaded once per feature in the conductor's own context, not in the main conversation; and a test keeps the `CLAUDE.md`
+  template in `init.md` under 80 lines (it is 46; the official ceiling is 200; every agent launch re-reads it).
+
+### S-5. DONE in 2.16.0 — What only the owner controls: say it once, in plain words — Sonnet, S
+- **Why:** three large savings are outside the kit's reach: a fresh chat per task, the model of the main conversation, and plugins
+  that load into every session whether or not they are used.
+- **Change:**
+  - **Resume cost.** SessionStart with source `resume` or `fork` receives `prompt_cache_likely_expired`, `context_tokens` and
+    `estimated_cache_write_usd` (V21). When the cache has likely expired and `context_tokens` is over 150,000, the session note adds
+    ONE conditional line: tell the owner in a sentence that this chat re-sends about N tokens, that a new chat picks up from the
+    project's records for less, and offer to compact if they would rather stay. Read every field defensively.
+  - **Fable for a build.** When the session's model is a Fable model and the project has open roadmap items, one conditional line,
+    once per project (a marker in the kit's data folder): Fable costs about twice Opus; fine for planning or a hard problem;
+    suggest Opus for the build itself. The same pattern as M-7's Haiku line. The kit never switches models (V15: it cannot).
+  - **Plugins.** `scripts/doctor.mjs --plugins` lists the plugins enabled in the user's and the project's settings files (read
+    only) and says which load into every coding session; `/dogfood` includes it. The kit never changes that setting itself: it
+    tells the owner a project file can switch a plugin off for one project (`enabledPlugins`, V20's page) and offers to write it.
+  - **Docs.** A "Keeping usage down" section in `docs/how-it-works.md`: what the kit does by itself (after this phase), and the
+    three things only the owner controls. Add the official code-intelligence (language server) plugins to `docs/add-ons.md` as a
+    recommended add-on for typed languages ("reduces file reads", costs page); `init` mentions the matching one, and never installs it.
+- **Test:** each conditional line appears only under its condition and the default note stays under its word limit; the doctor
+  lists plugins from sample settings files and changes nothing.
+
+### Part B — release 2.17.0: a fresh context for every feature (changes how features are built; see D14)
+
+### S-6. The conductor: one roadmap item, one fresh context — Opus, L (after V25)
+- **Why:** the owner's idea, finished. Builders already work in their own worktree and context, but the main conversation still
+  runs the workflow, writes every brief, reads every report and edits every record. A subagent starts fresh and returns only its
+  result (V24), so running the whole workflow inside one gives every feature a new context automatically, on every surface.
+- **Change:**
+  - `plugins/starter-kit/workflows/feature.md`: today's `commands/feature.md` text, moved. Plain Markdown that whoever runs the
+    workflow reads on demand (the first of P2-4's on-demand references). `docs.test.mjs` treats `workflows/` like `commands/`
+    (scripts exist, agents exist, model routing named).
+  - `agents/conductor.md` (new, under 250 words): `tools: Read, Write, Edit, Bash, Grep, Glob, Agent, SendMessage`, `effort: high`,
+    no `isolation`. It is told which workflow file to read (`${CLAUDE_PLUGIN_ROOT}/workflows/<name>.md`) and follows it exactly as
+    the main conversation does today: it launches the builder and the reviewers, merges, proves, writes the records. It cannot ask
+    the owner anything (V24), so it stops and returns the question. Its whole report, twelve lines at most:
+    `RESULT: MERGED <commit> | BLOCKED | NEEDS OWNER | CANNOT DELEGATE`, then WHAT WORKS, HOW TO SEE IT, LEFT AS IS, NOT VERIFIED,
+    QUESTION (only with NEEDS OWNER), WHERE (branch and worktree, when not merged), NEXT (checkpoint due, milestone finished).
+  - `commands/feature.md` becomes a dispatcher (under 200 words): run `build-state.mjs --plan` (S-7), which prints whether to
+    start or resume and where to run; launch the `conductor` agent in the foreground with the item, MAIN and BASE, on the model
+    `model-route.mjs --role conductor` prints; relay its report to the owner in plain words; on NEEDS OWNER ask the owner, then
+    send the answer to the SAME conductor (or, if it cannot be resumed, launch a new one: the state tells it where things stand);
+    on NEXT run the checkpoint or `/starter-kit:accept`; otherwise carry on with the next item.
+  - **Fallback, always available:** when the conductor answers CANNOT DELEGATE (nested agents are switched off, V24), when the
+    launch fails, or when `{ "freshContext": false }` is set (a comfort setting), the dispatcher says: read the workflow file and
+    run it in this conversation, as before this release.
+  - `model-route.mjs`: role `conductor`, starts on sonnet, moves to opus for size L, risk or `critical` rigor; never below sonnet.
+  - `implementer.md`: (1) if no worktree was made for you (V25: not stated for an agent started by an agent) and you are in the
+    main checkout, make your own (`git worktree add`) before touching anything; (2) commit after each acceptance criterion's test
+    passes, not once at the end, so a cut-off loses minutes.
+- **Later, not now:** the same for `full-scan`, `audit`, `redteam` and `onboard` (S-12 decides). And if V25 shows plugin skills
+  with `context: fork` behave well live, moving `feature` to a skill with that setting removes the dispatcher altogether.
+- **Test:** docs tests (the dispatcher's length and the four things it must do; the workflow file passes every check the command
+  did; the fallback sentence exists); model-route cases for the new role; the gate tests of S-8.
+
+### S-7. The build state: resume from the last verified step — Opus, M (the first slice of OC-4)
+- **Why:** a session that ends, a usage limit, a compaction or a conductor that cannot be resumed must not cost the feature.
+- **Change:** `scripts/build-state.mjs`. The state lives OUTSIDE the project (`<data folder>/state/<project key>.json`, like the
+  flight log), so it can never be committed and never makes the main checkout "not clean". Fields: the roadmap item (its text and
+  a short hash), `stage` (`brief`, `build`, `review`, `merge`, `prove`, `records`, `done`), `round`, `main`, `base`, `branch`,
+  `worktree`, `lastGood` (the last commit that passed its tests), the builder's model, `reviewed` (reviewer → commit, for S-2),
+  `question` (when waiting for the owner), `updated`.
+  - `--set key=value …` (the workflow calls it at each stage boundary: six short calls per feature), `--show`, `--clear`.
+  - `--plan --feature "<text>"`: one answer for the dispatcher: `START` or `RESUME at <stage>`, and `RUN IN conductor` or
+    `RUN HERE` (the `freshContext` switch).
+  - `--resume`: the brief for whoever continues. It trusts git over the file: it checks that the branch and the worktree still
+    exist (`git worktree list`), prints the last commit and `git status --porcelain` of the worktree (the "last file edits" that
+    were never committed), and says what the stage needs next. A state whose branch is gone is reported as stale and cleared.
+  - The session note adds ONE conditional line when a state exists and is not `done`: a feature build was cut off at <stage>;
+    `/starter-kit:feature` resumes it.
+  - OC-4 later turns this record into the full state machine (`next.mjs`); do not build that here.
+- **Test:** set, show and clear; `--plan` with no state, a live state and the switch; `--resume` with a missing branch, a missing
+  worktree, uncommitted files and a clean tree; nothing is written inside the project; the note's line appears only when it should.
+
+### S-8. Only the conductor may start agents, and its "merged" is checked — Opus, M
+- **Why:** M-1's rule was "no kit agent may start another agent". The conductor is the one exception, and an exception needs a guard.
+- **Change:**
+  - `docs.test.mjs`: exactly one agent, `conductor`, may list `Agent`; it must use an allow-list, must not be on Haiku, and must
+    not hold web tools. Every other agent as M-1 says. Update the rule's wording in `CLAUDE.md`.
+  - `hooks/agent-route.mjs` becomes caller-aware (tool hooks inside a subagent carry the caller's `agent_type`, V15): a launch
+    made BY the conductor is allowed only for `starter-kit:` agents other than the conductor itself; a launch made by any other kit
+    agent is refused; launches from the main conversation as now.
+  - `hooks/conductor-check.mjs` on SubagentStop for `starter-kit:conductor` (through `gate.mjs`, `substop`): the first line must
+    be one of the four RESULT values; `MERGED <commit>` must name a commit that exists and is an ancestor of the current branch
+    (`git merge-base --is-ancestor`). Otherwise send it back once (`decision: "block"`, the scout-check pattern) with what is
+    wrong. "Done is something you can show", applied to the new hand-over point.
+- **Test:** the frontmatter rules; the hook's caller cases (conductor → builder allowed, conductor → general-purpose refused,
+  conductor → conductor refused, scout → anything refused, main → as before); the report check with a real temporary repository
+  (a true merge passes, an invented commit is sent back once, never twice); all of it through the gate.
+
+### S-9. Compaction as the safety net, steered by the kit — Sonnet, M (OWNER DECISION D13)
+- **Why:** the owner asked for an automatic clear at a threshold. This is the form of it that exists (V19, V20, V21).
+- **Change:**
+  - `hooks/compact-notes.mjs` on PreCompact (both matchers, through `gate.mjs`): prints the instructions for the summary, about
+    120 words: keep the roadmap item in progress and its stage, anything waiting for the owner, decisions made in this chat that
+    are not yet in `DECISIONS.md`, and anything said to be unverified; drop tool output, file contents and finished features
+    (the records hold them). Always exits 0: it never blocks a compaction.
+  - PostCompact: the flight log records `{ ev: "compact", src: <trigger> }`, so a trial shows how often it happened.
+  - SessionStart with source `compact` already puts the session note back; it now carries S-7's resume line too.
+  - `init` (inside its existing single yes/no about the settings file, D13): write `"autoCompactWindow": 300000` into the
+    project's `.claude/settings.json`, so a big-context model compacts at 300K, not about 967K. A named starting value; S-12 tunes it.
+    Never touch the user's own settings file. Existing projects: `/dogfood` offers it once.
+  - No `autoCompactWindow` on the implementer yet: its context is the most valuable in the build (S-12).
+- **Test:** the hook's output is under 10,000 characters and exit 0 for both triggers; the recorder's new event; `init.md` names
+  the setting inside the one question; the note after `compact` contains the resume line when a state exists.
+
+### S-10. Documentation and release — Sonnet, S
+- `docs/how-it-works.md`: "A fresh context for every feature" and "When a chat gets long" in plain words, including the honest
+  line that the kit cannot clear a chat or open a new one by itself, and what the desktop app adds. `docs/settings.md`:
+  `quietOutput`, `freshContext`. `README.md` agents table (ten agents). `CLAUDE.md`: the changed agent rule, the `workflows/`
+  folder in the layout. Changelog, handoff, version, all tests both ways, `claude plugin validate`.
+
+### S-11. Fold the result back into OC-4 and OC-11 — Sonnet, S
+- Mark in OC-4 that the state record exists (S-7) and what is left (the state machine, refusing a step without evidence, the stop
+  conditions). Mark in OC-11 that `workflows/` exists, and move the next longest command there if a trial shows it loaded often.
+
+### S-12. Measure, then decide the trade-offs — owner in the loop, after a trial (extends M-14)
+- From the flight report: lines trimmed and kept (S-1), whole-file rewrites (S-3), review rounds and which reviewers re-ran (S-2),
+  tokens per agent and model (M-2), compactions per session (S-9), resume notices (S-5). The main conversation's size after a
+  ten-feature build is read by the owner from the app's context indicator: the kit cannot see it (V22).
+- **Trade-offs to decide only with those numbers** (each lowers something, however slightly):
+  - One reviewer for small features: fold the challenger's checks into the reviewer for size S (OC-1's rigor table already does
+    this at `product`). The largest structural saving left, and a small quality trade.
+  - `effort: medium` for the UI reviewer and the challenger.
+  - `autoCompactWindow` on the implementer for very long builds.
+  - A lower or higher project window than 300K.
+  - Conductors for `full-scan`, `audit`, `redteam`, `onboard`.
+- Samples will be small. Write down what was seen.
+
+---
+
+## Phase OC — one-click shipping (releases 2.19.0 and 2.20.0)
 
 **Goal:** the owner describes the app once, answers one batch of questions, does one checklist of things only they can do (accounts,
 payment method, keys in the host's settings), and then only approves milestones and the launch. Between those moments the build
 runs by itself, and each milestone arrives as a link to click. Everything that keeps the kit safe stays: the guards still check
 every command, nothing ships without the checks passing, and nothing is pushed, deployed or charged without the owner's yes.
 
-**Release 2.17.0** = OC-1 to OC-6 (fewer interruptions, deterministic checks). **Release 2.18.0** = OC-7 to OC-12 (golden paths,
+**Release 2.19.0** = OC-1 to OC-6 (fewer interruptions, deterministic checks). **Release 2.20.0** = OC-7 to OC-12 (golden paths,
 previews, one go-live, tidier projects). Do the verifications V9, V10 and V11 first.
 
 ### OC-1. One intake — Opus (design), Sonnet (edits), M (absorbs P2-1, the rigor dial)
@@ -614,6 +872,9 @@ previews, one go-live, tidier projects). Do the verifications V9, V10 and V11 fi
   rules are in place (unit test with the real hook payload); trust approval is still required for project-supplied commands.
 
 ### OC-4. A build that keeps going — Opus, L (absorbs P4-2; after V11)
+- **Builds on Phase S:** S-7 delivers the state record and the resume brief, and S-6 runs each feature in its own context. What is
+  left here is the state machine around them. V11 is answered in V24: `/loop` and session scheduled tasks only run while the
+  session is open and idle; anything durable is a cloud or desktop scheduled task the owner sets up.
 - **Why:** F4. A long build stops at the end of every session and after every usage limit, and resuming relies on reading notes.
 - **Change:** `scripts/next.mjs` holds the pipeline as states (brief → build → review round n → merge → prove → records →
   checkpoint → milestone), keeps the current state in `.claude/kit-state.json`, prints only the instructions for the current state,
@@ -889,6 +1150,8 @@ roadmap proof rule, milestone acceptance, the vetting workflow. They are small a
 | D10 | May each milestone be put on a private preview link on the host (test keys and test data only), so you check it by clicking a link? | Yes, once a host is chosen. |
 | D11 | May medium, large and risky features be built and reviewed on the stronger model (Opus, about twice Sonnet's usage), with small ones staying on Sonnet? | **Decided: yes** (2026-11-25). The trial numbers (M-14) decide whether medium features stay there. |
 | D12 | Should the kit ever pick the most expensive model (Fable, about four times Sonnet) by itself? | **Decided: no** (2026-11-25). Use it yourself in the main conversation when planning a big app; the kit's agents stop at Opus. |
+| D13 | When a project is set up, may the kit set that project's chats to tidy themselves (compact) at 300,000 tokens? Big-context models otherwise wait until about 967,000, and every message before that re-sends everything. | Yes. It is one line in the project's own settings file, inside the yes/no setup already asks. |
+| D14 | Part B of Phase S changes how every feature is built (each one in its own fresh context), and nothing since 2.12.1 has run in a live session. Run one trial build after part A first, or build part B now? | Trial first: a problem in the new flow could then not be confused with an older one. If you want it now, it ships with the old flow intact as an automatic fallback and a switch (`"freshContext": false`). |
 
 ## Definition of done for the whole plan
 
@@ -898,6 +1161,9 @@ roadmap proof rule, milestone acceptance, the vetting workflow. They are small a
 - The five longest instruction files (`init`, `spec`, `feature`, `implementer`, `full-scan`) total under 4,500 words (about
   8,000 today), and the session note is under 400.
 - Every blocking check is something a script can prove.
+- Savings: a noisy command's output reaches Claude as failures and a summary, with the full log one read away; a second review
+  round reads only the fix; a ten-feature build leaves the main conversation small enough that it was never compacted; a build cut
+  off at any point resumes at its last verified step.
 - Models: one script decides which model each agent runs on, a hook refuses a review on a model below its minimum, no Haiku agent
   can write, run commands or start agents, and a trial's flight report shows tokens per model.
 - One-click: a trial app built from a preset needs the owner for one intake, one checklist, one acceptance per milestone (each a link

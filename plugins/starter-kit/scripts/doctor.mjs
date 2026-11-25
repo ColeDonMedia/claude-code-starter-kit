@@ -6,8 +6,10 @@
 //   - the data folder is writable, and when hooks last recorded activity for this project (proof Claude Code is calling them)
 //   - the project is set up (CLAUDE.md marker) and carries the tripwire that notices when hooks are not running
 // Run: node doctor.mjs [--project <dir>] [--json]. Exit 1 when something is wrong.
+//      node doctor.mjs --project <dir> --plugins   which other plugins load into every session here (read only)
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { dataDir } from "./trust-lib.mjs";
@@ -101,9 +103,41 @@ export async function diagnose(project) {
   return { version, checks, healthy: checks.every((c) => c.ok !== false) };
 }
 
+// Which plugins load into this project's sessions, from the user's and the project's settings files (read only). Every enabled
+// plugin's skills, agents and instructions cost tokens in every session, used or not. Project settings win over user settings.
+export function listPlugins(project, home = homedir()) {
+  const files = [join(home, ".claude", "settings.json"), join(project, ".claude", "settings.json"), join(project, ".claude", "settings.local.json")];
+  const state = new Map();
+  for (const f of files) {
+    try {
+      const ep = JSON.parse(readFileSync(f, "utf8")).enabledPlugins;
+      if (ep && typeof ep === "object") for (const [name, on] of Object.entries(ep)) state.set(name, { on: on === true, from: f === files[0] ? "your settings" : "this project's settings" });
+    } catch {
+      /* missing or unreadable */
+    }
+  }
+  const on = [...state].filter(([, s]) => s.on).map(([name, s]) => ({ name, from: s.from }));
+  return { on, others: on.filter((p) => !p.name.startsWith("starter-kit@")) };
+}
+
+export function pluginReport(project, home) {
+  const { others } = listPlugins(project, home);
+  if (!others.length) return "Besides the starter kit, no plugins are switched on in your or this project's settings files.";
+  return [
+    `Plugins switched on besides the starter kit (${others.length}); each one's skills, agents and instructions load into every session here, used or not:`,
+    ...others.map((p) => `- ${p.name} (${p.from})`),
+    `To switch one off for this project only, add "enabledPlugins": { "<name>": false } to this project's .claude/settings.json.`,
+    "The kit never changes this itself: say which ones to switch off and it will write that line.",
+  ].join("\n");
+}
+
 if (process.argv[1] && resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url))) {
   const a = process.argv.slice(2);
   const project = resolve(a.includes("--project") ? a[a.indexOf("--project") + 1] : ".");
+  if (a.includes("--plugins")) {
+    console.log(pluginReport(project));
+    process.exit(0);
+  }
   const r = await diagnose(project);
   if (a.includes("--json")) console.log(JSON.stringify(r, null, 1));
   else {

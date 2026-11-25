@@ -102,6 +102,24 @@ Writing a record needs what the main conversation already knows, so handing that
 wrong record misleads every later session. The mechanical records (database map, architecture map, status) are already written by
 scripts, for free.
 
+## Keeping usage down
+
+**What the kit does by itself:**
+- **Noisy output is shortened.** When a test run, install or build prints more than 120 lines and succeeds, Claude gets the start,
+  any failure lines with a little context, and the summary. The full output is saved in `.claude/logs/` (a folder that ignores
+  itself, so it is never committed) and the short version says where. Git output is never shortened, and the command itself is never
+  changed. Off with `{ "quietOutput": false }`.
+- **A second review round reads only the fix,** and only the reviewers that objected re-check it.
+- **Builders edit instead of rewriting files,** and commit after every passing test.
+- **Agents use the right model** (see above), and the flight report shows tokens per model, shortened output and whole-file rewrites.
+
+**What only you control (the kit tells you once when it matters):**
+- **A new chat per task.** Every message re-sends the whole conversation, and after a pause the cache has expired, so all of it is
+  charged in full again. The project's records let a new chat pick up for much less. When you reopen a large old chat, the kit says so.
+- **The model of your own chat.** Fable costs about twice Opus: worth it for planning a big app or a hard problem, rarely for the build.
+- **Plugins.** Every plugin you switch on loads into every session. Ask "which plugins load here?" and the kit lists them
+  (`scripts/doctor.mjs --plugins`); it can switch one off for this project only if you ask.
+
 ## Cheap research
 
 Web searching and reading run on Haiku (fast and inexpensive), in parallel by angle. The main conversation checks the claims,

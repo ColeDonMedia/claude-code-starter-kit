@@ -30,6 +30,8 @@ Merge into the existing file if there is one; never drop existing entries.
   ("May I run this project's own test and build commands without asking each time?"), listing the commands:
   the install, test, typecheck, lint and build commands you found (as `Bash(<command>:*)`), plus
   `Bash(git status:*)`, `Bash(git diff:*)`, `Bash(git log:*)`. Add them only if the user says yes.
+- For a typed language (TypeScript, Python, Go, Rust, Java, C#), mention in one line that the official marketplace's
+  code-intelligence plugin for it cuts file reading; never install it yourself.
 Add these lines to `.gitignore` (skip any already present): `.claude/settings.local.json`,
 `.claude/worktrees/`, `.claude/logs/`, `.claude/last-full-scan`, `.claude/last-verified`, `.claude/last-docs-check`, `.claude/screens/`, `e2e/test-results/`, `playwright-report/`, and the secret files: `.env`, `.env.*`,
 `*.pem`, `*.key`, `*.p12`, `*.pfx`, `credentials.json`. Then un-ignore only the templates with

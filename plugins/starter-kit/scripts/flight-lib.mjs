@@ -22,7 +22,7 @@ export function logPath(root) {
 // Keep only harmless fields. Anything not on this list is dropped.
 export function sanitize(e) {
   const out = { t: e.t ?? new Date().toISOString() };
-  for (const k of ["ev", "tool", "skill", "agent", "prog", "src", "id", "sid", "stop"]) {
+  for (const k of ["ev", "tool", "skill", "agent", "prog", "src", "id", "sid", "stop", "item"]) {
     if (e[k] !== undefined && e[k] !== null) out[k] = String(e[k]).replace(/[^\w:.\-/ ]/g, "").slice(0, 60);
   }
   return out;

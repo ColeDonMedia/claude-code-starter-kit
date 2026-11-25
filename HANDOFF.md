@@ -3,9 +3,9 @@
 Read this, then `CLAUDE.md` (how to work on this repo), `README.md` (what the kit does) and `CHANGELOG.md` (history).
 Rewrite this file at the end of every session; keep it under 40 lines and true.
 
-## State at version 2.7.0 (2026-11-24)
+## State at version 2.8.0 (2026-11-24)
 - Public repo `ColeDonMedia/claude-code-starter-kit`, MIT, installed from GitHub; machines self-update daily.
-- The plugin lives in `plugins/starter-kit/`: 18 commands, 7 agents, 10 hook scripts, helper scripts, ~305 tests.
+- The plugin lives in `plugins/starter-kit/`: 18 commands, 7 agents, 10 hook scripts, helper scripts, ~315 tests.
 - OWNER RULE: never spend API tokens (no `claude -p`, no npx claude-code runs). Test with unit tests only; live trials are run by the owner in a normal session (`DOGFOOD.md`).
 - Everything is unit-tested against real git repositories and (for packages) the live registries.
 
@@ -29,6 +29,7 @@ Rewrite this file at the end of every session; keep it under 40 lines and true.
 
 - NEVER RUN LIVE: `/launch` and `/maintain` (the checks behind them are unit-tested). They need real accounts and a real host, so they will need adjusting on first real use.
 
+- NEVER RUN LIVE: drift check, compaction, checkpoints and stall warnings at session start (unit-tested, incl. a simulated 50-session build).
 - NEVER RUN LIVE: the flight recorder (tested with Claude Code's payload shape; whether `PreToolUse`/`PostToolUse` carry `tool_use_id` and `Stop` runs for subagents is unconfirmed), `/dogfood`, the design quality bar and scoring, the context pack inside `/feature`. No trial in `DOGFOOD.md` has been run yet.
 - NEVER RUN LIVE: `/legal` (conversation and drafting). The checkers are unit-tested. The drafts are AI-written and need a lawyer.
 

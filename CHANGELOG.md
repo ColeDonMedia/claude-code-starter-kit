@@ -4,6 +4,17 @@ What changed in each release of the starter-kit plugin, newest first, in plain w
 repository's history. Every release bumps `version` in `plugins/starter-kit/.claude-plugin/plugin.json`; a test
 fails if this file has no entry for the current version.
 
+## [2.8.0] — 2026-11-24
+Builds that last weeks.
+- New `scripts/drift-check.mjs`: map paths that no longer exist, a handoff behind the latest code commits, a decision that picks what an
+  earlier one rejected, oversized records. The session start reports drift before any work.
+- New `scripts/compact-records.mjs`: older decisions and changelog releases move word for word into archive files (lossless, idempotent);
+  an oversized handoff or master document is flagged for rewriting, never cut.
+- New `scripts/checkpoint.mjs`: every 3 merged features, a forced re-verification (suite, roadmap proofs, drift, plan versus build).
+- Stall detection: the flight recorder fingerprints the next roadmap item at each session start; the same item three sessions running, or
+  four builder launches in one session, is reported at session start with an instruction to stop retrying.
+- Tested with a simulated 50-session project: session note stays flat, no decision lost, checkpoints on time, drift caught.
+
 ## [2.7.0] — 2026-11-24
 Trial runs, a flight recorder, taste, and memory for long builds. No API calls anywhere: everything runs locally or in your normal session.
 - New flight recorder hook (`hooks/flight-recorder.mjs`, `scripts/flight-lib.mjs`): a private log of names only (workflows, agents, tools, the

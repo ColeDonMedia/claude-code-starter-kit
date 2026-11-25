@@ -10,6 +10,10 @@ import { fileURLToPath } from "node:url";
 import { checkRoadmap } from "../scripts/roadmap-check.mjs";
 import { maintenanceStatus } from "../scripts/maintenance-due.mjs";
 import { lastDecisions } from "../scripts/context-pack.mjs";
+import { checkDrift } from "../scripts/drift-check.mjs";
+import { checkpointStatus } from "../scripts/checkpoint.mjs";
+import { stallStatus } from "../scripts/flight-report.mjs";
+import { readLog } from "../scripts/flight-lib.mjs";
 
 // The commands call the kit's helper scripts "<SCRIPTS>"; say where that is, as a real path (command text can't be
 // relied on to expand a placeholder).
@@ -146,6 +150,29 @@ try {
       m.days === null
         ? "This app is launched but no maintenance or launch date is recorded. Offer to run /starter-kit:maintain (updates, security, backups, errors)."
         : `Routine maintenance is overdue: ${m.days} days since ${m.since}. Offer to run /starter-kit:maintain (updates, security, backups, errors).`,
+    );
+  }
+} catch {
+  /* never let this break session start */
+}
+
+// Long builds: records that drifted from reality, a checkpoint that is due, a build that is going round in circles.
+try {
+  const drift = checkDrift(root);
+  if (drift.length) {
+    parts.push(
+      `RECORDS DRIFT (${drift.length}): ${drift.slice(0, 3).join("; ").slice(0, 400)}. Fix these first (run node "${SCRIPTS}/compact-records.mjs" --project . for oversized records).`,
+    );
+  }
+  if (checkpointStatus(root).due) {
+    parts.push(
+      "A CHECKPOINT is due (3+ features merged since the last). Before building more: run the full test suite, roadmap-check, drift-check, re-read the approved plan in PROJECT.md against what was built, fix or report every gap, then record it with checkpoint.mjs --record.",
+    );
+  }
+  const stall = stallStatus(readLog(root));
+  if (stall.stalled) {
+    parts.push(
+      `STALLED: ${stall.msgs.join("; ")}. Do not try the same approach again. Tell the user in plain words what is blocking it, and offer a smaller step or a different approach.`,
     );
   }
 } catch {

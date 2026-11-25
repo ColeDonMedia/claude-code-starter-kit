@@ -3,6 +3,7 @@
 // failed, which is exactly what you want to see after a trial run. It records names only, never content (see
 // scripts/flight-lib.mjs). It never blocks anything and never prints. Switch off with { "flightLog": false } in
 // .claude/kit.json.
+import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { record } from "../scripts/flight-lib.mjs";
@@ -29,7 +30,17 @@ try {
 
 const ev = input.hook_event_name;
 const e = { sid: input.session_id };
-if (ev === "SessionStart") Object.assign(e, { ev: "start", src: input.source });
+if (ev === "SessionStart") {
+  Object.assign(e, { ev: "start", src: input.source });
+  // A short fingerprint (not the text) of the next unfinished roadmap item, so a report can tell when the same item has
+  // been "next" for session after session: a stalled build.
+  try {
+    const next = /^[-*] \[ \] (.+)$/m.exec(readFileSync(join(root, "ROADMAP.md"), "utf8"))?.[1];
+    if (next) e.item = createHash("sha1").update(next.trim()).digest("hex").slice(0, 10);
+  } catch {
+    /* no roadmap */
+  }
+}
 else if (ev === "Stop") Object.assign(e, { ev: "stop", stop: input.stop_hook_active ? "again" : "first" });
 else if (ev === "PreToolUse" || ev === "PostToolUse") {
   const ti = input.tool_input ?? {};

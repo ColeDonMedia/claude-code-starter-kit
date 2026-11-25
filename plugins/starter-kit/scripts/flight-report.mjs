@@ -47,6 +47,22 @@ export function analyze(events) {
   return { starts, stops, edits, flow, agents, unfinished, notes, events: events.length };
 }
 
+// A build is stalled when the same roadmap item has been "next" at the start of `sessions` sessions in a row, or when one
+// session keeps relaunching the builder (review rounds that never converge).
+export function stallStatus(events, sessions = 3, relaunches = 4) {
+  const starts = events.filter((e) => e.ev === "start" && e.sid);
+  const bySid = [];
+  for (const s of starts) if (!bySid.some((x) => x.sid === s.sid)) bySid.push(s);
+  const recent = bySid.slice(-sessions);
+  const stuck = recent.length === sessions && recent[0].item && recent.every((s) => s.item === recent[0].item);
+  const lastSid = bySid.length ? bySid[bySid.length - 1].sid : null;
+  const builds = events.filter((e) => e.sid === lastSid && e.ev === "try" && short(e.agent) === "implementer").length;
+  const msgs = [];
+  if (stuck) msgs.push(`The same roadmap item has been next for ${sessions} sessions in a row`);
+  if (builds >= relaunches) msgs.push(`The builder was launched ${builds} times in the latest session (review rounds are not converging)`);
+  return { stalled: msgs.length > 0, msgs };
+}
+
 export function report(events, { all = false } = {}) {
   let use = events;
   if (!all) {
@@ -60,6 +76,8 @@ export function report(events, { all = false } = {}) {
     `Workflows run, in order: ${a.flow.length ? a.flow.join(" -> ") : "none"}`,
     `Agents launched: ${Object.keys(a.agents).length ? Object.entries(a.agents).map(([k, v]) => `${k} x${v}`).join(", ") : "none"}`,
   ];
+  const st = stallStatus(events);
+  if (st.stalled) a.notes.push(...st.msgs.map((m) => m + "."));
   lines.push(a.notes.length ? "Look at:\n" + a.notes.map((n) => `- ${n}`).join("\n") : "Nothing looks off.");
   return lines.join("\n");
 }

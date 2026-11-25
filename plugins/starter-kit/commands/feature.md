@@ -92,4 +92,10 @@ Done is something you can show, not something you say. Before reporting or ticki
   to run or the page to open), and anything the reviewer flagged that was left as-is. No git details unless
   something went wrong.
 - If anything stopped early, say exactly where the work is (branch and worktree path) so nothing is lost.
+- **Checkpoint.** Run `node "<SCRIPTS>/checkpoint.mjs" --project .`. If one is due (every 3 merged features), stop building and
+  re-verify everything first: the full test suite, `roadmap-check.mjs`, `drift-check.mjs`, and the approved plan in `PROJECT.md`
+  read against what was really built (anything missing, changed or added without agreement). Fix what you can, report the rest in plain
+  words, run `compact-records.mjs` if a record is oversized, then `checkpoint.mjs --project . --record` and commit.
+- **Going in circles?** If the same feature has failed review 3 times, or you are about to try an approach that already failed, stop and
+  tell the user what is blocking it, with a smaller step or a different approach to choose from.
 - If `ROADMAP.md` has more unticked items and nothing needs the user's decision, start the next one now.

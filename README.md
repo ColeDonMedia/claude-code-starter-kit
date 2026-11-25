@@ -72,14 +72,29 @@ More in [How it works](docs/how-it-works.md).
 
 Claude starts these itself; you can also type them.
 
-| Plan | Build | Check | Ship and run |
-|---|---|---|---|
-| `/starter-kit:init` set up a project | `/starter-kit:feature` build a feature | `/starter-kit:review` review changes | `/starter-kit:full-scan` pre-ship sweep |
-| `/starter-kit:spec` plan an app | `/starter-kit:tdd` small test-first fix | `/starter-kit:audit` security audit | `/starter-kit:launch` first go-live |
-| `/starter-kit:research` competitors | `/starter-kit:debug` root-cause a bug | `/starter-kit:redteam` try to break it | `/starter-kit:maintain` monthly care |
-| `/starter-kit:design` pick a look | `/starter-kit:db` database changes | `/starter-kit:speed` make it faster | `/starter-kit:legal` privacy and terms |
-| `/starter-kit:onboard` map a codebase | | `/starter-kit:accept` you try it | `/starter-kit:status` where are we |
-| `/starter-kit:vet` check an add-on | | `/starter-kit:dogfood` check the kit | |
+| Stage | Workflow | What it does |
+|---|---|---|
+| **Plan** | `/starter-kit:init` | Sets up a project: detects the stack, writes its `CLAUDE.md` |
+| | `/starter-kit:spec` | Turns an idea into an approved plan and roadmap |
+| | `/starter-kit:research` | Competitors and the market, every claim linked |
+| | `/starter-kit:design` | Picks a look from the style library and checks accessibility |
+| | `/starter-kit:onboard` | Maps a big existing codebase, area by area |
+| | `/starter-kit:vet` | Checks someone else's add-on before you install it |
+| **Build** | `/starter-kit:feature` | Builds a feature test-first in its own branch, reviews it, merges it |
+| | `/starter-kit:tdd` | One small test-first fix in the current conversation |
+| | `/starter-kit:debug` | Finds a bug's root cause with evidence, then fixes it |
+| | `/starter-kit:db` | Database changes on a local copy, rehearsed at real size |
+| **Check** | `/starter-kit:review` | Reviews changes made in the conversation |
+| | `/starter-kit:audit` | Security audit of the whole project |
+| | `/starter-kit:redteam` | Attacks a local copy like a hostile user |
+| | `/starter-kit:speed` | Measures what's slow and fixes the biggest cause |
+| | `/starter-kit:accept` | You try the finished milestone; your verdict is recorded |
+| | `/starter-kit:dogfood` | Checks what the kit itself did after a trial build |
+| **Ship and run** | `/starter-kit:full-scan` | The pre-ship sweep: every test, build and security review |
+| | `/starter-kit:launch` | The first go-live: environments, backups, alerts, a runbook |
+| | `/starter-kit:legal` | Privacy policy, terms and library licenses |
+| | `/starter-kit:maintain` | The monthly check-up |
+| | `/starter-kit:status` | Where things stand, in plain words |
 
 ### 7 agents
 

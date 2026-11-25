@@ -5,7 +5,7 @@ repository's history. Every release bumps `version` in `plugins/starter-kit/.cla
 fails if this file has no entry for the current version.
 
 ## Repository tidy-up — 2026-11-25 (documentation only; the plugin is unchanged, so no new version)
-- New logo, and a short README (about 1,200 words instead of 7,000): what it does, install, how you use it, every workflow and
+- New logo, and a short README (about 1,400 words instead of 7,000): what it does, install, how you use it, every workflow and
   agent in tables, the guards, what still needs you, and what is proven.
 - The detail moved into one page per topic in `docs/` (how it works, safety, quality, planning and records, design, speed and
   scale, databases, big codebases, launch, add-ons, settings), indexed in `docs/README.md`.

@@ -7,8 +7,9 @@ import { trustEntries, entriesOf } from "../scripts/trust-lib.mjs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { hookPath } from "../scripts/test-via-gate.mjs";
 
-const HOOK = join(dirname(fileURLToPath(import.meta.url)), "test-related.mjs");
+const HOOK = hookPath(dirname(fileURLToPath(import.meta.url)), "test-related.mjs");
 
 function sandbox() {
   const dir = realpathSync(mkdtempSync(join(tmpdir(), "kit-hook-")));

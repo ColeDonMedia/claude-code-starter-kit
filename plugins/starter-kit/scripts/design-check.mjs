@@ -11,6 +11,7 @@ const SECTIONS = [
   ["type", /font|typograph|\btype\b/i],
   ["spacing", /spacing|space scale/i],
   ["components", /component|button|input/i],
+  ["speed feel", /speed|snappy|perceived|responsiv/i],
   ["references", /reference|inspir|apps we like/i],
   ["quality bar", /quality bar|polish/i],
 ];

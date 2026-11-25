@@ -81,22 +81,26 @@ const pluginRoot = (process.env.CLAUDE_PLUGIN_ROOT || "").replace(/\\/g, "/");
 if (!/\/plugins\/cache\//.test(pluginRoot) && process.env.KIT_AUTOUPDATE_FORCE !== "1") done();
 
 const projectDir = resolve(process.env.CLAUDE_PROJECT_DIR || input.cwd || process.cwd());
+let switchedOff = false;
 try {
   const p = join(projectDir, ".claude", "kit.json");
   if (existsSync(p)) {
     const cfg = JSON.parse(readFileSync(p, "utf8"));
-    if (cfg.autoUpdate === false || cfg.auto === false) done();
+    switchedOff = cfg.autoUpdate === false || cfg.auto === false;
   }
 } catch {
   /* ignore bad json */
 }
+if (switchedOff) done();
 
+let tooSoon = false;
 try {
   const last = Number(readFileSync(stampFile, "utf8"));
-  if (Number.isFinite(last) && Date.now() - last < intervalMs) done();
+  tooSoon = Number.isFinite(last) && Date.now() - last < intervalMs;
 } catch {
   /* no stamp yet: due */
 }
+if (tooSoon) done();
 
 // Stamp first, so overlapping sessions don't start two updates.
 try {

@@ -7,6 +7,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync, realpathSync } from "nod
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { hookPath } from "../scripts/test-via-gate.mjs";
 import { scanText, scanDiff, scanFiles } from "../scripts/secret-scan.mjs";
 import { trustEntries, entriesOf } from "../scripts/trust-lib.mjs";
 
@@ -16,7 +17,7 @@ process.env.KIT_DATA_DIR = TRUST_DATA;
 test.after(() => rmSync(TRUST_DATA, { recursive: true, force: true }));
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const GUARD = join(HERE, "secret-guard.mjs");
+const GUARD = hookPath(HERE, "secret-guard.mjs");
 const SCAN = join(HERE, "..", "scripts", "secret-scan.mjs");
 
 const FAKE = {

@@ -62,13 +62,15 @@ Spend a few minutes thinking like an attacker, before any code, and write the re
   security review as soon as they're built, not only at the end.
 
 ## 7. Design brief (anything with a screen)
-Write `DESIGN.md` (about 25 lines, each part under its own heading: Feel, Colors, Type, Spacing, Components, References, Quality bar) so every screen looks like one product. "High end" is taste, so start from the user's:
+Write `DESIGN.md` (about 25 lines, each part under its own heading: Feel, Colors, Type, Spacing, Components, Speed feel, References, Quality bar) so every screen looks like one product. "High end" is taste, so start from the user's:
 ask in step 2 which two or three apps they like the look of and one they dislike, look at those (use a browser tool if you
 have one, otherwise the product's own pages) and write what you see into a `References` section: what each does well
 (spacing, hierarchy, density, motion) and what to avoid. Then write: the feel in three words, colors as lines like
 `background: #ffffff`, `text: #111111`, `muted: #555555`, `accent: #2563eb`, `error: #b00020` (text at least 4.5:1 on the
 background), one or two fonts and a size scale, spacing scale, corner and shadow style, component rules (buttons, inputs,
-cards), the layout at phone and desktop widths, and a `Quality bar` section: one primary action per screen, a clear visual
+cards), the layout at phone and desktop widths, a `Speed feel` section (a tap shows a result or a pressed state within 100 ms; a skeleton
+or the previous data instead of a blank screen; actions save optimistically; images and embeds reserve their space so nothing jumps; one
+spinner at most per screen), and a `Quality bar` section: one primary action per screen, a clear visual
 hierarchy, a real empty/loading/error state on every screen, no placeholder text, specific microcopy ("Save recipe", not
 "Submit"), motion short and subtle, nothing that looks like an unstyled browser default. Use the project's existing design
 system if it has one. Run `node "<SCRIPTS>/design-check.mjs" --project .` and fix what it reports. Every later screen follows this
@@ -89,7 +91,9 @@ file, and the ui-reviewer scores each screen against the Quality bar.
   into milestones of about three features. Each milestone ends with the user trying it and saying whether it is what they wanted.
 - **Real-world checks** — for anything with a screen: the three to five user journeys that must always work (sign up,
   sign in, the core action) will be end-to-end tests that click through the running app at phone and desktop sizes, and the
-  app gets a speed budget (how big the download may be). Say so in the plan.
+  app gets a **speed budget**: on a mid-range phone on slow 4G the main content shows in 2.5 s, nothing jumps around, a tap answers within 100 ms
+  and finishes within a second, and an API answer takes under 200 ms (say which pages and actions matter most, and ask whether anything
+  needs to be faster; write them into `.claude/speed.json`). Lists are always paged, and slow work (email, reports, images) runs in the background. Say so in the plan.
 - **Measuring and listening** — how the success goals will be measured once it is live (a privacy-friendly analytics tool, or simple
   counts from the app's own database, so no needless tracking), the few events that matter (sign-up, the core action), and how users
   can reach the owner (an in-app "Report a problem" or "Send feedback" that reaches an inbox the owner reads). Check current options and

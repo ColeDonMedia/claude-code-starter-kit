@@ -7,14 +7,15 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync, realpathSync } from "nod
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { hookPath } from "../scripts/test-via-gate.mjs";
 import { parseInstalls, assess } from "../scripts/pkg-check.mjs";
 import { trustEntries, entriesOf } from "../scripts/trust-lib.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const PKG = join(HERE, "package-guard.mjs");
-const FILE = join(HERE, "file-guard.mjs");
-const GATE = join(HERE, "push-gate.mjs");
-const SECRET = join(HERE, "secret-guard.mjs");
+const PKG = hookPath(HERE, "package-guard.mjs");
+const FILE = hookPath(HERE, "file-guard.mjs");
+const GATE = hookPath(HERE, "push-gate.mjs");
+const SECRET = hookPath(HERE, "secret-guard.mjs");
 
 const DATA = realpathSync(mkdtempSync(join(tmpdir(), "hard-data-")));
 process.env.KIT_DATA_DIR = DATA;

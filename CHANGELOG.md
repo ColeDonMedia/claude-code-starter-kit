@@ -4,6 +4,22 @@ What changed in each release of the starter-kit plugin, newest first, in plain w
 repository's history. Every release bumps `version` in `plugins/starter-kit/.claude-plugin/plugin.json`; a test
 fails if this file has no entry for the current version.
 
+## [2.12.0] — 2026-11-25
+Fast and snappy, at every level.
+- Speed budget: `.claude/speed.json` (defaults: main content 2.5 s, no layout jumping, taps answer in 100 ms, results in 1 s, 600 KB first load)
+  written in the plan, tightened per page and action. New `scripts/speed-check.mjs` judges measurements in plain words with the usual fix.
+- New `templates/speed.spec.js` (Playwright, copied to `e2e/` by init): throttled phone profile (slow 4G, 4x slower CPU); measures TTFB, FCP,
+  LCP, layout shift, total blocking time, bytes, requests, and per-action feedback and completion time.
+- New `scripts/delivery-check.mjs`: render-blocking scripts, missing viewport, unsized and never-lazy images, giant images, fonts without
+  `font-display`, unfingerprinted assets, missing compression and cache rules.
+- New `scripts/api-check.mjs`: queries and requests inside loops (JS/TS, Python, Ruby) and unbounded lists; marked exceptions are reported as accepted.
+- New `/speed`: measure, find the cause by level, fix one thing at a time, prove before and after, record under `## Performance`.
+- Builders follow fast-by-default rules and write a query-count test for list endpoints; the UI reviewer scores how fast each screen feels
+  (`Speed feel` is now a required `DESIGN.md` section); `/full-scan` blocks on over-budget pages and HIGH findings; launch sets up real-user timing.
+- Hooks run in one process: new `hooks/gate.mjs` and `scripts/inprocess.mjs` run the same hook scripts for each event instead of up to seven
+  processes per shell command. All 225 hook tests also run through the gate (`KIT_VIA_GATE=1`) to prove no decision changed. Fixed on the way: the
+  flight recorder's off switch and two other hooks called exit inside a try block (a test now forbids that).
+
 ## [2.11.0] — 2026-11-24
 Maps that keep memory honest.
 - New `scripts/schema-map.mjs` → `SCHEMA.md`: tables, columns, keys, indexes, relationships and a Mermaid diagram, replayed from SQL migrations

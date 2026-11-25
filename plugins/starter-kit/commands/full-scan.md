@@ -41,7 +41,11 @@ Run the full pre-ship sweep using the commands listed under "Commands" in CLAUDE
 13. Records, for projects with linked notes or a database: `node "<SCRIPTS>/notes-graph.mjs" --project .` must report the notes consistent
    (no broken links, nothing relying on a superseded decision), and `schema-map.mjs --project .` and `arch-map.mjs --project .` (when those
    files exist) must say current. Regenerate with `--write` and say what changed.
-14. Design, for anything with a screen: run `node "<SCRIPTS>/design-check.mjs" --project .`. A missing or incomplete DESIGN.md, or
+14. Speed: for anything with a screen run the speed test (CLAUDE.md's `Speed test:`), then `node "<SCRIPTS>/speed-check.mjs" --project .` and
+   `node "<SCRIPTS>/delivery-check.mjs" --dir <build folder> --project .`; for any server code run `node "<SCRIPTS>/api-check.mjs" --project . --base <last ship>`.
+   Over budget, a FAIL, or a HIGH finding blocks shipping: say in plain words which page or endpoint and what to do (`/starter-kit:speed`).
+   `ACCEPTED` and MEDIUM lines are listed for the owner. Exit 2 from speed-check means it was never measured: measure it.
+15. Design, for anything with a screen: run `node "<SCRIPTS>/design-check.mjs" --project .`. A missing or incomplete DESIGN.md, or
    colors with unreadable contrast, blocks shipping; fix it.
 
 Choosing what "since the last ship" means (never use a plain diff against the current branch — after

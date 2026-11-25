@@ -6,10 +6,11 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync, realpathSync } from "nod
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { hookPath } from "../scripts/test-via-gate.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const SESSION = join(HERE, "session-start.mjs");
-const GATE = join(HERE, "push-gate.mjs");
+const SESSION = hookPath(HERE, "session-start.mjs");
+const GATE = hookPath(HERE, "push-gate.mjs");
 const MANAGED = "<!-- starter-kit:managed -->\n# Project\n";
 
 function sandbox() {

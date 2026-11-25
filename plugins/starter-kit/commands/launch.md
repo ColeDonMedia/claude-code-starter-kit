@@ -53,7 +53,10 @@ alert on every paid service, and note each free-tier limit and what happens when
 ## 7b. Measure and listen
 Set up what the plan promised: the analytics (or counts) behind the success measures, with consent handled as `/starter-kit:legal` decided,
 and a visible way for users to report a problem or send feedback that lands in an inbox the owner actually reads. Write where to look
-for the numbers into "Monitoring and alerts" and the first date to review them against the goals.
+for the numbers into "Monitoring and alerts" and the first date to review them against the goals. Include real-user speed: the page-load
+and responsiveness figures real visitors get on their own phones and networks (most privacy-friendly analytics and hosting dashboards
+report Core Web Vitals; otherwise the free `web-vitals` library can send the three numbers to the same place as the counts, with no personal
+data). Lab numbers from the speed test are a proxy; these are the truth, so write the first date to compare them with `.claude/speed.json`.
 
 ## 8. Write RUNBOOK.md
 Create it from this template; every section filled in, plain words, no secret values, and a line `Launched: <date>` right under the title once it goes live:

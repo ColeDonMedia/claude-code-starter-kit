@@ -6,8 +6,9 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync, realpathSync } from "nod
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { hookPath } from "../scripts/test-via-gate.mjs";
 
-const GATE = join(dirname(fileURLToPath(import.meta.url)), "docs-gate.mjs");
+const GATE = hookPath(dirname(fileURLToPath(import.meta.url)), "docs-gate.mjs");
 
 function project({ managed = true } = {}) {
   const dir = realpathSync(mkdtempSync(join(tmpdir(), "docs-")));

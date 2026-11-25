@@ -71,11 +71,13 @@ if (!problems.length) done();
 
 const fingerprint = createHash("sha256").update(codeSha).update(problems.join("\n")).digest("hex");
 const stateFile = join(root, ".claude", "last-docs-check");
+let alreadySaid = false;
 try {
-  if (JSON.parse(read(stateFile) ?? "{}").fingerprint === fingerprint) done();
+  alreadySaid = JSON.parse(read(stateFile) ?? "{}").fingerprint === fingerprint;
 } catch {
   /* no state */
 }
+if (alreadySaid) done();
 try {
   mkdirSync(join(root, ".claude"), { recursive: true });
   writeFileSync(stateFile, JSON.stringify({ fingerprint, when: new Date().toISOString() }));

@@ -71,6 +71,7 @@ const parts = [
     "- New app or big/vague feature -> /starter-kit:spec (user approves), then build the roadmap; changed requirements: say what it adds or delays first.\n" +
     "- Existing big or unfamiliar codebase, or an area with no rules file -> /starter-kit:onboard before changing it.\n" +
     "- Schema change, migration, bulk data change, slow query, big table -> /starter-kit:db (local copies only).\n" +
+    "- Slow, laggy, heavy, \"make it faster/snappier\", or before launch -> /starter-kit:speed (measure first).\n" +
     "- Feature or non-trivial bug fix -> /starter-kit:feature. One-file tweak -> /starter-kit:tdd, then /starter-kit:review.\n" +
     "- Unclear bug, error or failing test -> /starter-kit:debug. Competitors, market -> /starter-kit:research.\n" +
     "- Where are we, progress, status -> /starter-kit:status. A milestone is finished -> /starter-kit:accept (the owner tries it) before more building.\n" +

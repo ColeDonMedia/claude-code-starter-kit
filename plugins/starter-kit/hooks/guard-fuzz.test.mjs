@@ -9,8 +9,9 @@ import { mkdtempSync, rmSync, realpathSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { hookPath } from "../scripts/test-via-gate.mjs";
 
-const GUARD = join(dirname(fileURLToPath(import.meta.url)), "safety-guard.mjs");
+const GUARD = hookPath(dirname(fileURLToPath(import.meta.url)), "safety-guard.mjs");
 const proj = realpathSync(mkdtempSync(join(tmpdir(), "fuzz-")));
 test.after(() => rmSync(proj, { recursive: true, force: true }));
 

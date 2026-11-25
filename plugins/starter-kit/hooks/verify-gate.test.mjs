@@ -6,9 +6,10 @@ import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, realpathSy
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { hookPath } from "../scripts/test-via-gate.mjs";
 import { trustEntries, entriesOf } from "../scripts/trust-lib.mjs";
 
-const GATE = join(dirname(fileURLToPath(import.meta.url)), "verify-gate.mjs");
+const GATE = hookPath(dirname(fileURLToPath(import.meta.url)), "verify-gate.mjs");
 const PASS = 'node -e "process.exit(0)"';
 const FAIL = 'node -e "console.log(String.fromCharCode(66,79,79,77));process.exit(1)"'; // prints BOOM
 

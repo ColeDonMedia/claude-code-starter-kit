@@ -108,6 +108,9 @@ tests can all pass while the page is broken; this is what catches that.
 - Record the command in CLAUDE.md as `End-to-end (browser) tests: <command>` and put the build folder and limits in
   `Speed budget:` (see the template). Add the e2e command to the GitHub checks workflow.
 - Write ONE smoke test now: the home page loads at both sizes and shows no console errors. `/starter-kit:feature` adds more per feature.
+- Copy `<plugin>/templates/speed.spec.js` to `e2e/speed.spec.js` unchanged (it measures how fast pages load and taps respond on a throttled
+  phone profile and writes `.claude/speed-results.json`), run `node "<SCRIPTS>/speed-check.mjs" --project . --init` to create the budget
+  `.claude/speed.json`, and record `Speed test: <command that runs e2e/speed.spec.js>` in CLAUDE.md. Add `.claude/speed-results.json` to `.gitignore`.
 Skip all of this, and write `none` in CLAUDE.md, for projects with no browser UI (a command-line tool, a library, an API only).
 
 ## 10. The project's memory: three short documents

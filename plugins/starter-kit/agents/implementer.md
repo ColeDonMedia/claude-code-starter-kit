@@ -37,6 +37,14 @@ brief and in the project's files.
    at the phone (375 px) and desktop (1280 px) sizes. Save a screenshot of each state to `.claude/screens/<feature>/` for the
    reviewers, and map the criterion to it as `→ test: e2e/<file>::<test name>`. If CLAUDE.md names a "Speed budget", run
    `node "<plugin>/scripts/perf-budget.mjs" --dir <build folder>` after building and fix anything over budget before reporting.
+   Fast by default, every time (slowness is much cheaper to avoid than to fix): never run a query or network call inside a loop (load
+   what the loop needs in one query first); every list endpoint takes a limit and a page, and the database has an index for each column
+   a new query filters, joins or sorts on; for any endpoint that returns a list, write a test that counts the database queries and
+   asserts the count does not grow with the number of rows; give images a width and height and `loading="lazy"` below the first screen;
+   load heavy libraries and routes on demand; never block the first paint on data that isn't shown yet; slow work (email, reports,
+   images, third-party calls) goes to a background job, not the user's request; every tap shows a result or pressed state at once, with
+   optimistic updates and skeletons instead of blank screens. After building, run `node "<plugin>/scripts/api-check.mjs" --project .
+   --base <MAIN>` (fix every HIGH) and, for screens, the speed test and `node "<plugin>/scripts/speed-check.mjs" --project .`; report the numbers.
    Secure by default, every time (these are the mistakes that become breaches):
    - Check who is asking on every endpoint, action and query: authenticate, then authorize (can THIS user touch THIS
      record?). Never trust an id, role, price or flag sent by the browser.

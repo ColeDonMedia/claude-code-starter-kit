@@ -22,7 +22,7 @@ and re-read the red team's last findings for anything still open. Rotate any key
 ## 3. Operations health
 - Backups: confirm the most recent automatic backup exists and RUNBOOK.md's `Restore last tested` date is under 90 days old; if not, do a restore test now and update the date.
 - Errors and uptime: summarize the top error reports and any downtime since the last visit, in plain words, with what you changed or recommend.
-- Speed: run the speed budget again (`perf-budget.mjs`) and compare with last time.
+- Speed: run the speed budget again (`perf-budget.mjs`, the speed test with `speed-check.mjs`, `api-check.mjs`) and compare with the numbers recorded under `## Performance` in PROJECT.md; if anything got worse, use `/starter-kit:speed`. Also look at real-user timing if the launch set it up.
 - Costs: compare this month's bill or usage with the estimate in RUNBOOK.md and say if it is drifting.
 - Expiring things: domain renewal, certificates, API keys with an end date, free trials.
 

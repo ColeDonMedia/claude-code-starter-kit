@@ -54,7 +54,10 @@ test("every hook is registered, and every registered hook exists", () => {
   const registered = new Set(JSON.stringify(cfg).match(/hooks\/([a-z-]+\.mjs)/g)?.map((s) => s.replace("hooks/", "")));
   const onDisk = readdirSync(join(PLUGIN, "hooks")).filter((x) => x.endsWith(".mjs") && !x.endsWith(".test.mjs"));
   for (const f of registered) assert.ok(onDisk.includes(f), `hooks.json names ${f}, which does not exist`);
-  for (const f of onDisk) assert.ok(registered.has(f) || f === "auto-update.mjs", `${f} is not registered in hooks.json`);
+  // hooks.json starts everything through gate.mjs, which runs the individual hook scripts; each must be named there
+  const gate = readFileSync(join(PLUGIN, "hooks", "gate.mjs"), "utf8");
+  assert.ok(registered.has("gate.mjs"), "hooks.json must start gate.mjs");
+  for (const f of onDisk.filter((x) => x !== "gate.mjs")) assert.ok(registered.has(f) || gate.includes(`"${f.replace(/\.mjs$/, "")}"`), `${f} is not run by gate.mjs or registered in hooks.json`);
 });
 
 // ---- no dead references: the instructions must only point at things that exist ----

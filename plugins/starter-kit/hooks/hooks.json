@@ -2,20 +2,8 @@
   "hooks": {
     "SessionStart": [
       {
-        "matcher": "startup|clear|compact",
         "hooks": [
-          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/session-start.mjs\"", "timeout": 10 }
-        ]
-      },
-      {
-        "hooks": [
-          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/flight-recorder.mjs\"", "timeout": 5 }
-        ]
-      },
-      {
-        "matcher": "startup",
-        "hooks": [
-          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/auto-update.mjs\"", "timeout": 10 }
+          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/gate.mjs\" start", "timeout": 20 }
         ]
       }
     ],
@@ -23,32 +11,7 @@
       {
         "matcher": "*",
         "hooks": [
-          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/flight-recorder.mjs\"", "timeout": 5 }
-        ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/safety-guard.mjs\"", "timeout": 10 },
-          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/secret-guard.mjs\"", "timeout": 60 },
-          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/package-guard.mjs\"", "timeout": 30 },
-          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/push-gate.mjs\"", "timeout": 10 },
-          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/db-guard.mjs\"", "timeout": 10 }
-        ]
-      },
-      {
-        "matcher": "Write|Edit|MultiEdit",
-        "hooks": [
-          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/file-guard.mjs\"", "timeout": 10 }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/flight-recorder.mjs\"", "timeout": 5 },
-          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/verify-gate.mjs\"", "timeout": 300 },
-          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/docs-gate.mjs\"", "timeout": 30 }
+          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/gate.mjs\" pre", "timeout": 120 }
         ]
       }
     ],
@@ -56,13 +19,14 @@
       {
         "matcher": "*",
         "hooks": [
-          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/flight-recorder.mjs\"", "timeout": 5 }
+          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/gate.mjs\" post", "timeout": 120 }
         ]
-      },
+      }
+    ],
+    "Stop": [
       {
-        "matcher": "Edit|Write|MultiEdit",
         "hooks": [
-          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/test-related.mjs\"", "timeout": 120 }
+          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/gate.mjs\" stop", "timeout": 330 }
         ]
       }
     ]

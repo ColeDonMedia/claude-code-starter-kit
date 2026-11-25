@@ -6,8 +6,9 @@ import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, rmSync
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { hookPath } from "../scripts/test-via-gate.mjs";
 
-const HOOK = join(dirname(fileURLToPath(import.meta.url)), "auto-update.mjs");
+const HOOK = hookPath(dirname(fileURLToPath(import.meta.url)), "auto-update.mjs");
 const CACHE_ROOT = "/home/u/.claude/plugins/cache/starter-kit-marketplace/starter-kit/1.0.0";
 
 function box() {

@@ -18,15 +18,17 @@ try {
 }
 
 const root = resolve(process.env.CLAUDE_PROJECT_DIR || input.cwd || process.cwd());
+let off = false;
 try {
   const p = join(root, ".claude", "kit.json");
   if (existsSync(p)) {
     const cfg = JSON.parse(readFileSync(p, "utf8"));
-    if (cfg.flightLog === false || cfg.auto === false) process.exit(0);
+    off = cfg.flightLog === false || cfg.auto === false;
   }
 } catch {
   /* bad json: keep recording */
 }
+if (off) process.exit(0);
 
 const ev = input.hook_event_name;
 const e = { sid: input.session_id };

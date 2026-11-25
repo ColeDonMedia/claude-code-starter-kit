@@ -6,10 +6,11 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync, realpathSync } from "nod
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { hookPath } from "../scripts/test-via-gate.mjs";
 import { readFileSync } from "node:fs";
 import { trustEntries, entriesOf } from "../scripts/trust-lib.mjs";
 
-const GUARD = join(dirname(fileURLToPath(import.meta.url)), "safety-guard.mjs");
+const GUARD = hookPath(dirname(fileURLToPath(import.meta.url)), "safety-guard.mjs");
 const dir = realpathSync(mkdtempSync(join(tmpdir(), "guard-")));
 test.after(() => rmSync(dir, { recursive: true, force: true }));
 

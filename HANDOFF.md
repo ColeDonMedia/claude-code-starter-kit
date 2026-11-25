@@ -3,14 +3,15 @@
 Read this, then `CLAUDE.md` (how to work on this repo), `README.md` (what the kit does) and `CHANGELOG.md` (history).
 Rewrite this file at the end of every session; keep it under 50 lines and true.
 
-## State at version 2.11.0 (2026-11-24)
+## State at version 2.12.0 (2026-11-25)
 - Public repo `ColeDonMedia/claude-code-starter-kit`, MIT, installed from GitHub; machines self-update daily.
-- `plugins/starter-kit/`: 20 commands, 7 agents, 11 hook scripts, helper scripts, ~355 tests (all unit tests, local only).
+- `plugins/starter-kit/`: 21 commands, 7 agents, 12 hook scripts (gate.mjs runs the rest), helper scripts, ~385 tests (all unit tests, local only).
 - OWNER RULE: never spend API tokens (no `claude -p`, no npx claude-code runs). Live trials are run by the owner in a
   normal session (`DOGFOOD.md`); read the flight report afterwards (`/dogfood`).
 - This session added: 2.7 flight recorder, taste bar, decisions memory; 2.8 drift/compaction/checkpoints/stalls;
   2.9 code index, impact, scoped tests, `/onboard`; 2.10 database guard, migration check, rehearsal, `/db`;
-  2.11 schema map, architecture map, linked notes with decision status (Obsidian export).
+  2.11 schema map, architecture map, linked notes with decision status (Obsidian export);
+  2.12 speed budget, speed test template, delivery/API checks, `/speed`, and ONE merged hook process (`hooks/gate.mjs`).
 
 ## What was verified, and how
 - Code index: read-only on a real 9.2M-line Python install (31k files; impact and hubs correct; 3.5 min first build;
@@ -20,7 +21,11 @@ Rewrite this file at the end of every session; keep it under 50 lines and true.
   No Postgres or MySQL on this machine: the Postgres plan parser is tested on sample `EXPLAIN` JSON only.
 - Database guard: 16 deny, 14 allow, 7 ask cases. Expect real-world commands it misreads; add them to `db.test.mjs` first.
 
+- Gate: all 225 hook tests also pass through `gate.mjs` (`KIT_VIA_GATE=1`); merged is ~10-30% faster per shell command (Node start is ~0.3 s here).
+
 ## Not verified (be honest about this)
+- BIGGEST RISK: `hooks.json` now starts only `gate.mjs`. If the gate misbehaves inside real Claude Code (it swaps process.stdin/exit/stdout in-process), EVERY guard fails open. First thing next live session: confirm a guard still fires (try a harmless blocked command). Rollback = the 2.11.0 `hooks.json` in git history.
+- NEVER RUN LIVE: `templates/speed.spec.js` (Playwright not installed here), `speed-check`, `/speed`; `api-check` and `delivery-check` are pattern screens tested on synthetic code only.
 - The full pipeline (plan, research, multi-feature build, ship) has never run end to end live. Only the safety guard has
   been seen firing in a live session; every other hook is tested with Claude Code's payload shape.
 - NEVER RUN LIVE: red-team, challenger, `/redteam`, `/accept`, `/status`, `/launch`, `/maintain`, `/legal`, `/dogfood`,

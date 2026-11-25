@@ -143,7 +143,7 @@ test("design check: contrast math matches the WCAG reference values", () => {
   assert.ok(contrast("#595959", "#ffffff") > 4.5);
 });
 
-const GOOD = `# Design\n## Feel\ncalm, clear, quick\n## Colors\nbackground: #ffffff\ntext: #111111\nmuted: #595959\naccent: #2563eb\nerror: #b00020\n## Type\nInter\n## Spacing\n4px scale\n## Components\nbuttons\n## References\nLinear\n## Quality bar\none primary action\n`;
+const GOOD = `# Design\n## Feel\ncalm, clear, quick\n## Colors\nbackground: #ffffff\ntext: #111111\nmuted: #595959\naccent: #2563eb\nerror: #b00020\n## Type\nInter\n## Spacing\n4px scale\n## Components\nbuttons\n## Speed feel\ninstant feedback\n## References\nLinear\n## Quality bar\none primary action\n`;
 test("design check: a complete brief passes", () => {
   assert.deepEqual(checkDesign(GOOD), []);
 });

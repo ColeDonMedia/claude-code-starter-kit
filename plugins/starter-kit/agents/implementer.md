@@ -37,6 +37,9 @@ brief and in the project's files.
    at the phone (375 px) and desktop (1280 px) sizes. Save a screenshot of each state to `.claude/screens/<feature>/` for the
    reviewers, and map the criterion to it as `→ test: e2e/<file>::<test name>`. If CLAUDE.md names a "Speed budget", run
    `node "${CLAUDE_PLUGIN_ROOT}/scripts/perf-budget.mjs" --dir <build folder>` after building and fix anything over budget before reporting.
+   Built for its size: run `node "${CLAUDE_PLUGIN_ROOT}/scripts/scale-profile.mjs" --project .` and follow its Build and Skip lists
+   (no servers, queues or caches in an app that runs on one person's computer; connection pools, background jobs and stateless
+   servers in one that serves thousands at once). If there is no profile, say so in your report instead of guessing a size.
    Fast by default, every time (slowness is much cheaper to avoid than to fix): never run a query or network call inside a loop (load
    what the loop needs in one query first); every list endpoint takes a limit and a page, and the database has an index for each column
    a new query filters, joins or sorts on; for any endpoint that returns a list, write a test that counts the database queries and

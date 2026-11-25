@@ -4,12 +4,28 @@
 // SQLite runs right here (Node's built-in driver); the original file is never opened for writing. For Postgres, run
 // `EXPLAIN (FORMAT JSON) <query>` on a LOCAL copy and pass the saved output with --pg-plan; it flags sequential scans.
 // Run: node db-rehearse.mjs (--sqlite <db> | --schema <file.sql>) [--seed table=rows ...] [--migrate <file.sql>]
-//                           [--explain "<sql>" ...] [--keep]
+//                           [--explain "<sql>" ...] [--keep] [--project <dir>] [--max-rows 2000000]
 //      node db-rehearse.mjs --pg-plan <plan.json> [--min-rows 10000]
+// Row counts can come from the scale profile (.claude/scale.json): `--seed users=users` (the planned number of people) and
+// `--seed orders=per-user:200` (200 per person). Very large plans are capped at --max-rows so a rehearsal finishes, and the
+// migration time is scaled up to estimate the real one.
 import { copyFileSync, existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { loadProfile } from "./scale-profile.mjs";
+
+// "5000" -> 5000; "users" -> the planned number of people; "per-user:200" -> people x 200; "main" -> the planned main table.
+export function seedCount(spec, profile, maxRows = 2000000) {
+  let planned;
+  if (/^\d+$/.test(String(spec))) planned = Number(spec);
+  else if (spec === "users") planned = profile.usersTotal;
+  else if (spec === "main") planned = profile.usersTotal * profile.recordsPerUser;
+  else if (/^per-user:\d+(\.\d+)?$/.test(String(spec))) planned = Math.round(profile.usersTotal * Number(spec.split(":")[1]));
+  else return { error: `"${spec}" is not a row count, "users", "main" or "per-user:N"` };
+  const rows = Math.min(planned, maxRows);
+  return { planned, rows, scale: rows ? planned / rows : 1 };
+}
 
 async function sqlite() {
   const prev = process.emitWarning;
@@ -125,14 +141,21 @@ if (process.argv[1] && resolve(process.argv[1]) === resolve(fileURLToPath(import
     const copy = await openCopy({ db: get("--sqlite"), schema: get("--schema") });
     let bad = false;
     try {
+      const profile = loadProfile(resolve(get("--project") ?? "."));
+      const maxRows = Number(get("--max-rows")) || 2000000;
+      let scale = 1;
       for (const s of all("--seed")) {
-        const [t, n] = s.split("=");
-        const r = seed(copy.conn, t, Number(n));
-        console.log(`Seeded ${r.rows} rows into ${t} in ${r.ms} ms.`);
+        const [t, spec] = s.split("=");
+        const c = seedCount(spec, profile, maxRows);
+        if (c.error) throw new Error(c.error);
+        scale = Math.max(scale, c.scale);
+        const r = seed(copy.conn, t, c.rows);
+        console.log(`Seeded ${r.rows} rows into ${t} in ${r.ms} ms${c.planned !== c.rows ? ` (the plan says ${c.planned}; capped at --max-rows ${maxRows})` : ""}.`);
       }
       if (get("--migrate")) {
         const r = timeMigration(copy.conn, get("--migrate"));
-        console.log(`Migration took ${r.ms} ms on this data.${r.ms > 5000 ? " That is long enough to matter on a live database: plan it for a quiet time or split it." : ""}`);
+        const est = scale > 1 ? ` At the planned size (about ${Math.round(scale)}x more rows) expect roughly ${Math.round((r.ms * scale) / 1000)} s or more.` : "";
+        console.log(`Migration took ${r.ms} ms on this data.${est}${r.ms * scale > 5000 ? " That is long enough to matter on a live database: plan it for a quiet time or split it." : ""}`);
       }
       for (const q of all("--explain")) {
         const r = explain(copy.conn, q);

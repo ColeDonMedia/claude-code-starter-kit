@@ -23,6 +23,10 @@ and re-read the red team's last findings for anything still open. Rotate any key
 - Backups: confirm the most recent automatic backup exists and RUNBOOK.md's `Restore last tested` date is under 90 days old; if not, do a restore test now and update the date.
 - Errors and uptime: summarize the top error reports and any downtime since the last visit, in plain words, with what you changed or recommend.
 - Speed: run the speed budget again (`perf-budget.mjs`, the speed test with `speed-check.mjs`, `api-check.mjs`) and compare with the numbers recorded under `## Performance` in PROJECT.md; if anything got worse, use `/starter-kit:speed`. Also look at real-user timing if the launch set it up.
+- Size: take the real numbers (accounts or installs, and the busiest moment's users, from analytics or the host's dashboard) and run
+  `node "${CLAUDE_PLUGIN_ROOT}/scripts/scale-profile.mjs" --project . --actual usersTotal=<n> usersPeak=<n>`. Past half of the plan, re-run the
+  load test (or the desktop check) at the planned size now; past the plan, update the profile with its suggested numbers, re-test, and tell
+  the owner in plain words what will need to change before the next doubling.
 - Costs: compare this month's bill or usage with the estimate in RUNBOOK.md and say if it is drifting.
 - Expiring things: domain renewal, certificates, API keys with an end date, free trials.
 

@@ -17,8 +17,9 @@ the running code still uses the old column. Work slowly and prove each step on a
 3. **Check every migration:** `node "${CLAUDE_PLUGIN_ROOT}/scripts/migration-check.mjs" --project .`. Fix every HIGH finding by following its "Safer" line.
    Only the owner may accept a risk: explain it in plain words (what could go wrong, for how long, how it would be undone) and, if they
    accept, add the comment `kit: accepted-risk — owner said "<their words>"` on that line.
-4. **Rehearse at real size.** Ask (or estimate from the plan) how many rows the main tables will have after a year; use at least
-   100,000 for anything users create, 1,000,000 for logs and events. SQLite:
+4. **Rehearse at real size.** Take the sizes from the scale profile (`scale-profile.mjs --project .` prints the one-year table sizes):
+   `--seed users=users --seed <table>=per-user:<rows each person creates>`. With no profile, set one first; use at least 100,000 for
+   anything users create and 1,000,000 for logs and events. Very large plans are capped (`--max-rows`) and the timings scaled up. SQLite:
    `node "${CLAUDE_PLUGIN_ROOT}/scripts/db-rehearse.mjs" --sqlite <db file> --seed <parent>=<rows> --seed <child>=<rows> --migrate <file.sql> --explain "<each new query>"`.
    Postgres or MySQL: fill a local Docker copy (`generate_series`), run `EXPLAIN (FORMAT JSON)` for each new query, save it and pass it with
    `--pg-plan <file>`. Fix every full scan of a big table (usually a missing index) and say how long the migration took.

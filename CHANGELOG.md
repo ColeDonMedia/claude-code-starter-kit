@@ -4,6 +4,23 @@ What changed in each release of the starter-kit plugin, newest first, in plain w
 repository's history. Every release bumps `version` in `plugins/starter-kit/.claude-plugin/plugin.json`; a test
 fails if this file has no entry for the current version.
 
+## [2.13.0] — 2026-11-25
+Built for its size: a one-person desktop app and a SaaS for thousands are planned, built and tested differently.
+- New scale profile (`.claude/scale.json`, `scripts/scale-profile.mjs`): the plan asks one size question and records kind, people in a
+  year, people at the busiest moment and what downtime costs. The script derives requests a second at peak and the test target,
+  requests in progress, a connection pool size, table sizes after a year and open connections, and prints what to build, how to
+  prove it, and what to deliberately skip for that size (five tiers, from single-user to very large). `--actual` compares real
+  numbers after launch and says when to re-test.
+- New `scripts/load-test.mjs`: a ramp of simulated users against a copy on this computer (plain Node, nothing to install), with
+  requests a second, p50/p95/p99 and error rate per step, and a verdict: HOLDS, BREAKS, or NOT REACHED (this computer hit its limit
+  first). Refuses any address that is not this computer.
+- New `scripts/desktop-check.mjs`: for desktop and command-line apps: time until ready, memory and processor use of the whole
+  process tree while idle, download size, against budgets by kind. Always stops the app it started.
+- `db-rehearse.mjs` takes row counts from the profile (`users`, `main`, `per-user:N`), caps very large plans and scales the timing up.
+- Wired in: `/spec` (the size question, a Size section in the plan), `/init`, the builder (follow the Build and Skip lists),
+  `/speed` (which check fits which kind of app), `/db`, `/full-scan` (step 16), `/maintain` (real numbers versus the plan), and a
+  session-start reminder for projects with a roadmap and no profile.
+
 ## [2.12.2] — 2026-11-25
 Payment keys: caught, and the block message says where they go so billing keeps working.
 - The secret scanner now catches Stripe test secret and restricted keys (`sk_test_`, `rk_test_`, not only live ones), Stripe webhook

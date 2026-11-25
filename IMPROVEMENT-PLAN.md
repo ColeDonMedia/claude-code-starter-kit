@@ -11,8 +11,9 @@ then stop and report. Do not start the next phase in the same release.
 | Phase | Release | State |
 |---|---|---|
 | 0 — safety and correctness | 2.12.1 | **Done** (P0-1 to P0-9). D1 decided: keep the merged runner, with the canary, self-check and fail-closed net. |
-| 1 — verifiable | 2.13.0 | Next. Needs owner decisions D2 and D3. |
-| 2, 3, 4 | — | Not started. Phase 2 waits for one live trial (P1-6). |
+| Owner requests | 2.12.2, 2.13.0 | **Done**: payment keys (2.12.2); sizing an app to its users: scale profile, load test, desktop check (2.13.0). |
+| 1 — verifiable | 2.14.0 | Next. Needs owner decisions D2 and D3. |
+| 2, 3, 4 | — | Not started. Phase 2 waits for one live trial (P1-6). When P2-1 (rigor dial) is built, combine it with the scale profile: one question pair in `/spec` sets both. |
 
 **Answers from the official docs (2026-11-25, hooks reference, sub-agents page, plugins reference):**
 - V1. The tool is `PowerShell`; its input has the command in `tool_input.command`, like Bash. The docs advise `Bash|PowerShell` matchers.

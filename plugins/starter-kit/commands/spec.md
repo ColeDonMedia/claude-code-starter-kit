@@ -15,7 +15,18 @@ Send ONE message with at most 6 plain-language questions, each with your propose
 say "yes". Ask only about what they'd care about: who it's for, the one thing it must do well, must-haves versus
 later, phone, computer or both, whether people sign in, anything it must connect to, budget or deadline, and (if it
 has a screen) two or three apps whose look they like and one they dislike.
+Always include ONE question about size, because it decides how the app is built: "Will this run on each person's own computer,
+or online for everyone? About how many people in a year, and how many using it at the same moment at the busiest time? What
+does it cost you if it is down for an hour?" Offer your guess as the default (for example "a free download, a few thousand
+people, one at a time each" or "a business tool: 2,000 accounts, 200 at once, an hour down costs money").
 Never ask them to choose technology. Then wait. If they say "you decide", use your defaults and say so.
+
+## 2b. Size it
+Write the answers into the scale profile: `node "${CLAUDE_PLUGIN_ROOT}/scripts/scale-profile.mjs" --project . --set kind=<web|saas|api|desktop|cli|mobile|library|game> usersTotal=<n> usersPeak=<n> downtime=<minutes|hour-costs-money|never>`
+(add `actionsPerMinute`, `recordsPerUser`, `realtime=true` when you know them). It prints the numbers that follow (requests a
+second at the busy moment, table sizes after a year, connections) and what to build, test and deliberately skip at that size.
+Choose the stack and design to fit it: a one-person desktop app gets no servers, queues or caches; a big SaaS gets them from the
+start. Don't build for a size the owner did not ask for, in either direction.
 
 ## 3. Research (new apps and unfamiliar territory; skip for a small feature)
 Launch two or three starter-kit `researcher` agents (they run on cheap, fast Haiku), one per angle, in parallel with
@@ -89,6 +100,10 @@ file, and the ui-reviewer scores each screen against the Quality bar.
 - **Roadmap** — 3 to 10 features in build order, smallest useful version first, each with its criteria and a size
   (`[S]` a few hours of work, `[M]` about a day, `[L]` several days: your honest guess, labelled as a guess), grouped
   into milestones of about three features. Each milestone ends with the user trying it and saying whether it is what they wanted.
+- **Size** — in plain words, from the scale profile: how many people, how many at once, what that means in numbers, and what
+  will be built (and deliberately not built) because of it. Then how it will be proven: an app on the user's own computer gets a
+  start-up, memory and download check; an online app gets its database rehearsed at the one-year size and a local load test at
+  the target rate (and, for big apps, the same test on the host's staging copy, run or approved by the owner).
 - **Real-world checks** — for anything with a screen: the three to five user journeys that must always work (sign up,
   sign in, the core action) will be end-to-end tests that click through the running app at phone and desktop sizes, and the
   app gets a **speed budget**: on a mid-range phone on slow 4G the main content shows in 2.5 s, nothing jumps around, a tap answers within 100 ms

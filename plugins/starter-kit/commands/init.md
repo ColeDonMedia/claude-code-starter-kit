@@ -113,6 +113,12 @@ tests can all pass while the page is broken; this is what catches that.
   `.claude/speed.json`, and record `Speed test: <command that runs e2e/speed.spec.js>` in CLAUDE.md. Add `.claude/speed-results.json` to `.gitignore`.
 Skip all of this, and write `none` in CLAUDE.md, for projects with no browser UI (a command-line tool, a library, an API only).
 
+## 9b. Size (every project)
+If `.claude/scale.json` does not exist and you can tell what kind of thing this is, ask the owner the one size question from
+`/starter-kit:spec` (own computer or online, how many people, how many at once, what an hour of downtime costs) and record it with
+`node "${CLAUDE_PLUGIN_ROOT}/scripts/scale-profile.mjs" --project . --set …`. Commit `.claude/scale.json` (it is plain numbers, no secrets).
+Add `.claude/load-results.json` and `.claude/desktop-results.json` to `.gitignore`.
+
 ## 10. The project's memory: short documents any session can pick up from
 Create these if missing (never overwrite ones that exist), fill what you know and leave `TODO` for the rest. Any
 session, by any bot or person, must be able to read them and carry on with full context. Hooks keep them honest:

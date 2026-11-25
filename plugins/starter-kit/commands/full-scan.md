@@ -47,6 +47,10 @@ Run the full pre-ship sweep using the commands listed under "Commands" in CLAUDE
    `ACCEPTED` and MEDIUM lines are listed for the owner. Exit 2 from speed-check means it was never measured: measure it.
 15. Design, for anything with a screen: run `node "${CLAUDE_PLUGIN_ROOT}/scripts/design-check.mjs" --project .`. A missing or incomplete DESIGN.md, or
    colors with unreadable contrast, blocks shipping; fix it.
+16. Size: `node "${CLAUDE_PLUGIN_ROOT}/scripts/scale-profile.mjs" --project . --check` (no profile blocks a first launch: set it with the owner).
+   On the user's own computer: run `desktop-check.mjs` (see `/starter-kit:speed`); over budget blocks. Online: run `load-test.mjs` against a
+   local copy seeded to the profile's size; BREAKS blocks; NOT REACHED does not block on its own, but for a large or very large profile
+   say plainly that the host's staging copy must carry the target before launch, and that the owner runs or approves that test.
 
 Choosing what "since the last ship" means (never use a plain diff against the current branch — after
 `/starter-kit:feature` you are already on it, so that diff is empty). Take the first that exists:
@@ -64,7 +68,8 @@ Rules:
 - Report each step's real output.
 - Ship only when every applicable step is green AND security-reviewer returns APPROVE. Every numbered step above can block:
   1–5 and 8 must pass; 6 must APPROVE; 7 must have no FAIL; 9 must have nothing waiting; 10 and 11 must be complete for a first
-  public launch; 12 must have no HIGH; 13 must be consistent and current; 14 must be within budget with no FAIL or HIGH; 15 must pass.
+  public launch; 12 must have no HIGH; 13 must be consistent and current; 14 must be within budget with no FAIL or HIGH; 15 must pass;
+  16 must have a profile and no BREAKS or over-budget result.
   ADVICE, MEDIUM and `ACCEPTED` lines do not block, but list them for the owner. If anything fails, fix it and re-run the full sweep.
 
 When — and only when — every applicable step is green and security-reviewer returned APPROVE, record it

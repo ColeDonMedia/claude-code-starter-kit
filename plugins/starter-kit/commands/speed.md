@@ -7,6 +7,16 @@ Make this fast, and prove it: $ARGUMENTS
 Speed is measured, never guessed: a change that was not timed before and after is not an optimisation. Work from the biggest cost down
 and stop when the budget is met. Over-tuning costs more than it saves.
 
+0. **Know the size.** `node "${CLAUDE_PLUGIN_ROOT}/scripts/scale-profile.mjs" --project .` says what "fast" means for this app. If it has no
+   profile, set one first (ask the owner the size question from `/starter-kit:spec`). Then, as well as the page checks below:
+   - **On the user's own computer** (desktop, command-line): `node "${CLAUDE_PLUGIN_ROOT}/scripts/desktop-check.mjs" --project . --cmd "<start command>"
+     --ready-text "<what it prints when ready>"` (or `--ready-port`, or `--until-exit` for a command-line tool; `--build <installer>` for
+     the download size): start-up time, memory and processor use while idle. Also try the largest realistic input and a long session.
+   - **Online for many people:** start the app locally against a database seeded to the profile's size (`db-rehearse.mjs --seed users=users
+     --seed <main table>=per-user:<n>`), then `node "${CLAUDE_PLUGIN_ROOT}/scripts/load-test.mjs" --project . --url http://localhost:<port>/<busy page or endpoint>`
+     (several `--url`s, or a `--scenario` file mixing reads and writes like real use). It steps up the crowd to the profile's target rate.
+     BREAKS means fix it now (it failed below the target); NOT REACHED means this computer hit its limit first, so repeat on the host's
+     staging copy before launch (the owner runs or approves that: the tool itself never targets another computer).
 1. **Know the target.** Read `.claude/speed.json` (create it with `node "${CLAUDE_PLUGIN_ROOT}/scripts/speed-check.mjs" --project . --init`). The defaults mean
    "on a mid-range phone on slow 4G: main content in 2.5 s, no jumping, taps answer in 100 ms". Tighten them for the pages and actions that
    matter most (sign-in, the core action). If the user named something that feels slow, put exactly that page or action in the budget.

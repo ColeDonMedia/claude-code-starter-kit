@@ -75,7 +75,7 @@ const parts = [
     "- New app or big/vague feature -> /starter-kit:spec (user approves), then build the roadmap; changed requirements: say what it adds or delays first.\n" +
     "- Existing big or unfamiliar codebase, or an area with no rules file -> /starter-kit:onboard before changing it.\n" +
     "- Schema change, migration, bulk data change, slow query, big table -> /starter-kit:db (local copies only).\n" +
-    "- Slow, laggy, heavy, \"make it faster/snappier\", or before launch -> /starter-kit:speed (measure first).\n" +
+    "- Slow, laggy, heavy, \"make it faster\", \"can it handle N users\", or before launch -> /starter-kit:speed (measure first).\n" +
     "- Feature or non-trivial bug fix -> /starter-kit:feature. One-file tweak -> /starter-kit:tdd, then /starter-kit:review.\n" +
     "- Unclear bug, error or failing test -> /starter-kit:debug. Competitors, market -> /starter-kit:research.\n" +
     "- Where are we, progress, status -> /starter-kit:status. A milestone is finished -> /starter-kit:accept (the owner tries it) before more building.\n" +
@@ -177,6 +177,13 @@ if (roadmap) {
   } catch {
     /* never let a bad roadmap break session start */
   }
+}
+
+// A project being built with no size on record: the plan never asked how many people it is for (projects planned before 2.13).
+if (roadmap && !existsSync(join(root, ".claude", "scale.json"))) {
+  parts.push(
+    `No scale profile: ask the owner one question (own computer or online, how many people in a year, how many at the busiest moment, what an hour down costs) and record it with node "${SCRIPTS}/scale-profile.mjs" --project . --set … before building more.`,
+  );
 }
 
 // A launched app needs regular care; say so when it is overdue (30+ days since the last maintenance or the launch).

@@ -30,8 +30,14 @@ brief and in the project's files.
    otherwise web search or the package's own docs/types in `node_modules` or site-packages).
    For anything with a screen: follow `DESIGN.md` if the project has one (colors, type, spacing, components);
    build every state, not just the happy one (empty, loading, error, success); make it work at phone width
-   (about 375px) and desktop; every input needs a label, everything must work by keyboard, and text contrast
-   must be at least 4.5:1. Handle bad input and failed requests with a message a person can understand.
+   (about 375px) and desktop. Accessible by default (WCAG 2.2 AA): real elements for what they are (button, link, label,
+   heading, list) before ARIA; every field has a visible label and errors in text that say how to fix them; everything works by
+   keyboard with a visible focus ring that sticky headers never cover; tap targets at least 24 px (44 on touch); text 4.5:1 and
+   control borders and focus rings 3:1 (DESIGN.md's `input-border` and `focus` colours); layouts reflow at 320 px and survive 200%
+   zoom; animation respects "reduce motion"; anything dragged can also be done with taps; nothing asked twice in one flow; sign-in
+   allows paste and password managers. If CLAUDE.md names an `Accessibility test:`, run it and
+   `node "${CLAUDE_PLUGIN_ROOT}/scripts/a11y-check.mjs" --project .` before reporting, and fix every BLOCKING line.
+   Handle bad input and failed requests with a message a person can understand.
    If CLAUDE.md lists an "End-to-end (browser) tests" command, every feature a user can see or click gets an end-to-end test for
    its user-facing criteria: the test opens the running app, does what a person would do, and checks what they would see,
    at the phone (375 px) and desktop (1280 px) sizes. Save a screenshot of each state to `.claude/screens/<feature>/` for the

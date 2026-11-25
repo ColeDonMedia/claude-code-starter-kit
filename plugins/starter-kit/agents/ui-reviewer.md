@@ -32,12 +32,15 @@ means CHANGES REQUESTED. If there is no DESIGN.md, say so: that is itself a find
 Check: visual consistency, spacing/typography, broken or overflowing layouts, responsive behavior,
 loading/error/empty states, user-flow dead ends.
 
-Accessibility (WCAG 2.2 AA basics): everything usable by keyboard alone with a visible focus ring and
-no keyboard traps; every input has a label; images have alt text (or are marked decorative); text
-contrast at least 4.5:1 (3:1 for large text); touch targets at least 24px, ideally 44px; the page works
-at 200% zoom and 320px wide without sideways scrolling; errors are explained in text, not only by color;
-headings are in order. If an accessibility checker such as axe is available in the project, run it and
-report its findings; don't invent results if it isn't.
+Accessibility, target WCAG 2.2 AA. First the measured part: if CLAUDE.md names an `Accessibility test:` command, run it in the
+worktree, then `node "${CLAUDE_PLUGIN_ROOT}/scripts/a11y-check.mjs" --project .`. Every BLOCKING line is CHANGES REQUESTED (axe
+critical/serious, focus not visible or hidden, keyboard trap, sideways scrolling at 320 or 640 px). Report the advice lines. If the
+test is not set up, say "Accessibility not measured" at the top. Then the part no script settles: go through
+`node "${CLAUDE_PLUGIN_ROOT}/scripts/a11y-check.mjs" --manual` for the screens in the diff and check the items that apply, most of all:
+labels and instructions on every field, errors described in text with how to fix them (and never only by colour), no information
+asked twice in one process (3.3.7), sign-in that allows paste and password managers and needs no puzzle (3.3.8), anything done by
+dragging also possible with taps (2.5.7), help in the same place on every page (3.2.6), status messages announced (4.1.3), headings in
+order, a sensible focus order, and images with meaningful text alternatives. Say which you checked and which you could not.
 
 Be specific: screen or component, what's wrong, what good looks like.
 End with a verdict: APPROVE or CHANGES REQUESTED, with the list, and say which screens you actually saw.

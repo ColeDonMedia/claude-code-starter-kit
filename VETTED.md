@@ -8,7 +8,16 @@ after the commit listed here.** If you install one, pin that commit or a release
 Most scanner HIGH flags were false positives: `curl | sh` lines in install docs and CI files, security
 tools' own test fixtures, and prompts that *forbid* hiding things from the user. The rows below list only
 what matters at runtime. Licenses are as reported by GitHub at vet time; check the LICENSE file before
-copying any text. This kit copies no third-party text — the features below are clean-room.
+copying any text. This kit copies no third-party instructions or code — the features below are clean-room. The one
+exception is DATA: see "Data included in the kit" below.
+
+## Data included in the kit
+
+| Repo | Commit | License | What was taken | What was left out, and why |
+|---|---|---|---|---|
+| [nextlevelbuilder/ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) | 8db36338810d | MIT | Five data tables, unchanged, in `plugins/starter-kit/library/ui-ux-pro-max/` with the LICENSE and a NOTICE: 89 UI styles, 194 palettes, 74 font pairings, 194 product types, 141 UX rules. Read only by the kit's own `style-library.mjs`. | Vetted 2026-11-25 (750 files, 31 MB; scanner 0 HIGH, 282 MEDIUM). Left out: the skill's instructions and Python and JavaScript scripts; its other skills (several send prompts and API keys to outside AI services); an `.mcp.json` that starts three helper servers at `@latest`. The data was read for AI-directed text (none: the "AI Prompt Keywords" column is design wording, and the kit never prints it), hidden characters (none) and links (Google Fonts only). 193/194 palettes pass the data's own contrast pairs; the kit nudges 81 palettes for its stricter accent and error-text pairs, and says so. **Do not install the repository as a whole bundle**; if you want its own tools, install just the `ui-ux-pro-max` skill, pinned to this commit. |
+
+## Repos vetted as add-ons
 
 | Repo | Commit | License | Verdict | What I found |
 |---|---|---|---|---|

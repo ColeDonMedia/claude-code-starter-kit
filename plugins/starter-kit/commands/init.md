@@ -111,6 +111,10 @@ tests can all pass while the page is broken; this is what catches that.
 - Copy `${CLAUDE_PLUGIN_ROOT}/templates/speed.spec.js` to `e2e/speed.spec.js` unchanged (it measures how fast pages load and taps respond on a throttled
   phone profile and writes `.claude/speed-results.json`), run `node "${CLAUDE_PLUGIN_ROOT}/scripts/speed-check.mjs" --project . --init` to create the budget
   `.claude/speed.json`, and record `Speed test: <command that runs e2e/speed.spec.js>` in CLAUDE.md. Add `.claude/speed-results.json` to `.gitignore`.
+- Accessibility: add `@axe-core/playwright` as a dev dependency (the package guard vets it; it is MPL-2.0, fine as an unmodified
+  dependency), copy `${CLAUDE_PLUGIN_ROOT}/templates/a11y.spec.js` to `e2e/a11y.spec.js` unchanged, and record
+  `Accessibility test: <command that runs e2e/a11y.spec.js>` in CLAUDE.md. It checks WCAG 2.2 AA with axe plus a keyboard walk,
+  reflow, zoom and motion; `a11y-check.mjs` judges the results. Add `.claude/a11y-results-*.json` to `.gitignore`.
 Skip all of this, and write `none` in CLAUDE.md, for projects with no browser UI (a command-line tool, a library, an API only).
 
 ## 9b. Size (every project)
@@ -196,6 +200,7 @@ safety checks are off: tell the user that before doing anything else.
 - End-to-end (browser) tests: <command, or "none" if there is no browser UI>
 - Speed budget: <build folder and limits for `perf-budget.mjs`, e.g. dist (JS 300 KB, CSS 100 KB, images 500 KB each), or "none">
 - Speed test: <command that runs e2e/speed.spec.js, or "none" if there is no browser UI>
+- Accessibility test: <command that runs e2e/a11y.spec.js, or "none" if there is no browser UI>
 - Size: <"normal", or "large" for thousands of files: building and reviewing then use scoped tests and impact checks>
 - Database: <kind and where local development's copy runs, e.g. "Postgres in Docker (docker compose up db)", or "none">
   Never point local development, tests or the kit at a database on another computer.

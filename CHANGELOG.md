@@ -4,6 +4,22 @@ What changed in each release of the starter-kit plugin, newest first, in plain w
 repository's history. Every release bumps `version` in `plugins/starter-kit/.claude-plugin/plugin.json`; a test
 fails if this file has no entry for the current version.
 
+## [2.14.0] — 2026-11-25
+Design and accessibility: a real style library, and WCAG 2.2 AA tested, not eyeballed.
+- Vetted design data in `library/ui-ux-pro-max/` (MIT, pinned commit, LICENSE and NOTICE): 89 UI styles, 194 palettes, 74 font pairings,
+  194 product types, 141 UX rules. Only data was taken; the source's instructions, scripts, other skills (some send prompts and API keys
+  to outside AI services) and MCP settings were left out. Recorded in `VETTED.md` under a new "Data included in the kit" section.
+- New `scripts/style-library.mjs` (the kit's own reader): match a product and its references to three directions (style + palette +
+  font pairing), list and show entries, a side-by-side preview page, `--write` a complete DESIGN.md, `--css` design tokens with a focus
+  ring and reduce-motion rules. Every palette is contrast-checked; 81 are nudged for the kit's stricter accent and error-text pairs, and
+  the tool says which. The table's "AI prompt" column is never printed.
+- New `/design` workflow; `/spec` uses it for the design brief.
+- New `templates/a11y.spec.js` (Playwright + axe-core, WCAG 2.0 to 2.2 A and AA): axe results plus the kit's own keyboard walk (focus
+  visible, not hidden, no trap), small tap targets, reflow at 320 and 640 px, and motion under "reduce motion". New `scripts/a11y-check.mjs`
+  sorts blocking from advice; `scripts/wcag.mjs` holds all 55 WCAG 2.2 A and AA criteria in plain words with how each is checked.
+- `design-check.mjs` requires an Accessibility section and gains `ensureContrast()`. The builder, the UI reviewer, `/init` (installs the
+  test), `/full-scan` (step 17), `/accept` (the checks a person must do) and the session routing all use it.
+
 ## [2.13.0] — 2026-11-25
 Built for its size: a one-person desktop app and a SaaS for thousands are planned, built and tested differently.
 - New scale profile (`.claude/scale.json`, `scripts/scale-profile.mjs`): the plan asks one size question and records kind, people in a

@@ -51,6 +51,9 @@ Run the full pre-ship sweep using the commands listed under "Commands" in CLAUDE
    On the user's own computer: run `desktop-check.mjs` (see `/starter-kit:speed`); over budget blocks. Online: run `load-test.mjs` against a
    local copy seeded to the profile's size; BREAKS blocks; NOT REACHED does not block on its own, but for a large or very large profile
    say plainly that the host's staging copy must carry the target before launch, and that the owner runs or approves that test.
+17. Accessibility, for anything with a screen: run CLAUDE.md's `Accessibility test:`, then `node "${CLAUDE_PLUGIN_ROOT}/scripts/a11y-check.mjs" --project .`.
+   A BLOCKING line blocks shipping (fix it, or `/starter-kit:design`); exit 2 means it was never measured: measure it. List the advice and
+   the items for a person; for a first public launch, remind the owner that automated checks find roughly half of real problems.
 
 Choosing what "since the last ship" means (never use a plain diff against the current branch — after
 `/starter-kit:feature` you are already on it, so that diff is empty). Take the first that exists:
@@ -69,7 +72,7 @@ Rules:
 - Ship only when every applicable step is green AND security-reviewer returns APPROVE. Every numbered step above can block:
   1–5 and 8 must pass; 6 must APPROVE; 7 must have no FAIL; 9 must have nothing waiting; 10 and 11 must be complete for a first
   public launch; 12 must have no HIGH; 13 must be consistent and current; 14 must be within budget with no FAIL or HIGH; 15 must pass;
-  16 must have a profile and no BREAKS or over-budget result.
+  16 must have a profile and no BREAKS or over-budget result; 17 must have no BLOCKING line.
   ADVICE, MEDIUM and `ACCEPTED` lines do not block, but list them for the owner. If anything fails, fix it and re-run the full sweep.
 
 When — and only when — every applicable step is green and security-reviewer returned APPROVE, record it

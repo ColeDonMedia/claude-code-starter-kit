@@ -61,7 +61,7 @@ test("session-start: set-up project gets workflow routing and lean mode, not the
     for (const cmd of ["spec", "feature", "tdd", "review", "research", "full-scan", "vet", "debug", "audit", "redteam", "status", "accept", "launch", "maintain", "legal"]) {
       assert.ok(ctx.includes(`/starter-kit:${cmd}`), `routing should mention /starter-kit:${cmd}`);
     }
-    assert.match(ctx, /Never ask the user to type a command/);
+    assert.match(ctx, /never ask the user to type a command/i);
     assert.match(ctx, /LEAN MODE/);
     assert.match(ctx, /clarity beats brevity/);
     assert.doesNotMatch(ctx, /starter-kit:init/);

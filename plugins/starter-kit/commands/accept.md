@@ -17,6 +17,9 @@ Nothing counts as accepted because the tests pass. The owner has to see it and s
 4. **Ask for a verdict:** works, or what's wrong or different from what they wanted. For anything with a screen also ask:
    "Which screen feels least like the apps you like, and what feels off?" Taste is theirs: write their answer into
    `DESIGN.md` (References or a "Never" list) so every later screen follows it. Wait for their answer.
+   Before asking, do the accessibility checks a person must do yourself on this milestone's screens (`node "${CLAUDE_PLUGIN_ROOT}/scripts/a11y-check.mjs" --manual`
+   lists them): keyboard only, 200% zoom, 320 px wide, reduce motion, error messages, sign-in. Tell the owner in one line what you
+   checked, and ask them to try one thing themselves: use the new screens with the keyboard only (Tab, Enter, Space, arrow keys).
 5. **Record it.**
    - They are happy: set the milestone's line to `Accepted: yes (<today's date>) — owner said: "<their own words, shortened if long>"`.
      Quote them truthfully; never write an acceptance they did not give. Commit it.

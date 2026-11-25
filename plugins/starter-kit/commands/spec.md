@@ -73,19 +73,11 @@ Spend a few minutes thinking like an attacker, before any code, and write the re
   security review as soon as they're built, not only at the end.
 
 ## 7. Design brief (anything with a screen)
-Write `DESIGN.md` (about 25 lines, each part under its own heading: Feel, Colors, Type, Spacing, Components, Speed feel, References, Quality bar) so every screen looks like one product. "High end" is taste, so start from the user's:
-ask in step 2 which two or three apps they like the look of and one they dislike, look at those (use a browser tool if you
-have one, otherwise the product's own pages) and write what you see into a `References` section: what each does well
-(spacing, hierarchy, density, motion) and what to avoid. Then write: the feel in three words, colors as lines like
-`background: #ffffff`, `text: #111111`, `muted: #555555`, `accent: #2563eb`, `error: #b00020` (text at least 4.5:1 on the
-background), one or two fonts and a size scale, spacing scale, corner and shadow style, component rules (buttons, inputs,
-cards), the layout at phone and desktop widths, a `Speed feel` section (a tap shows a result or a pressed state within 100 ms; a skeleton
-or the previous data instead of a blank screen; actions save optimistically; images and embeds reserve their space so nothing jumps; one
-spinner at most per screen), and a `Quality bar` section: one primary action per screen, a clear visual
-hierarchy, a real empty/loading/error state on every screen, no placeholder text, specific microcopy ("Save recipe", not
-"Submit"), motion short and subtle, nothing that looks like an unstyled browser default. Use the project's existing design
-system if it has one. Run `node "${CLAUDE_PLUGIN_ROOT}/scripts/design-check.mjs" --project .` and fix what it reports. Every later screen follows this
-file, and the ui-reviewer scores each screen against the Quality bar.
+Use the project's existing design system if it has one. Otherwise run `/starter-kit:design`: it looks at the apps the owner likes,
+searches the kit's style library (89 styles, 194 contrast-checked palettes, 74 font pairings) for two or three directions that fit
+the product and those references, shows them side by side for the owner to pick, and writes `DESIGN.md` (Feel, Colors, Type,
+Spacing, Components, Speed feel, Accessibility, References, Quality bar), which must pass `design-check.mjs`. Every later screen follows
+this file, and the ui-reviewer scores each screen against it. The accessibility target is WCAG 2.2 AA unless the owner needs more.
 
 ## 8. Present the plan — short, plain words
 - **Goal** — one sentence

@@ -24,8 +24,11 @@ the owner's trial runs in a normal session (`DOGFOOD.md`) and by the hook canary
   (`scripts/inprocess.mjs`): guards before shell commands and edits, the session note, the flight recorder, related tests,
   and the stop-time checks. Every hook script is also runnable and tested on its own.
 - `plugins/starter-kit/scripts/` — the helper scripts the commands, agents and hooks call, each with its own test file.
-- `plugins/starter-kit/templates/` — files copied into projects (the speed test).
-- `VETTED.md` — every third-party repo that was vetted, with pinned commits. Third-party skills are never copied in.
+- `plugins/starter-kit/templates/` — files copied into projects (the speed and accessibility tests).
+- `plugins/starter-kit/library/` — vetted third-party DATA (no instructions, no code), each folder with its license and a NOTICE
+  naming the source commit and what was left out. Read only by the kit's own scripts, as data.
+- `VETTED.md` — every third-party repo that was vetted, with pinned commits. Third-party skills, scripts and settings are never
+  copied in; data may be, under a permissive license, after vetting, into `library/` with its license and notice.
 - `.claude/kit.json` — turns the automatic hooks off for this repo itself (it is not a managed project).
 
 # Rules

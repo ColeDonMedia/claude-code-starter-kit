@@ -11,8 +11,8 @@ then stop and report. Do not start the next phase in the same release.
 | Phase | Release | State |
 |---|---|---|
 | 0 — safety and correctness | 2.12.1 | **Done** (P0-1 to P0-9). D1 decided: keep the merged runner, with the canary, self-check and fail-closed net. |
-| Owner requests | 2.12.2, 2.13.0 | **Done**: payment keys (2.12.2); sizing an app to its users: scale profile, load test, desktop check (2.13.0). |
-| 1 — verifiable | 2.14.0 | Next. Needs owner decisions D2 and D3. |
+| Owner requests | 2.12.2–2.14.0 | **Done**: payment keys (2.12.2); sizing an app to its users (2.13.0); design library and WCAG 2.2 AA testing (2.14.0). |
+| 1 — verifiable | 2.15.0 | Next. Needs owner decisions D2 and D3. When P2-4 moves rule blocks into references, the WCAG list in `scripts/wcag.mjs` is the source for the accessibility reference. |
 | 2, 3, 4 | — | Not started. Phase 2 waits for one live trial (P1-6). When P2-1 (rigor dial) is built, combine it with the scale profile: one question pair in `/spec` sets both. |
 
 **Answers from the official docs (2026-11-25, hooks reference, sub-agents page, plugins reference):**

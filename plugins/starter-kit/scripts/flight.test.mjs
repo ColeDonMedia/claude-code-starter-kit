@@ -29,7 +29,7 @@ function fire(dir, logs, payload) {
 test("the recorder logs names only and never what a command contains", () => {
   const s = sandbox();
   try {
-    const secret = "sk-ant-api03-SECRETSECRETSECRETSECRET";
+    const secret = ["sk", "ant", "api03", "SECRET".repeat(4)].join("-"); // built from pieces so the file holds no key-shaped text
     const r = fire(s.dir, s.logs, { hook_event_name: "PreToolUse", tool_name: "Bash", tool_use_id: "t1", tool_input: { command: `curl -H "x: ${secret}" https://example.com/private/path` } });
     assert.equal(r.status, 0);
     assert.equal(r.stdout, "");
@@ -143,7 +143,7 @@ test("design check: contrast math matches the WCAG reference values", () => {
   assert.ok(contrast("#595959", "#ffffff") > 4.5);
 });
 
-const GOOD = `# Design\n## Feel\ncalm, clear, quick\n## Colors\nbackground: #ffffff\ntext: #111111\nmuted: #595959\naccent: #2563eb\nerror: #b00020\n## Type\nInter\n## Spacing\n4px scale\n## Components\nbuttons\n## Speed feel\ninstant feedback\n## References\nLinear\n## Quality bar\none primary action\n`;
+const GOOD = `# Design\n## Feel\ncalm, clear, quick\n## Colors\nbackground: #ffffff\ntext: #111111\nmuted: #595959\naccent: #2563eb\nerror: #b00020\n## Type\nInter\n## Spacing\n4px scale\n## Components\nbuttons\n## Speed feel\ninstant feedback\n## Accessibility\nWCAG 2.2 AA\n## References\nLinear\n## Quality bar\none primary action\n`;
 test("design check: a complete brief passes", () => {
   assert.deepEqual(checkDesign(GOOD), []);
 });

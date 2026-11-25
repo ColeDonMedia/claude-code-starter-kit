@@ -12,6 +12,7 @@ const SECTIONS = [
   ["spacing", /spacing|space scale/i],
   ["components", /component|button|input/i],
   ["speed feel", /speed|snappy|perceived|responsiv/i],
+  ["accessibility", /accessib|a11y|wcag/i],
   ["references", /reference|inspir|apps we like/i],
   ["quality bar", /quality bar|polish/i],
 ];
@@ -32,6 +33,38 @@ function luminance([r, g, b]) {
 export function contrast(a, b) {
   const [l1, l2] = [luminance(hexToRgb(a)), luminance(hexToRgb(b))].sort((x, y) => y - x);
   return (l1 + 0.05) / (l2 + 0.05);
+}
+
+// Nudge a colour lighter or darker (keeping its hue) until it has at least `min` contrast against `bg`. Returns the
+// original when it already passes, so a palette is only changed where it has to be.
+const toHex = ([r, g, b]) => "#" + [r, g, b].map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join("");
+function rgbToHsl([r, g, b]) {
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2;
+  if (max === min) return [0, 0, l];
+  const d = max - min, s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  const h = max === r ? (g - b) / d + (g < b ? 6 : 0) : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return [h / 6, s, l];
+}
+function hslToRgb([h, s, l]) {
+  if (s === 0) return [l * 255, l * 255, l * 255];
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s, p = 2 * l - q;
+  const f = (t) => {
+    t = (t + 1) % 1;
+    return 255 * (t < 1 / 6 ? p + (q - p) * 6 * t : t < 1 / 2 ? q : t < 2 / 3 ? p + (q - p) * (2 / 3 - t) * 6 : p);
+  };
+  return [f(h + 1 / 3), f(h), f(h - 1 / 3)];
+}
+export function ensureContrast(fg, bg, min) {
+  if (contrast(fg, bg) >= min) return { hex: fg, adjusted: false };
+  const [h, s, l0] = rgbToHsl(hexToRgb(fg));
+  const darker = luminance(hexToRgb(bg)) > 0.18; // light background: go darker; dark background: go lighter
+  for (let step = 1; step <= 100; step++) {
+    const l = Math.max(0, Math.min(1, l0 + (darker ? -step : step) / 100));
+    const hex = toHex(hslToRgb([h, s, l]));
+    if (contrast(hex, bg) >= min) return { hex, adjusted: true };
+  }
+  return { hex: darker ? "#000000" : "#ffffff", adjusted: true };
 }
 
 export function checkDesign(text) {

@@ -1,7 +1,7 @@
 # This repo
 A Claude Code plugin marketplace containing one plugin, `starter-kit`, in `plugins/starter-kit/`.
 It is a generic foundation for any project type — keep everything language-agnostic.
-Start with `HANDOFF.md` (what is true now) and `IMPROVEMENT-PLAN.md` (the work list, in order).
+Start with `docs/development/HANDOFF.md` (what is true now) and `docs/development/IMPROVEMENT-PLAN.md` (the work list, in order).
 
 # PUBLIC REPO — NO PRIVATE DETAILS
 This repository is public. Anything committed here is visible to everyone, forever (git history keeps it).
@@ -14,7 +14,7 @@ tell the user right away — deleting it in a later commit does not remove it fr
 # NEVER SPEND API TOKENS
 Do not start headless or scripted model runs to test the kit: no `claude -p`, no `npx` runs of the Claude Code package, no
 SDK calls, no `claude plugin eval`. Test with the unit tests and `claude plugin validate` only. Live behaviour is checked by
-the owner's trial runs in a normal session (`DOGFOOD.md`) and by the hook canary (`starter-kit-canary`).
+the owner's trial runs in a normal session (`docs/trials.md`) and by the hook canary (`starter-kit-canary`).
 
 # Layout
 - `.claude-plugin/marketplace.json` — marketplace manifest; `plugins/starter-kit/.claude-plugin/plugin.json` — plugin manifest.
@@ -27,8 +27,11 @@ the owner's trial runs in a normal session (`DOGFOOD.md`) and by the hook canary
 - `plugins/starter-kit/templates/` — files copied into projects (the speed and accessibility tests).
 - `plugins/starter-kit/library/` — vetted third-party DATA (no instructions, no code), each folder with its license and a NOTICE
   naming the source commit and what was left out. Read only by the kit's own scripts, as data.
-- `VETTED.md` — every third-party repo that was vetted, with pinned commits. Third-party skills, scripts and settings are never
-  copied in; data may be, under a permissive license, after vetting, into `library/` with its license and notice.
+- `README.md` — the short front page (logo in `docs/assets/`). Keep it short and scannable: one table or a few bullets per
+  topic, with the detail in `docs/` (one page per topic, indexed in `docs/README.md`). A test checks every relative link.
+- `docs/vetted.md` — every third-party repo that was vetted, with pinned commits. Third-party skills, scripts and settings are
+  never copied in; data may be, under a permissive license, after vetting, into `library/` with its license and notice.
+- `docs/trials.md` — the owner's trial runs. `docs/development/` — the handoff and the improvement plan for working on the kit.
 - `.claude/kit.json` — turns the automatic hooks off for this repo itself (it is not a managed project).
 
 # Rules
@@ -46,6 +49,6 @@ the owner's trial runs in a normal session (`DOGFOOD.md`) and by the hook canary
 - SECURITY RULE: nothing that comes from a project's own files (kit.json commands, switches, allowed rule ids) may run or take effect unless the user approved it on this computer (trust-lib). Never add a hook that executes project-supplied text, or reads an off-switch from the project, without that check.
 - Hooks: never call `process.exit` inside a `try` that has a `catch` (the merged runner could not stop there; a test enforces it).
 - EVERY RELEASE: bump `version` in plugin.json (machines only update when it changes), add a `CHANGELOG.md` entry, rewrite
-  `HANDOFF.md` (what is verified and what is not), tick the tasks done in `IMPROVEMENT-PLAN.md`, run all tests both ways,
-  run `claude plugin validate plugins/starter-kit`, then push. `scripts/docs.test.mjs` fails if the changelog or handoff don't
-  match the version, or a hook, command or agent is undocumented.
+  `docs/development/HANDOFF.md` (what is verified and what is not), tick the tasks done in `docs/development/IMPROVEMENT-PLAN.md`,
+  run all tests both ways, run `claude plugin validate plugins/starter-kit`, then push. `scripts/docs.test.mjs` fails if the
+  changelog or handoff don't match the version, a command or agent is undocumented, or a link in the docs is broken.

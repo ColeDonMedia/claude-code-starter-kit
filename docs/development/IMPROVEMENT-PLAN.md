@@ -4,7 +4,7 @@ Written 2026-11-25 against version 2.12.0, after a full audit of the plugin; ext
 against 2.14.0 (one-click shipping, Phase OC). This is a work list for the next implementing session (Opus or Sonnet). It is
 ordered: follow "Order of work" under Progress, one release per phase.
 
-**How to use this file.** Read `CLAUDE.md`, `HANDOFF.md` and this file. Do one phase, release it, tick its tasks here,
+**How to use this file.** Read the root `CLAUDE.md`, `HANDOFF.md` (next to this file) and this file. Do one phase, release it, tick its tasks here,
 then stop and report. Do not start the next phase in the same release.
 
 ## Progress
@@ -149,7 +149,7 @@ Small, urgent, low-risk. Nothing here adds a feature.
 - **Delivered:** CLAUDE.md rewritten with a NEVER SPEND API TOKENS section and the current layout; docs test forbids headless-run instructions.
 - **Why:** E5.
 - **Change:** delete the "Test real behavior end to end with a current CLI: `npx …`" rule. Replace it with: "Never spend API
-  tokens. Live behaviour is checked by the owner's trial runs (`DOGFOOD.md`) and the hook self-check (P0-6)." Update the layout
+  tokens. Live behaviour is checked by the owner's trial runs (`docs/trials.md`) and the hook self-check (P0-6)." Update the layout
   section to the current commands, agents, hooks and scripts, and the session-note limit.
 - **Test:** a docs test that `CLAUDE.md` does not contain `claude-code@` or ` -p "`, and that it names every command file.
 
@@ -287,10 +287,10 @@ Nothing here changes what the kit does for a project. It makes failures visible 
 
 ### P1-6. First live trial — owner in the loop
 - **Why:** E20. This is the most valuable item in the whole plan.
-- **How (no API tokens):** the owner runs trial 1 from `DOGFOOD.md` in a normal session. Alternative, only with the owner's
+- **How (no API tokens):** the owner runs trial 1 from `docs/trials.md` in a normal session. Alternative, only with the owner's
   yes: the implementing session starts a separate normal app session in a new empty folder with the trial prompt, then reads
   the flight report afterwards. **OWNER DECISION D3.**
-- **Then:** fix what broke, each fix with a test, and log it in `DOGFOOD.md`. **Do not start Phase OC or Phase 2 until one trial
+- **Then:** fix what broke, each fix with a test, and log it in `docs/trials.md`. **Do not start Phase OC or Phase 2 until one trial
   has run.** Both should be shaped by what the trial shows.
 - **Before the trial:** update this machine to the newest version (it was still on 2.6.0 at the second audit, F1), start one
   session so the self-check runs, and confirm `starter-kit-canary` is refused with each shell tool.

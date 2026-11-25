@@ -4,6 +4,17 @@ What changed in each release of the starter-kit plugin, newest first, in plain w
 repository's history. Every release bumps `version` in `plugins/starter-kit/.claude-plugin/plugin.json`; a test
 fails if this file has no entry for the current version.
 
+## Repository tidy-up — 2026-11-25 (documentation only; the plugin is unchanged, so no new version)
+- New logo, and a short README (about 1,200 words instead of 7,000): what it does, install, how you use it, every workflow and
+  agent in tables, the guards, what still needs you, and what is proven.
+- The detail moved into one page per topic in `docs/` (how it works, safety, quality, planning and records, design, speed and
+  scale, databases, big codebases, launch, add-ons, settings), indexed in `docs/README.md`.
+- Moved: `DOGFOOD.md` → `docs/trials.md`, `VETTED.md` → `docs/vetted.md`, `HANDOFF.md` and `IMPROVEMENT-PLAN.md` →
+  `docs/development/`. Corrected while moving: the researcher runs on Haiku, there are 21 workflows, and the license note now says
+  the design data is included under MIT.
+- `docs.test.mjs` now checks every relative link and image in the README and docs, that the README stays short, and that every
+  docs page links back to it.
+
 ## [2.14.0] — 2026-11-25
 Design and accessibility: a real style library, and WCAG 2.2 AA tested, not eyeballed.
 - Vetted design data in `library/ui-ux-pro-max/` (MIT, pinned commit, LICENSE and NOTICE): 89 UI styles, 194 palettes, 74 font pairings,

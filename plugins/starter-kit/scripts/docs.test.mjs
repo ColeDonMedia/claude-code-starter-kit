@@ -20,9 +20,10 @@ test("CHANGELOG.md has an entry for the current version, newest first", () => {
   assert.deepEqual([...versions].sort((a, b) => num(b) - num(a)), versions, "entries must be newest first");
 });
 
-test("HANDOFF.md exists and is about the current version", () => {
-  assert.ok(existsSync(join(REPO, "HANDOFF.md")));
-  const h = read("HANDOFF.md");
+const HANDOFF = join("docs", "development", "HANDOFF.md");
+test("the kit's HANDOFF.md exists and is about the current version", () => {
+  assert.ok(existsSync(join(REPO, HANDOFF)));
+  const h = read(HANDOFF);
   assert.ok(h.includes(`version ${version}`), `HANDOFF.md should say "version ${version}"`);
   assert.ok(h.split("\n").length <= 60, "keep the handoff short");
   for (const heading of ["Not verified", "Do this first next session"]) assert.ok(h.includes(heading), `HANDOFF.md needs a "${heading}" section`);
@@ -34,15 +35,41 @@ test("the repo's own CLAUDE.md never tells a session to spend API tokens on a he
   assert.match(rules, /NEVER SPEND API TOKENS/);
 });
 
-test("the README mentions every command and every hook, so nothing is undocumented", () => {
+// The README is a short front page; the detail lives in docs/ (one page per topic).
+const docPages = (dir = join(REPO, "docs")) =>
+  readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? docPages(join(dir, e.name)) : e.name.endsWith(".md") ? [join(dir, e.name)] : []));
+const pages = [join(REPO, "README.md"), ...docPages()];
+
+test("the README lists every command and every agent, so nothing is undocumented", () => {
   const readme = read("README.md");
   for (const f of readdirSync(join(PLUGIN, "commands"))) {
     const name = f.replace(/\.md$/, "");
-    assert.ok(readme.includes(`/starter-kit:${name}`) || readme.includes(`starter-kit:${name}`), `README does not mention the "${name}" command`);
+    assert.ok(readme.includes(`/starter-kit:${name}`), `README does not list the "${name}" command`);
   }
   for (const f of readdirSync(join(PLUGIN, "agents"))) {
     const name = f.replace(/\.md$/, "");
-    assert.ok(readme.includes(`\`${name}\``) || readme.includes(`${name}\` agent`) || readme.includes(`${name} agent`), `README does not mention the "${name}" agent`);
+    assert.ok(readme.includes(`\`${name}\``), `README does not list the "${name}" agent`);
+  }
+});
+
+test("the README stays a short front page, and every docs page links back to it", () => {
+  const words = read("README.md").split(/\s+/).filter(Boolean).length;
+  assert.ok(words <= 1500, `README is ${words} words; move detail into a docs/ page`);
+  assert.ok(existsSync(join(REPO, "docs", "assets", "logo.png")), "the README logo is missing");
+  for (const p of docPages().filter((x) => !x.includes(`${join("docs", "development")}`))) {
+    assert.ok(readFileSync(p, "utf8").includes("../README.md"), `${p.replace(REPO, "")} has no link back to the README`);
+  }
+});
+
+test("every relative link and image in the README and docs points at a file that exists", () => {
+  for (const p of pages) {
+    const text = readFileSync(p, "utf8").replace(/```[\s\S]*?```/g, "");
+    const targets = [...text.matchAll(/\]\(([^)\s]+)\)/g), ...text.matchAll(/<img[^>]+src="([^"]+)"/g)].map((m) => m[1]);
+    for (const t of targets) {
+      if (/^(https?:|mailto:|#)/.test(t)) continue;
+      const file = t.split("#")[0];
+      assert.ok(existsSync(join(dirname(p), file)), `${p.replace(REPO, "")} links to ${t}, which does not exist`);
+    }
   }
 });
 
@@ -75,7 +102,7 @@ const textFiles = [
   join(PLUGIN, "hooks", "session-start.mjs"),
   join(PLUGIN, "hooks", "docs-gate.mjs"),
   join(PLUGIN, "hooks", "verify-gate.mjs"),
-  join(REPO, "README.md"),
+  ...pages.filter((p) => !p.includes(join("docs", "development"))), // the plan names scripts that don't exist yet
 ];
 
 test("every script that a command or agent tells Claude to run really exists", () => {

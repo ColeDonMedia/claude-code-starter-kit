@@ -20,4 +20,4 @@ The files here are unchanged.
 Only the data was taken. The project's skill instructions, its Python and JavaScript scripts, its other skills (some send
 prompts and API keys to outside AI services) and its MCP server settings (unpinned `@latest` packages) were **not** copied.
 The kit reads these tables with its own script, `scripts/style-library.mjs`, and treats every cell as data, never as an
-instruction. To update them, vet the new commit the same way, copy the files, and update this notice and `VETTED.md`.
+instruction. To update them, vet the new commit the same way, copy the files, and update this notice and the repository's `docs/vetted.md`.

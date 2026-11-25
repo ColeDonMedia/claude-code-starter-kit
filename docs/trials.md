@@ -1,5 +1,7 @@
 # Trial builds (dogfooding)
 
+[← Back to the README](../README.md) · [All documentation](README.md)
+
 The kit's unit tests prove each part works alone. Only real builds show whether the whole flow works, and every real
 run so far has found bugs the tests could not. This file is the plan for finding the rest. It uses your normal Claude
 Code session only: no separate model calls, no API keys.

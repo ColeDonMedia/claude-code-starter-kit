@@ -1,5 +1,7 @@
 # Vetted third-party repos
 
+[← Back to the README](../README.md) · [All documentation](README.md)
+
 Each repo below was cloned shallowly into its own empty folder (nothing run or installed), scanned with
 `plugins/starter-kit/scripts/vet-scan.mjs`, and checked by reading the hooks, scripts and manifests that
 execute. Vetted on 2026-11-24. **A scan plus a read lowers risk; it does not prove safety, and repos change

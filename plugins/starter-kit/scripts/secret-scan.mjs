@@ -28,18 +28,58 @@ const RULES = [
   ["slack-token", "HIGH", /\bxox[abprs]-[A-Za-z0-9-]{10,}\b/, "Slack token"],
   ["npm-token", "HIGH", /\bnpm_[A-Za-z0-9]{36}\b/, "npm access token"],
   ["supabase-service-key", "HIGH", /\beyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/, "JSON web token (possibly a Supabase service key)"],
+  ["gitlab-token", "HIGH", /\bglpat-[A-Za-z0-9_-]{20,}\b/, "GitLab access token"],
+  ["sendgrid-key", "HIGH", /\bSG\.[A-Za-z0-9_-]{16,}\.[A-Za-z0-9_-]{16,}\b/, "SendGrid API key"],
+  ["twilio-key", "HIGH", /\b(AC|SK)[0-9a-f]{32}\b/, "Twilio account or API key id"],
+  ["discord-token", "HIGH", /\b[MN][A-Za-z0-9_-]{22,}\.[A-Za-z0-9_-]{5,8}\.[A-Za-z0-9_-]{25,}\b/, "Discord bot token"],
+  ["telegram-token", "HIGH", /\b\d{8,10}:[A-Za-z0-9_-]{35}\b/, "Telegram bot token"],
+  ["slack-webhook", "HIGH", /hooks\.slack\.com\/services\/T[A-Z0-9]+\/B[A-Z0-9]+\/[A-Za-z0-9]+/, "Slack webhook URL"],
+  ["azure-storage-key", "HIGH", /AccountKey=[A-Za-z0-9+/]{40,}={0,2}/, "Azure storage account key"],
+  ["huggingface-token", "HIGH", /\bhf_[A-Za-z0-9]{30,}\b/, "Hugging Face token"],
+  ["digitalocean-token", "HIGH", /\bdop_v1_[a-f0-9]{40,}\b/, "DigitalOcean token"],
+  ["shopify-token", "HIGH", /\bshp(at|ca|pa|ss)_[a-f0-9]{32}\b/, "Shopify access token"],
+  [
+    // user:password@host in any URL (database connection strings, git remotes with a token)
+    "credentialed-url",
+    "HIGH",
+    /\b[a-z][a-z0-9+.-]*:\/\/[^\s:@/'"`]+:([^\s@/'"`]{4,})@[^\s/'"`]+/i,
+    "URL with a password or token embedded in it",
+    (m) => m[1],
+  ],
+  [
+    "bearer-token",
+    "HIGH",
+    /\bBearer\s+([A-Za-z0-9_\-.=+/]{20,})(?![A-Za-z0-9_\-.=+/])/,
+    "bearer token in an authorization header",
+    (m) => m[1],
+  ],
   [
     "secret-assignment",
     "HIGH",
-    // Upper-case names only (env-style), and the value must look like a token: no spaces or code punctuation,
-    // and mixed letters with a digit. This keeps prose and source code from matching.
-    /\b([A-Z0-9_]*(SECRET|TOKEN|PASSWORD|PASSWD|API_?KEY|PRIVATE_?KEY|ACCESS_?KEY|CLIENT_?SECRET)[A-Z0-9_]*)\s*[:=]\s*["']?([A-Za-z0-9_\-+/=.]{8,})(?![A-Za-z0-9_\-+/=.])/,
+    // Upper-case env-style names; the value must look like a token: no spaces or code punctuation, with letters AND a
+    // digit. This keeps prose and source code from matching. Any NAME_KEY counts (STRIPE_KEY, SIGNING_KEY ...).
+    /\b([A-Z0-9_]*(SECRET|TOKEN|PASSWORD|PASSWD|PWD|API_?KEY|[A-Z0-9]+_KEY|PRIVATE_?KEY|ACCESS_?KEY|CLIENT_?SECRET|CREDENTIAL|AUTH_?KEY)[A-Z0-9_]*)\s*[:=]\s*["']?([A-Za-z0-9_\-+/=.]{8,})(?![A-Za-z0-9_\-+/=.])/,
     "secret value assigned to a credential-named variable",
+    (m) => m[3],
+  ],
+  [
+    "credential-literal",
+    "HIGH",
+    // The same idea for names written the way code and config files write them: apiKey, secret_key, "password": ...
+    // A quoted value (10+ characters) or a long unquoted token-like value, with letters AND a digit.
+    /\b([A-Za-z0-9_]*(?:secret|token|passw(?:or)?d|pwd|api[_-]?key|apikey|private[_-]?key|access[_-]?key|client[_-]?secret|auth[_-]?key|credential)[A-Za-z0-9_]*)["']?\s*[:=]\s*(?:"([^"\s]{10,})"|'([^'\s]{10,})'|([A-Za-z0-9_\-+/=.]{16,})(?![A-Za-z0-9_\-+/=.]))/i,
+    "secret-looking value assigned to a credential-named variable",
+    (m) => m[2] ?? m[3] ?? m[4],
   ],
 ];
 
+// Rules whose match is a guess from a variable NAME: they get the strictest false-alarm filtering.
+const NAME_BASED = new Set(["secret-assignment", "credential-literal", "bearer-token"]);
+// Passwords that are obviously just examples when they appear in a connection string.
+const DUMMY_PASSWORDS = /^(password|passwd|pass|secret|test|testing|admin|root|user|username|12345\d*|1234|qwerty|changeme|example|postgres|mysql|redis|guest|none|null|undefined)$/i;
+
 // Values that are obviously placeholders, not secrets.
-const PLACEHOLDER = /EXAMPLE|XXXX|x{6,}|\*{4,}|<[^>]+>|\$\{|%[A-Z_]+%|your[_-]?(key|token|secret)|changeme|placeholder|dummy|redacted/i;
+const PLACEHOLDER = /EXAMPLE|XXXX|x{6,}|\*{4,}|<[^>]+>|\$\{|%[A-Z_]+%|\{\{|your[_-]?(key|token|secret|password)|changeme|placeholder|dummy|redacted|process\.env|os\.environ|getenv/i;
 
 // Files that must never be committed, whatever they contain.
 export const FORBIDDEN_NAME = /(^|\/)(\.env(\.[^/]+)?|[^/]+\.(pem|key|p12|pfx|keystore|jks))$/i;
@@ -67,12 +107,13 @@ export function scanText(file, text, terms = []) {
   const findings = [];
   const lines = text.split(/\r?\n/);
   lines.forEach((line, i) => {
-    for (const [id, sev, re, desc] of RULES) {
+    for (const [id, sev, re, desc, pick] of RULES) {
       const m = re.exec(line);
       if (!m) continue;
-      const value = m[3] ?? m[0];
-      if (id === "secret-assignment" && (PLACEHOLDER.test(value) || !/\d/.test(value) || !/[A-Za-z]/.test(value))) continue;
-      if (id !== "secret-assignment" && PLACEHOLDER.test(m[0])) continue;
+      const value = (pick ? pick(m) : m[0]) ?? m[0];
+      if (NAME_BASED.has(id) && (PLACEHOLDER.test(value) || !/\d/.test(value) || !/[A-Za-z]/.test(value))) continue;
+      if (id === "credentialed-url" && (PLACEHOLDER.test(value) || DUMMY_PASSWORDS.test(value))) continue; // judge the password, not the host name
+      if (!NAME_BASED.has(id) && id !== "credentialed-url" && PLACEHOLDER.test(m[0])) continue;
       findings.push({ sev, file, line: i + 1, rule: id, message: desc, sample: redact(value) });
     }
     for (const t of terms) {

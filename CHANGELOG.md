@@ -4,6 +4,27 @@ What changed in each release of the starter-kit plugin, newest first, in plain w
 repository's history. Every release bumps `version` in `plugins/starter-kit/.claude-plugin/plugin.json`; a test
 fails if this file has no entry for the current version.
 
+## [2.2.0] — 2026-11-24
+Adversarial review: the kit now attacks the work, and attacks itself.
+- New `challenger` agent in every `/feature` review: assumes the work is NOT done and tries to prove it (claims without
+  evidence, tests that can't fail, missing cases, collateral damage); must show what it tried; "does not hold up" blocks the merge.
+- New `red-team` agent and `/redteam` command: attacks a local copy of the app like a hostile user (broken access
+  control, injection, business-logic abuse, uploads, leaks, AI-model abuse), writing a failing test for every confirmed
+  break. Runs on high-risk features and before a first launch.
+- New `scripts/mutate.mjs`: mutation testing (deliberately breaks the code and checks the tests notice). Works in a
+  worktree only, restores every file, discards mistakes that merely fail to compile.
+- Safety guard: attack tools (nmap, sqlmap, hydra, nikto, ffuf ...) are denied unless aimed at this computer; load
+  testers aimed at a remote host ask first.
+- Fuzzing the kit's own guards found and fixed 63 gaps. Safety guard: `rm -rf //`, `/./`, `/var/lib`, `sudo -n`, `{ ...; }`,
+  `find / -delete`, `git clean --force`, `sh -c "$(curl ...)"`, download-then-run, `DELETE FROM` without WHERE, `TRUNCATE`,
+  MongoDB drops, uploading `.env` with curl/scp, `python -c` / `node -e` / `perl -e` one-liners, `ssh host 'rm -rf /'`,
+  `base64 -d | sh`, multi-stage pipes, risky `docker run` mounts, `xargs rm -rf`. Secret scanner: connection strings with
+  passwords, bearer tokens, lowercase and camelCase names (`apiKey`, `password =`), any `*_KEY` name, and GitLab, SendGrid,
+  Twilio, Discord, Telegram, Slack webhook, Azure, Hugging Face, DigitalOcean and Shopify tokens.
+- Found in live use: the safety guard read a heredoc commit message (text mentioning `rm -rf //`) as commands and blocked a
+  harmless commit. Heredoc bodies are now data unless the receiver is a shell or interpreter, where they are inspected.
+- Session routing knows "try to break it / red team / pen test".
+
 ## [2.1.0] — 2026-11-24
 Memory and proof, so any session can pick up where the last one ended and "done" can't be a claim.
 - Projects now keep three short records: `PROJECT.md` (master document: what it is, stack, architecture map, decisions

@@ -97,6 +97,27 @@ a reviewer must find a real test for every acceptance criterion, so "done" has t
 still writes these notes, so the proof checks (git history, files and test names) are what keep them true, and they cannot
 prove a test is a *good* test; the reviewer reads the test for that.
 
+**Adversarial review: someone is always trying to prove it wrong.**
+- *The challenger* (`challenger` agent) joins every feature review with one job: assume the work is NOT done and prove it.
+  It checks the builder's claims against the files, hunts tests that couldn't fail, missing cases and collateral damage,
+  and must show what it tried (a review that lists no attempts is invalid). "Does not hold up" blocks the merge.
+- *The red team* (`red-team` agent, `/starter-kit:redteam`) attacks a local copy of the app like a hostile user: reading
+  other users' data, bypassing sign-in, injecting input, abusing prices and business rules, bad uploads, leaks, and
+  tricking any AI model the app uses. Each confirmed break gets a failing test that stays in the project as a permanent
+  regression test. It runs on high-risk features right after they are built and on the first launch. It only ever
+  attacks this computer: a guard hook denies attack tools (`nmap`, `sqlmap`, `hydra`, `nikto`, `ffuf` and others) aimed
+  at anything else, and load-testing tools aimed at a remote host ask you first.
+- *Mutation testing* (`scripts/mutate.mjs`) deliberately breaks the code, one small mistake at a time (flips a
+  comparison, swaps `&&` and `||`, turns `true` into `false`), and checks that the tests notice. A change the tests don't
+  notice is behavior nobody checks. It refuses to touch your main folder, restores every file afterwards, and discards
+  mistakes that merely fail to compile.
+- *The kit attacks itself.* `guard-fuzz` and `secret-fuzz` tests throw hundreds of disguised attacks at the safety guard
+  and the secret scanner (quote tricks, nested shells, `ssh` and `python -c` one-liners, encoded payloads,
+  download-then-run, uploads of `.env`, connection strings and a dozen key formats), alongside harmless look-alikes
+  that must NOT be blocked. The first run found 63 real gaps, all fixed; every new disguise gets added there first.
+Limits: a red team only finds what it is clever enough to try, cannot test what it cannot run locally or third-party
+services, and does not replace a professional penetration test for an app that holds payments or sensitive data.
+
 **Checks must pass before a turn ends.** When Claude finishes a turn and code has changed, a hook runs the
 project's own checks (the `verify` list in `.claude/kit.json`: typecheck, lint, tests). If one fails, the turn
 doesn't end; Claude gets the failure and must fix it or tell you plainly what's broken. Passing checks cost no

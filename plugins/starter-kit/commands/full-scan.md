@@ -20,6 +20,9 @@ Run the full pre-ship sweep using the commands listed under "Commands" in CLAUDE
    rate limits, error handling, backups, a rollback plan). Anything FAIL blocks the launch; NOT CHECKED items go
    to the user in plain words with what to look at. This gate covers pushes, pull requests, releases, package
    publishes and deploy commands (`npm publish`, `vercel --prod`, `fly deploy`, `docker push`, and so on).
+   For that first launch of anything with sign-in, payments, personal data or uploads, also run `/starter-kit:redteam`
+   (it attacks a local copy and checks the tests with mutation testing): a launch is blocked while any critical or
+   high break it found is unfixed, and a low mutation score on the main logic is reported to the user.
 
 Choosing what "since the last ship" means (never use a plain diff against the current branch — after
 `/starter-kit:feature` you are already on it, so that diff is empty). Take the first that exists:

@@ -37,7 +37,15 @@ Launch the starter-kit `reviewer` agent, plus `ui-reviewer` in parallel if UI fi
 `security-reviewer` agent (range mode, on `git diff MAIN...BRANCH`) right now — not only at ship time — whenever the
 feature is tagged `high-risk` in ROADMAP.md or its diff touches sign-in or sessions, permissions or roles,
 payments, file uploads, database rules or migrations, secrets or environment settings, network or CORS settings,
-or anything that handles other people's personal data. Treat its CHANGES REQUESTED like the reviewer's. Give them:
+or anything that handles other people's personal data. Treat its CHANGES REQUESTED like the reviewer's.
+Also launch the `challenger` agent, always: it assumes the work is NOT done and tries to prove it (claims without
+evidence, tests that couldn't fail, missing cases, collateral damage), and must show what it tried. Its
+"DOES NOT HOLD UP" is treated like CHANGES REQUESTED; its findings that block "done" must be fixed, and any it
+could not confirm must be answered, not ignored.
+For `high-risk` features (same list as above), also run ONE round of the `red-team` agent against the feature
+branch (tell it `git checkout --detach BRANCH`, the run command, and the feature's security criteria). Every
+break it confirms comes with a failing test: send those to the implementer to fix, and keep the tests in the project.
+Give each reviewer:
 - the WORKTREE path — they must run every command there (`cd` into it, or `git -C`), because the main
   checkout does not have the feature's code and would be testing the old version
 - the diff to review: `git diff MAIN...BRANCH`
@@ -51,7 +59,8 @@ If a reviewer says CHANGES REQUESTED:
 - Then review again. Stop after 3 rounds and ask the user.
 
 ## 3. Merge
-Only when the implementer reported a green full suite AND the reviewer said APPROVE:
+Only when the implementer reported a green full suite AND the reviewer said APPROVE AND the challenger's findings
+that block "done" are resolved (and, for high-risk features, no red-team break is left unfixed):
 - Confirm the main checkout is still clean and still on MAIN.
 - `git merge --no-ff BRANCH` into MAIN.
 - If there is a merge conflict, run `git merge --abort`, and report it. Do not resolve conflicts unasked.

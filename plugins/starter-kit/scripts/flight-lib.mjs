@@ -35,7 +35,7 @@ export const count = (v) => (Number.isFinite(v) && v >= 0 ? Math.round(v) : unde
 // Keep only harmless fields. Anything not on this list is dropped.
 export function sanitize(e) {
   const out = { t: e.t ?? new Date().toISOString() };
-  for (const k of ["ev", "tool", "skill", "agent", "prog", "src", "id", "sid", "stop", "item", "ask", "eff", "ran", "tok", "model", "miss", "ok", "bad", "lines", "kept", "rw", "res"]) {
+  for (const k of ["ev", "tool", "skill", "agent", "prog", "src", "id", "sid", "stop", "item", "ask", "eff", "ran", "tok", "model", "miss", "ok", "bad", "lines", "kept", "rw", "res", "mt", "mk"]) {
     if (e[k] !== undefined && e[k] !== null) out[k] = String(e[k]).replace(/[^\w:.\-/ ]/g, "").slice(0, 60);
   }
   return out;

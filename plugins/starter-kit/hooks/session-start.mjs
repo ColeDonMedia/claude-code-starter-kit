@@ -4,7 +4,7 @@
 //                               and "lean mode" token-saving rules.
 // .claude/kit.json switches: { "lean": false } drops lean mode, { "plainLanguage": false } drops the
 // non-programmer wording rule, { "auto": false } turns everything off.
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
@@ -73,13 +73,33 @@ if (input.source === "resume" || input.source === "fork") {
 const MANIFESTS = ["package.json", "pyproject.toml", "requirements.txt", "go.mod", "Cargo.toml", "Gemfile", "pom.xml", "build.gradle", "composer.json", "Makefile"];
 const looksLikeProject = existsSync(join(root, ".git")) || MANIFESTS.some((m) => existsSync(join(root, m)));
 const managed = (read(join(root, "CLAUDE.md")) ?? "").includes("starter-kit:managed");
-if (!looksLikeProject && !managed) process.exit(0);
+// A brand-new, empty folder is where a new app usually starts, so the kit must speak there too (a trial found it silent: Claude
+// went straight to writing code with no plan). A folder that holds other files but is not a project (Downloads) stays quiet.
+const IGNORABLE = new Set([".claude", ".vscode", ".idea", ".ds_store", "thumbs.db", "desktop.ini"]);
+let empty = false;
+try {
+  empty = !looksLikeProject && readdirSync(root).filter((n) => !IGNORABLE.has(n.toLowerCase())).length === 0;
+} catch {
+  /* unreadable folder: treat as not empty */
+}
+if (!looksLikeProject && !managed && !empty) process.exit(0);
+
+const PLAN_FIRST =
+  "A new app, website or tool, or a big or vague feature, goes to /starter-kit:spec before any code is written: it asks one batch of " +
+  "questions with defaults and gets the owner's approval of a plan and a roadmap, which /starter-kit:feature then builds. ";
+if (empty) {
+  emit(
+    "STARTER KIT: this folder is empty. If the user wants software built here, run /starter-kit:init yourself first (Skill tool; an " +
+      "empty folder is fine), then follow its routing. " + PLAN_FIRST +
+      "Never ask the user to type a command. For anything else, ignore this note. " + WHERE,
+  );
+}
 
 if (!managed) {
   emit(
     "STARTER KIT: this project has not been set up yet (no starter-kit CLAUDE.md). " +
       "Before anything else, run /starter-kit:init yourself with the Skill tool, without asking first; the user " +
-      "should never need to type it. Then carry on with their request. It detects the stack and writes CLAUDE.md; " +
+      "should never need to type it. Then carry on with their request. " + PLAN_FIRST + "Init detects the stack and writes CLAUDE.md; " +
       "it asks the user one yes/no question about command permissions. If it fails, say so in one sentence and continue. " +
       WHERE,
   );

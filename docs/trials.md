@@ -31,4 +31,4 @@ Code session only: no separate model calls, no API keys.
 ## Log of trials
 | Date | Trial | Result | Bugs found | Fixed in |
 |---|---|---|---|---|
-| (none run yet) | | | | |
+| 2026-11-25 | A real idea instead of trial 1: a freelancer quote builder, from an empty folder, on 2.17.0 | Stopped after the first message | 1. In an empty folder the session note never appeared, so Claude planned to write code straight away with no plan, questions or approval. 2. The session start carried no model name, so the one-time Haiku and Fable notices cannot fire (shape now recorded). Good: the hooks ran live (the flight log recorded the session and its commands). | 2.17.1 |

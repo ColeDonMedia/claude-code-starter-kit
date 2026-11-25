@@ -34,6 +34,10 @@ const ev = input.hook_event_name;
 const e = { sid: input.session_id };
 if (ev === "SessionStart") {
   Object.assign(e, { ev: "start", src: input.source, model: modelName(input.model) });
+  // The first live trial showed no model at session start. Record the field's shape (its type and key names, never a value)
+  // so the next trial shows whether Claude Code sends it at all, and how.
+  e.mt = input.model === undefined ? "absent" : input.model === null ? "null" : typeof input.model;
+  if (input.model && typeof input.model === "object") e.mk = Object.keys(input.model).slice(0, 6).join("/");
   // A short fingerprint (not the text) of the next unfinished roadmap item, so a report can tell when the same item has
   // been "next" for session after session: a stalled build.
   try {

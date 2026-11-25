@@ -138,7 +138,7 @@ Details: [Safety and security](docs/safety.md).
 
 ## What's proven and what isn't
 
-- **Proven:** 499 automated tests over the hooks and scripts, including fuzz tests that throw hundreds of disguised attacks at
+- **Proven:** 502 automated tests over the hooks and scripts, including fuzz tests that throw hundreds of disguised attacks at
   the guards. They run before every release.
 - **Not yet proven:** a full real-world build from idea to launch. [Trial runs](docs/trials.md) describe how that is being tested.
 - Tested on Windows so far; macOS and Linux are intended.

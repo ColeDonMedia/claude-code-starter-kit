@@ -183,7 +183,8 @@ Also add to the project's CLAUDE.md template output (below) the "Records" sectio
 
 ## 11. Report
 In plain words, a few lines: what kind of project this is, what you set up, and anything marked `TODO`.
-Commit the new files locally. Then carry on with whatever the user originally asked for.
+Commit the new files locally. Then carry on with whatever the user originally asked for. If that is a new app, website or tool,
+or a big or vague feature, run `/starter-kit:spec` next: no app code before the owner has approved a plan.
 
 ## CLAUDE.md template
 ```markdown

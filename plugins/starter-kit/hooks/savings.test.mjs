@@ -134,6 +134,53 @@ test("a build on Fable gets one line suggesting Opus, once per project", () => {
   }
 });
 
+// Found by the first live trial (2026-11-25): in a brand-new empty folder the kit said nothing, so Claude wrote code with no plan.
+test("an empty folder gets the plan-first note; a folder of other files that is not a project stays quiet", () => {
+  const s = sandbox();
+  try {
+    const empty = note(s, { source: "startup" });
+    assert.match(empty, /^STARTER KIT: this folder is empty/);
+    assert.match(empty, /run \/starter-kit:init yourself first/);
+    assert.match(empty, /\/starter-kit:spec before any code is written/);
+    assert.match(empty, /Never ask the user to type a command/);
+    s.put(".claude/settings.local.json", "{}");
+    s.put("Thumbs.db", "x");
+    assert.match(note(s, { source: "startup" }), /this folder is empty/, "only the editor's and the system's own files: still empty");
+    s.put("holiday-photo.jpg", "x");
+    assert.equal(note(s, { source: "startup" }), "", "a folder of other things is not a new project");
+  } finally {
+    s.done();
+  }
+});
+
+test("a project that is not set up yet is told to plan a new app before writing code, after init", () => {
+  const s = sandbox();
+  try {
+    s.put("package.json", "{}");
+    const n = note(s, { source: "startup" });
+    assert.match(n, /has not been set up yet/);
+    assert.match(n, /\/starter-kit:spec before any code is written/);
+  } finally {
+    s.done();
+  }
+});
+
+test("the session start records whether and how the model field arrives, never its value", () => {
+  const s = sandbox();
+  try {
+    s.run(RECORDER, { hook_event_name: "SessionStart", source: "startup" });
+    s.run(RECORDER, { hook_event_name: "SessionStart", source: "startup", model: "claude-opus-5-5" });
+    s.run(RECORDER, { hook_event_name: "SessionStart", source: "startup", model: { id: "claude-opus-5-5", display_name: "Opus 5.5 (secret-ish)" } });
+    const log = s.flight();
+    assert.match(log, /"mt":"absent"/);
+    assert.match(log, /"model":"claude-opus-5-5".*"mt":"string"/);
+    assert.match(log, /"mt":"object","mk":"id\/display_name"/);
+    assert.ok(!log.includes("secret-ish"));
+  } finally {
+    s.done();
+  }
+});
+
 test("writing a whole existing file again is counted (never its path); a new file is not", () => {
   const s = sandbox();
   try {

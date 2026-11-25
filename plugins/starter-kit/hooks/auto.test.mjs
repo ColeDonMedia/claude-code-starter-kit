@@ -109,9 +109,10 @@ test("session-start: injected text stays short (it costs tokens every session)",
   }
 });
 
-test("session-start: silent in a folder that is not a code project", () => {
+test("session-start: silent in a folder of other things that is not a code project (an EMPTY folder gets the plan-first note)", () => {
   const s = sandbox();
   try {
+    s.put("notes.txt", "shopping list");
     assert.equal(runHook(SESSION, {}, s.dir).stdout, "");
   } finally {
     s.cleanup();

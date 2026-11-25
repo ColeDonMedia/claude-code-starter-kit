@@ -4,6 +4,16 @@ What changed in each release of the starter-kit plugin, newest first, in plain w
 repository's history. Every release bumps `version` in `plugins/starter-kit/.claude-plugin/plugin.json`; a test
 fails if this file has no entry for the current version.
 
+## [2.17.1] — 2026-11-25
+Fixes from the first live trial.
+- **A new app in an empty folder now starts with a plan.** The kit only spoke up in a folder that already looked like a project, so
+  in a brand-new empty folder Claude heard nothing and went straight to writing code, with no questions and no plan to approve. An
+  empty folder now gets a short note: set the project up, then plan with the owner before any code. A folder of unrelated files
+  (Downloads, say) stays quiet. Setup itself now ends with the same rule.
+- The session start carried no model name, so the one-time Haiku and Fable notices could not appear. The flight log now records
+  how that field arrives (its type and key names, never a value), so the next trial shows what to read.
+- Good news from the same trial: the kit's hooks ran live on 2.17.0 and the flight recorder logged the session.
+
 ## [2.17.0] — 2026-11-25
 A fresh context for every feature, so the main chat stays small, and builds that resume from their last verified step (plan
 Phase S, part B).

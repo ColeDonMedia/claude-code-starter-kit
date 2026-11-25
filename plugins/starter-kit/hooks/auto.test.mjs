@@ -57,7 +57,7 @@ test("session-start: set-up project gets workflow routing and lean mode, not the
     s.put("CLAUDE.md", MANAGED);
     const ctx = contextOf(runHook(SESSION, {}, s.dir));
     assert.match(ctx, /STARTER KIT WORKFLOWS/);
-    for (const cmd of ["spec", "feature", "tdd", "review", "research", "full-scan", "vet", "debug", "audit", "redteam"]) {
+    for (const cmd of ["spec", "feature", "tdd", "review", "research", "full-scan", "vet", "debug", "audit", "redteam", "status", "accept"]) {
       assert.ok(ctx.includes(`/starter-kit:${cmd}`), `routing should mention /starter-kit:${cmd}`);
     }
     assert.match(ctx, /Never ask the user to type a command/);
@@ -322,6 +322,22 @@ test("session-start: warns up front when ticked roadmap items have no proof", ()
     s.put("ROADMAP.md", "- [x] Sign in — accounts\n  - [x] sign up\n- [ ] Save recipes — core\n");
     const ctx = contextOf(runHook(SESSION, {}, s.dir));
     assert.match(ctx, /ROADMAP\.md has \d+ unproven claim/);
+  } finally {
+    s.cleanup();
+  }
+});
+
+test("session-start: a finished milestone waiting for the owner is called out before more building", () => {
+  const s = sandbox();
+  try {
+    s.put("package.json", "{}");
+    s.put("CLAUDE.md", MANAGED);
+    const open = ["## Milestone 1 — People can sign in", "Accepted: pending", "- [x] Sign in", "  - [x] sign up", "- [ ] Later", "  - [ ] x", ""].join("\n");
+    s.put("ROADMAP.md", open);
+    assert.doesNotMatch(contextOf(runHook(SESSION, {}, s.dir)), /is finished and waiting for the owner's OK/, "milestone 1 still has an open feature");
+    const done = ["## Milestone 1 — People can sign in", "Accepted: pending", "- [x] Sign in", "  - [x] sign up", ""].join("\n");
+    s.put("ROADMAP.md", done);
+    assert.match(contextOf(runHook(SESSION, {}, s.dir)), /Milestone 1 \("People can sign in"\) is finished and waiting for the owner's OK: run \/starter-kit:accept/);
   } finally {
     s.cleanup();
   }

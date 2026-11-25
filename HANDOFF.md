@@ -3,9 +3,9 @@
 Read this, then `CLAUDE.md` (how to work on this repo), `README.md` (what the kit does) and `CHANGELOG.md` (history).
 Rewrite this file at the end of every session; keep it under 40 lines and true.
 
-## State at version 2.2.0 (2026-11-24)
+## State at version 2.3.0 (2026-11-24)
 - Public repo `ColeDonMedia/claude-code-starter-kit`, MIT, installed from GitHub; machines self-update daily.
-- The plugin lives in `plugins/starter-kit/`: 12 commands, 7 agents, 11 hooks, helper scripts, ~250 tests.
+- The plugin lives in `plugins/starter-kit/`: 14 commands, 7 agents, 11 hooks, helper scripts, ~270 tests.
 - Everything is unit-tested against real git repositories and (for packages) the live registries.
 
 ## Not verified (be honest about this)
@@ -21,6 +21,8 @@ Rewrite this file at the end of every session; keep it under 40 lines and true.
 
 - NEVER RUN LIVE: the `red-team` and `challenger` agents, `/redteam`, and the way `/feature` calls them. `mutate.mjs` was tested on real worktrees; the attack-scope guard (attack tools only at localhost) was fuzz-tested.
 - Fuzzing found 63 real gaps in the safety guard and secret scanner (fixed). Expect more disguises in the wild: add them to `guard-fuzz.test.mjs` / `secret-fuzz.test.mjs` first.
+
+- NEVER RUN LIVE: `/accept` and `/status` (the scripts behind them are unit-tested; the conversation flow isn't).
 
 ## Known risks
 - The GitHub repo is the source of code that auto-runs on every computer: keep two-factor on for that account.

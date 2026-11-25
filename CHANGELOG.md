@@ -4,6 +4,18 @@ What changed in each release of the starter-kit plugin, newest first, in plain w
 repository's history. Every release bumps `version` in `plugins/starter-kit/.claude-plugin/plugin.json`; a test
 fails if this file has no entry for the current version.
 
+## [2.3.0] — 2026-11-24
+Project-management discipline: success measures, estimates, risks, change control, milestone sign-off, status reports.
+- The plan now has measurable success goals, sized features (`[S]` `[M]` `[L]`), the top five risks with plans, and
+  milestones of about three features each; `PROJECT.md` gains "Success measures" and "Risks".
+- New `/accept`: when a milestone is finished Claude starts the app, tells the owner what to try, and records their verdict in their
+  own words with the date in `ROADMAP.md`. `roadmap-check.mjs --acceptance` reports finished milestones still waiting; the pre-ship
+  scan stops while any is, and the session start says so. A milestone can't be marked accepted before its features are done.
+- New `/status` and `scripts/status.mjs`: progress, left to build by size, a labelled rough forecast from past merge dates, success
+  measures, risks, what is waiting on the owner, and warnings about unproven ticks or a handoff that doesn't match history.
+- Change control step in `/spec`: say what a changed requirement adds or delays before building it, and record the decision.
+- Session routing text rewritten more compactly (460 words, down from 505) to make room.
+
 ## [2.2.0] — 2026-11-24
 Adversarial review: the kit now attacks the work, and attacks itself.
 - New `challenger` agent in every `/feature` review: assumes the work is NOT done and tries to prove it (claims without

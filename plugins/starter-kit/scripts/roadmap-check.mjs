@@ -17,7 +17,7 @@ import { basename, join, resolve } from "node:path";
 
 export function checkRoadmap(root) {
   const file = join(root, "ROADMAP.md");
-  if (!existsSync(file)) return { items: 0, ticked: 0, problems: [] };
+  if (!existsSync(file)) return { items: 0, ticked: 0, problems: [], milestones: [], unaccepted: [] };
   const lines = readFileSync(file, "utf8").split(/\r?\n/);
   const git = (...a) => spawnSync("git", a, { cwd: root, encoding: "utf8" });
   const problems = [];
@@ -52,23 +52,59 @@ export function checkRoadmap(root) {
       } else if (!man) problems.push(`"${name}": criterion "${cn}" has no "→ test: <file>::<name>" or "→ manual: <how it was checked>"`);
     }
   };
+  // Milestones group a few features and end with the owner's own acceptance, in their words:
+  //   ## Milestone 1 — People can sign in and save recipes
+  //   Accepted: pending            (or)   Accepted: yes (2026-11-24) — owner said: "looks good, ship it"
+  const milestones = [];
+  let ms = null;
   for (const line of lines) {
+    const mh = /^##\s+Milestone\s+(\d+)\s*[—–-]\s*(.+)$/i.exec(line);
+    if (mh) {
+      finish();
+      current = null;
+      ms = { n: Number(mh[1]), name: mh[2].trim(), features: [], accepted: null };
+      milestones.push(ms);
+      continue;
+    }
+    const acc = ms && /^Accepted:\s*(.+)$/i.exec(line.trim());
+    if (acc) {
+      const v = acc[1].trim();
+      if (/^pending/i.test(v)) ms.accepted = "pending";
+      else ms.accepted = /^yes\s*\(\d{4}-\d{2}-\d{2}\)\s*[—–-]\s*owner said:\s*["“].{3,}["”]/i.test(v) ? "yes" : "malformed";
+      continue;
+    }
     const top = /^[-*] \[( |x|X)\] (.+)$/.exec(line);
     const sub = /^\s+[-*] \[( |x|X)\] (.+)$/.exec(line);
     if (top) {
       finish();
       items++;
       current = { title: top[2].trim(), done: top[1] !== " ", criteria: [] };
+      if (ms) ms.features.push(current);
     } else if (sub && current) current.criteria.push({ done: sub[1] !== " ", text: sub[2].trim() });
   }
   finish();
-  return { items, ticked, problems };
+  const unaccepted = [];
+  for (const m of milestones) {
+    const allDone = m.features.length > 0 && m.features.every((f) => f.done);
+    if (m.accepted === "yes" && !allDone) problems.push(`Milestone ${m.n} is marked accepted but not all of its features are done`);
+    if (m.accepted === "malformed") problems.push(`Milestone ${m.n}: the "Accepted:" line must be "Accepted: pending" or 'Accepted: yes (YYYY-MM-DD) — owner said: "<their own words>"'`);
+    if (allDone && m.accepted !== "yes") unaccepted.push({ n: m.n, name: m.name });
+  }
+  return { items, ticked, problems, milestones: milestones.map((m) => ({ n: m.n, name: m.name, features: m.features.length, done: m.features.filter((f) => f.done).length, accepted: m.accepted === "yes" })), unaccepted };
 }
 
 if (process.argv[1] && basename(process.argv[1]) === "roadmap-check.mjs") {
   const i = process.argv.indexOf("--project");
   const root = resolve(i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : process.cwd());
   const r = checkRoadmap(root);
+  if (process.argv.includes("--acceptance")) {
+    // Is any finished milestone still waiting for the owner's sign-off? Used before a launch.
+    if (r.unaccepted.length) {
+      console.log(`Waiting for the owner's acceptance: ${r.unaccepted.map((m) => `Milestone ${m.n} (${m.name})`).join("; ")}`);
+      process.exitCode = 1;
+    } else console.log("No finished milestone is waiting for the owner's acceptance.");
+    process.exit(process.exitCode ?? 0);
+  }
   if (!r.items) console.log("No ROADMAP.md items to check.");
   else if (!r.problems.length) console.log(`Roadmap OK: ${r.ticked} of ${r.items} items done, each backed by a merge and tests.`);
   else console.log(`Roadmap has ${r.problems.length} unproven claim(s):\n- ${r.problems.join("\n- ")}`);

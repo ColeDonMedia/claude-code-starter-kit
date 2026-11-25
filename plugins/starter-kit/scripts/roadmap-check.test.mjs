@@ -5,6 +5,7 @@ import { spawnSync } from "node:child_process";
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync, realpathSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { checkRoadmap } from "./roadmap-check.mjs";
 
 function repo() {
@@ -113,9 +114,53 @@ test("a test path cannot point outside the project", () => {
 test("no ROADMAP.md means nothing to check; unticked items need no proof", () => {
   const r = repo();
   try {
-    assert.deepEqual(checkRoadmap(r.dir), { items: 0, ticked: 0, problems: [] });
+    assert.deepEqual(checkRoadmap(r.dir), { items: 0, ticked: 0, problems: [], milestones: [], unaccepted: [] });
     r.put("ROADMAP.md", "- [ ] Later — someday\n  - [ ] a thing\n");
     assert.deepEqual(checkRoadmap(r.dir).problems, []);
+  } finally {
+    r.cleanup();
+  }
+});
+
+// ---- milestones and the owner's acceptance ----
+const ms = (sha, accepted) =>
+  `# Roadmap\n## Milestone 1 — People can sign in\nAccepted: ${accepted}\n- [x] Sign in — accounts (merged ${sha})\n  - [x] A visitor can sign up → test: test/auth.test.js::signs up a visitor\n- [x] Log out — end the session (merged ${sha})\n  - [x] Logging out ends the session → test: test/auth.test.js::rejects a weak password\n## Milestone 2 — Recipes\nAccepted: pending\n- [ ] Save recipes — core\n  - [ ] A user can save a recipe\n`;
+
+test("a finished milestone with no acceptance is reported as waiting; an unfinished one is not", () => {
+  const r = repo();
+  try {
+    r.put("ROADMAP.md", ms(r.sha, "pending"));
+    const c = checkRoadmap(r.dir);
+    assert.deepEqual(c.problems, []);
+    assert.deepEqual(c.unaccepted, [{ n: 1, name: "People can sign in" }]);
+    assert.equal(c.milestones[1].done, 0);
+    const cli = spawnSync("node", [join(dirname(fileURLToPath(import.meta.url)), "roadmap-check.mjs"), "--project", r.dir, "--acceptance"], { encoding: "utf8" });
+    assert.equal(cli.status, 1);
+    assert.match(cli.stdout, /Milestone 1 \(People can sign in\)/);
+  } finally {
+    r.cleanup();
+  }
+});
+
+test("acceptance needs a date and the owner's own words; then nothing is waiting", () => {
+  const r = repo();
+  try {
+    r.put("ROADMAP.md", ms(r.sha, 'yes (2026-11-24) — owner said: "looks good, ship it"'));
+    const c = checkRoadmap(r.dir);
+    assert.deepEqual(c.problems, []);
+    assert.deepEqual(c.unaccepted, []);
+    r.put("ROADMAP.md", ms(r.sha, "yes"));
+    assert.match(checkRoadmap(r.dir).problems.join("\n"), /Accepted:" line must be/);
+  } finally {
+    r.cleanup();
+  }
+});
+
+test("a milestone cannot be accepted before its features are done", () => {
+  const r = repo();
+  try {
+    r.put("ROADMAP.md", ms(r.sha, "pending").replace("Accepted: pending\n- [ ] Save", 'Accepted: yes (2026-11-24) — owner said: "fine"\n- [ ] Save'));
+    assert.match(checkRoadmap(r.dir).problems.join("\n"), /Milestone 2 is marked accepted but not all/);
   } finally {
     r.cleanup();
   }

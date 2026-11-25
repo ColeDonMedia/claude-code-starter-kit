@@ -61,21 +61,16 @@ if (!managed) {
 
 const parts = [
   "STARTER KIT WORKFLOWS — you choose and run the right one yourself with the Skill tool. Never ask the user to type a command; say in one line what you ran.\n" +
-    "- Question, explanation, docs, config edit -> just answer or do it.\n" +
-    "- New app, or a large or vague feature -> /starter-kit:spec first (get the user's approval), then build its roadmap.\n" +
-    "- New feature or non-trivial bug fix -> /starter-kit:feature.\n" +
-    "- Small one-file tweak -> /starter-kit:tdd, then /starter-kit:review.\n" +
-    "- Bug, error, crash or failing test with an unclear cause -> /starter-kit:debug (root cause before any fix).\n" +
-    "- Competitors, market, alternatives, 'what's missing' -> /starter-kit:research.\n" +
-    "- You changed code directly in this conversation -> /starter-kit:review before you say it's done.\n" +
-    "- User says ship, release, deploy, publish, push, open a PR -> /starter-kit:full-scan (a hook blocks pushes, publishes and deploys until it passes).\n" +
-    "- Is it secure, security audit, harden it, or first time in an existing codebase with real users -> /starter-kit:audit.\n" +
-    "- Try to break/hack it, red team, pen test, or a first launch with sign-in, payments or personal data -> /starter-kit:redteam (attacks a local copy only).\n" +
+    "- Question, explanation, docs, config -> just do it. Unsure which workflow -> take the lighter path.\n" +
+    "- New app or big/vague feature -> /starter-kit:spec (user approves the plan), then build the roadmap. Changed requirements: say what it adds or delays first.\n" +
+    "- Feature or non-trivial bug fix -> /starter-kit:feature. One-file tweak -> /starter-kit:tdd, then /starter-kit:review.\n" +
+    "- Unclear bug, error or failing test -> /starter-kit:debug. Competitors, market -> /starter-kit:research.\n" +
+    "- Where are we, progress, status -> /starter-kit:status. A milestone is finished -> /starter-kit:accept (the owner tries it) before more building.\n" +
+    "- Ship, release, deploy, publish, push, PR -> /starter-kit:full-scan (hooks block pushes and deploys until it passes).\n" +
+    "- Secure? harden? existing codebase with users -> /starter-kit:audit. Break it, hack it, red team, pen test, or a first launch handling sign-in, payments or personal data -> /starter-kit:redteam (local copy only).\n" +
     "- A link to a skill, plugin or MCP server, or a request to install one -> /starter-kit:vet first; never install it yourself.\n" +
-    "- Never say done, fixed or passing without running the check this turn and quoting its result.\n" +
-    "- When work is verified, commit it locally yourself with a clear message. Never push unless asked.\n" +
-    "- Keep PROJECT.md (master document), HANDOFF.md and CHANGELOG.md true as you work; a hook checks them against git. Never tick a ROADMAP.md box without the merge commit and tests that prove it.\n" +
-    "- Unsure which -> take the lighter path.\n" +
+    "- Never say done, fixed or passing without running the check this turn and quoting it. Commit verified work locally; never push unasked.\n" +
+    "- Keep PROJECT.md (master document), HANDOFF.md, CHANGELOG.md true (a hook checks them against git). Never tick a ROADMAP.md box without the merge commit and test proof.\n" +
     `In the kit's commands, <SCRIPTS> means this folder: ${SCRIPTS}`,
 ];
 
@@ -107,14 +102,20 @@ if (roadmap) {
     parts.push(
       `ROADMAP.md: ${items.length - open.length} of ${items.length} done. Next: "${open[0][2].trim().slice(0, 120)}". ` +
         "If the user says continue, keep going, or gives no other task, build the next item with /starter-kit:feature, tick it off in " +
-        "ROADMAP.md, and carry on to the one after. Stop only for a real decision, a failing check you cannot fix, or when the list is done.",
+        "ROADMAP.md, and carry on to the one after. Stop only for a real decision, a failing check you cannot fix, a milestone waiting for the owner's OK, or when the list is done.",
     );
   } else if (items.length) {
     parts.push(`ROADMAP.md: all ${items.length} items are done. Suggest /starter-kit:full-scan before shipping.`);
   }
   // Ticked boxes must be backed by a real merge and real tests; say so up front if some are not.
   try {
-    const unproven = checkRoadmap(root).problems;
+    const checked = checkRoadmap(root);
+    if (checked.unaccepted.length) {
+      parts.push(
+        `Milestone ${checked.unaccepted[0].n} ("${checked.unaccepted[0].name.slice(0, 80)}") is finished and waiting for the owner's OK: run /starter-kit:accept before building more.`,
+      );
+    }
+    const unproven = checked.problems;
     if (unproven.length) {
       parts.push(
         `ROADMAP.md has ${unproven.length} unproven claim(s), for example: ${unproven[0].slice(0, 160)}. ` +

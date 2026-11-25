@@ -118,6 +118,10 @@ the handoff must cover the newest code commit, and roadmap ticks must be backed 
 <what works now; what is in progress; what does not exist yet>
 ## Known problems
 <bugs, shortcuts, things that were not verified>
+## Success measures
+<two or three measurable goals: how the owner will know this worked>
+## Risks
+<top five, one line each: what could go wrong, what would trigger it, what we'd do>
 ## Next steps
 <in order>
 ```

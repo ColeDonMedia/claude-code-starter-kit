@@ -97,6 +97,20 @@ a reviewer must find a real test for every acceptance criterion, so "done" has t
 still writes these notes, so the proof checks (git history, files and test names) are what keep them true, and they cannot
 prove a test is a *good* test; the reviewer reads the test for that.
 
+**Run like a project, not a pile of code.** The plan now includes what a program manager would write:
+- *How we'll know it worked:* two or three measurable goals, tied to why you wanted the app.
+- *Estimates:* each feature is sized small, medium or large (a labelled guess). The status report forecasts the
+  rest from how fast earlier features actually merged, and says when it has too little data to guess.
+- *Risks:* the top five, each with its trigger and the plan if it happens, kept in `PROJECT.md`.
+- *Change control:* when you change your mind, Claude first tells you what it adds or delays and records your
+  decision, instead of quietly absorbing the extra work or dropping an agreed feature.
+- *Your acceptance:* features are grouped into milestones of about three. When one is finished, Claude starts
+  the app (`/starter-kit:accept`), tells you exactly what to try in everyday words, and records your verdict in your own
+  words, with the date, in `ROADMAP.md`. Nothing ships while a finished milestone is waiting for your OK. Claude writes
+  the record from your reply, so the quote is only as honest as that step; it is what the owner reads back later.
+- *Status report:* ask "where are we?" (`/starter-kit:status`) for progress, what's next, the rough forecast, risks, and
+  exactly what Claude needs from you. Every line is built from the project's files and git history by a script.
+
 **Adversarial review: someone is always trying to prove it wrong.**
 - *The challenger* (`challenger` agent) joins every feature review with one job: assume the work is NOT done and prove it.
   It checks the builder's claims against the files, hunts tests that couldn't fail, missing cases and collateral damage,

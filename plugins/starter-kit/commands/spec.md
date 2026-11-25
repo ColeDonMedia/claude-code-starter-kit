@@ -74,20 +74,36 @@ and desktop widths. Use the project's existing design system if it has one. Ever
   and sign in with the new one"). Each becomes a test.
 - **Security** — what's protected, the main threats and the defence for each, as testable criteria, and which
   features count as high-risk
-- **Roadmap** — 3 to 10 features in build order, smallest useful version first, each with its criteria
+- **How we'll know it worked** — two or three measurable goals tied to why the user wants this ("20 bookings in the
+  first month", "a visitor can finish signing up in under a minute"). Ask what success looks like if they haven't said.
+- **Roadmap** — 3 to 10 features in build order, smallest useful version first, each with its criteria and a size
+  (`[S]` a few hours of work, `[M]` about a day, `[L]` several days: your honest guess, labelled as a guess), grouped
+  into milestones of about three features. Each milestone ends with the user trying it and saying whether it is what they wanted.
+- **Biggest risks** — the top five, each with what would trigger it and what you'd do (a service that may refuse
+  approval, a hard feature, a cost that could grow, a rule that may apply, something only the user can supply)
 - **Not now** — what is deliberately left for later
 - **Assumptions** — every default you picked, so they can correct any of them
 Ask the user to approve or correct it. Don't build until they do.
 
 ## 9. Save and hand off
 On approval, write the project's memory so any later session can pick up with full context:
-- `ROADMAP.md`: one checkbox per feature, in order (`- [ ] Feature name — one-line goal`), with that feature's
-  acceptance criteria (including its security criteria, and a `high-risk` tag where it applies) indented beneath it
-  as unticked checkboxes. A box is ticked later, and only with proof: `- [x] Name — goal (merged <commit>)` and, per
+- `ROADMAP.md`: milestones, each a heading `## Milestone 1 — what the user can do by then` followed by the line
+  `Accepted: pending`, then one checkbox per feature, in order (`- [ ] Feature name [M] — one-line goal`), with that
+  feature's acceptance criteria (including its security criteria, and a `high-risk` tag where it applies) indented
+  beneath it as unticked checkboxes. A box is ticked later, and only with proof: `- [x] Name — goal (merged <commit>)` and, per
   criterion, `→ test: <file>::<test name>` or `→ manual: <how it was checked>`. A hook rejects ticks without proof.
 - `PROJECT.md` (the master document): what it is, the stack and why, how to run it, the architecture map, the
-  decisions made in this planning (with the reasons and what was rejected), current state, known problems, next steps.
+  decisions made in this planning (with the reasons and what was rejected), current state, known problems, next steps,
+  plus `## Success measures` and `## Risks` (one line each, as agreed in the plan).
 - `HANDOFF.md` and `CHANGELOG.md`: start them as described in `/starter-kit:init` if they don't exist.
 Commit them. Then build the items in order with `/starter-kit:feature`, one at a time: after each merge the records
 are updated (see that command), tell the user in a line or two what now works and how to see it, and carry on to
-the next without being asked. Stop only for a real decision, a failing check you cannot fix, or when the list is done.
+the next without being asked. When the last feature of a milestone is merged, run `/starter-kit:accept` before building
+the next milestone. Stop only for a real decision, a failing check you cannot fix, a milestone waiting for the user's
+OK, or when the list is done.
+
+## 10. When the user changes their mind (change control)
+A new idea or a changed requirement is normal; surprises are not. Before building anything that wasn't in the approved plan:
+say in plain words what it adds or delays (a size, and which milestone it moves), whether it replaces something, and what
+you recommend (now, later, or not at all). Once they decide, update `ROADMAP.md`, record the decision and its reason in
+`PROJECT.md` (Decisions), and carry on. Never quietly absorb extra scope, and never drop an agreed feature without saying so.

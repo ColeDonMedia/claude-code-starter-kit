@@ -10,6 +10,7 @@ const short = (s) => String(s ?? "").replace(/^starter-kit:/, "");
 export function analyze(events) {
   const tries = new Map();
   const unfinished = [];
+  const failed = [];
   const skills = [];
   const agents = {};
   let edits = 0;
@@ -23,14 +24,13 @@ export function analyze(events) {
       tries.set(key, e);
       if (e.tool === "Skill" && e.skill) skills.push(short(e.skill));
       if ((e.tool === "Agent" || e.tool === "Task") && e.agent) agents[short(e.agent)] = (agents[short(e.agent)] ?? 0) + 1;
-    } else if (e.ev === "ok") {
-      if (e.id && tries.has(e.id)) tries.delete(e.id);
-      else {
-        // no id to pair on: match the oldest attempt of the same tool
-        const k = [...tries.keys()].find((x) => tries.get(x).tool === e.tool);
-        if (k) tries.delete(k);
-      }
-      if (["Edit", "Write", "MultiEdit"].includes(e.tool)) edits++;
+    } else if (e.ev === "ok" || e.ev === "fail") {
+      let k = e.id && tries.has(e.id) ? e.id : null;
+      // no id to pair on: match the oldest attempt of the same tool
+      if (!k) k = [...tries.keys()].find((x) => tries.get(x).tool === e.tool) ?? null;
+      if (e.ev === "fail") failed.push(e.tool === "Bash" || e.tool === "PowerShell" ? `${e.tool} (${e.prog || (k && tries.get(k).prog) || "?"})` : e.tool);
+      if (k) tries.delete(k);
+      if (e.ev === "ok" && ["Edit", "Write", "MultiEdit"].includes(e.tool)) edits++;
     }
   }
   const models = modelUse(events);
@@ -44,8 +44,9 @@ export function analyze(events) {
   if (ran("feature") && !agents.challenger) notes.push("The feature workflow ran but the challenger agent never started.");
   if (ran("feature") && !ran("accept") && stops > 0 && (flow.filter((s) => s === "feature").length >= 3)) notes.push("Several features were built and no milestone acceptance was run.");
   if (ran("spec") && !agents.researcher) notes.push("The plan was written but no researcher agent ran (no competitor research).");
-  if (unfinished.length) notes.push(`${unfinished.length} action(s) started but never finished (blocked by a guard, refused, or failed): ${[...new Set(unfinished)].slice(0, 8).join(", ")}.`);
-  return { starts, stops, edits, flow, agents, unfinished, notes, models, events: events.length };
+  if (unfinished.length) notes.push(`${unfinished.length} action(s) started but never finished (blocked by a guard, refused or interrupted): ${[...new Set(unfinished)].slice(0, 8).join(", ")}.`);
+  if (failed.length) notes.push(`${failed.length} action(s) ran and failed (often normal: a failing test before the fix, a missing file): ${[...new Set(failed)].slice(0, 8).join(", ")}.`);
+  return { starts, stops, edits, flow, agents, unfinished, failed, notes, models, events: events.length };
 }
 
 // Which models the agents asked for and ran on, the tokens per model, and review rounds per build (reviewer launches after each

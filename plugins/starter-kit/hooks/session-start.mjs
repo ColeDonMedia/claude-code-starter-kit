@@ -5,10 +5,10 @@
 // .claude/kit.json switches: { "lean": false } drops lean mode, { "plainLanguage": false } drops the
 // non-programmer wording rule, { "auto": false } turns everything off.
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
-import { dataDir, projectKey } from "../scripts/trust-lib.mjs";
+import { dataDir, newProjectMarker, projectKey } from "../scripts/trust-lib.mjs";
 import { remoteDbHosts } from "../scripts/db-lib.mjs";
 import { checkRoadmap } from "../scripts/roadmap-check.mjs";
 import { maintenanceStatus } from "../scripts/maintenance-due.mjs";
@@ -88,9 +88,16 @@ const PLAN_FIRST =
   "A new app, website or tool, or a big or vague feature, goes to /starter-kit:spec before any code is written: it asks one batch of " +
   "questions with defaults and gets the owner's approval of a plan and a roadmap, which /starter-kit:feature then builds. ";
 if (empty) {
+  // Remember that this project started empty: hooks/plan-gate.mjs then refuses app code until a plan is approved.
+  try {
+    mkdirSync(dirname(newProjectMarker(root)), { recursive: true });
+    if (!existsSync(newProjectMarker(root))) writeFileSync(newProjectMarker(root), new Date().toISOString());
+  } catch {
+    /* without the marker the note below still applies */
+  }
   emit(
     "STARTER KIT: this folder is empty. If the user wants software built here, run /starter-kit:init yourself first (Skill tool; an " +
-      "empty folder is fine), then follow its routing. " + PLAN_FIRST +
+      "empty folder is fine), then follow its routing. " + PLAN_FIRST + "A hook refuses app code here until the plan is approved. " +
       "Never ask the user to type a command. For anything else, ignore this note. " + WHERE,
   );
 }

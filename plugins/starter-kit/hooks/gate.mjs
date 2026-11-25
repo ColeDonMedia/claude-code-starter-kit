@@ -2,7 +2,7 @@
 // program for every matching hook, and starting Node costs about 0.3 s each, so the old set-up made every shell command wait
 // roughly 0.7 s. This runs the same individual hook scripts inside one process (see scripts/inprocess.mjs), in order:
 //   pre   (before any tool)   flight recorder; for shell commands: safety, database, secret, push, package guards;
-//                             for file edits: file guard; for agent launches: the model check. The first block ends the run.
+//                             for file edits: file guard, plan check; for agent launches: the model check. The first block ends the run.
 //   post  (after any tool)    flight recorder; after file edits: related tests; after shell commands: quiet output.
 //   stop  (a turn ends)       flight recorder, verify gate, docs gate.
 //   start (a session starts)  session note (startup, clear, compact; resume and fork: only the resume-cost line), flight
@@ -26,7 +26,7 @@ export function pipeline(mode, input) {
   const isShell = tool === "Bash" || tool === "PowerShell" || (!tool && typeof ti.command === "string");
   const isEdit = ["Edit", "Write", "MultiEdit"].includes(tool) || (!tool && typeof ti.file_path === "string" && typeof ti.command !== "string");
   const isAgent = tool === "Agent" || tool === "Task";
-  if (mode === "pre") return ["flight-recorder", ...(isShell ? ["safety-guard", "db-guard", "secret-guard", "push-gate", "package-guard"] : isEdit ? ["file-guard"] : isAgent ? ["agent-route"] : [])];
+  if (mode === "pre") return ["flight-recorder", ...(isShell ? ["safety-guard", "db-guard", "secret-guard", "push-gate", "package-guard"] : isEdit ? ["file-guard", "plan-gate"] : isAgent ? ["agent-route"] : [])];
   if (mode === "post") return ["flight-recorder", ...(isEdit ? ["test-related"] : isShell ? ["quiet-output"] : [])];
   if (mode === "stop") return ["flight-recorder", "verify-gate", "docs-gate"];
   // A resumed or forked chat already holds the note; session-start then only says what resuming costs, when it is worth saying.
@@ -34,7 +34,7 @@ export function pipeline(mode, input) {
   if (mode === "subagent") return ["subagent-start"];
   if (mode === "substop") return ["scout-check", "conductor-check"];
   if (mode === "precompact") return ["compact-notes"];
-  if (mode === "postcompact") return ["flight-recorder"];
+  if (mode === "postcompact" || mode === "postfail") return ["flight-recorder"]; // a failed tool call is recorded as failed, not as blocked
   return [];
 }
 

@@ -4,17 +4,18 @@ Read this, then `IMPROVEMENT-PLAN.md` (the work list, next to this file), the ro
 `CHANGELOG.md` (history). The README is a short front page; topic detail lives in `docs/`.
 Rewrite this file at the end of every session; keep it under 55 lines and true.
 
-## State at version 2.17.1 (2026-11-25)
+## State at version 2.17.2 (2026-11-25)
 - Public repo, MIT, installed from GitHub. Auto-update checks once per 24 hours at session start, in the background; a new
   version takes effect on the session AFTER that. This machine is updated by hand before each trial.
-- `plugins/starter-kit/`: 21 commands, 1 workflow file, 10 agents, 18 hook scripts (`gate.mjs` runs the rest), 43 helper scripts,
-  2 templates, vetted data in `library/`, 502 tests (unit tests only, one Windows machine). Hook tests also pass through the gate.
-- FIRST LIVE TRIAL (2026-11-25, `docs/trials.md`): the hooks ran live. It stopped at once: an empty folder got no session note, so
-  Claude skipped the plan (fixed in 2.17.1), and SessionStart carried no model (its shape is now recorded). Restart it on 2.17.1.
+- `plugins/starter-kit/`: 21 commands, 1 workflow file, 10 agents, 19 hook scripts (`gate.mjs` runs the rest), 43 helper scripts,
+  2 templates, vetted data in `library/`, 507 tests (unit tests only, one Windows machine). Hook tests also pass through the gate.
+- LIVE TRIALS (2026-11-25, `docs/trials.md`), both a freelancer quote builder: hooks ran live; run 1 found the silent empty folder
+  (2.17.1); run 2 built a good app but skipped the plan and every review, so a hook now refuses app code in a new project until
+  `ROADMAP.md` exists (2.17.2). SessionStart carries NO model field: the Haiku/Fable notices cannot fire (left inert, docs fixed).
 - OWNER RULE: never spend API tokens (no `claude -p`, no npx claude-code runs, no `claude plugin eval`). `CLAUDE.md` says so.
 - Done: Phase 0, Phase M (all but M-14), Phase S (all but S-12). Decisions: D1 merged hook runner; D11 Opus for medium, large and
   risky features; D12 never Fable; D13 compact project chats at 300K; D14 Phase S part B built before a trial, old flow as fallback.
-- Everything up to 2.17.0 is pushed; check `git log origin/main..` for 2.17.1.
+- Everything up to 2.17.1 is pushed; check `git log origin/main..` for 2.17.2.
 
 ## Recent work, and how far it is verified
 - 2.17.0 (Phase S part B): `/starter-kit:feature` dispatches to the new `conductor` agent, which runs `workflows/feature.md` in a
@@ -40,8 +41,7 @@ Rewrite this file at the end of every session; keep it under 55 lines and true.
 
 ## Known risks
 - The GitHub repo is the source of code that auto-runs on every computer, straight from `main`: keep two-factor on (P1-2 adds a stable channel).
-- The conductor is new: if a trial shows it failing, set `{ "freshContext": false }` in that project while it is fixed.
-- The model ceiling file (data folder) is not guarded against direct writes; it can only cap at Sonnet, and reports show it.
+- The conductor is new (untested live): if it fails, set `{ "freshContext": false }`. The plan gate sees file tools only, not shell writes.
 - Fake keys in tests must be built from pieces: GitHub push protection refuses key-shaped text written out in full.
 
 ## Do this first next session

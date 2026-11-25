@@ -185,6 +185,24 @@ test("the report shows models asked for, tokens per model and review rounds per 
   assert.match(r, /find for themselves: 2/);
 });
 
+test("a tool that ran and failed is reported as failed, not as blocked (found by the first live trial)", () => {
+  const s = sandbox();
+  try {
+    fire(s.dir, s.logs, { hook_event_name: "PreToolUse", tool_name: "Bash", tool_use_id: "f1", tool_input: { command: "npm test" } });
+    fire(s.dir, s.logs, { hook_event_name: "PostToolUseFailure", tool_name: "Bash", tool_use_id: "f1", tool_input: { command: "npm test -- --secret-flag" }, error: "Exit code 1\nprivate failure text" });
+    fire(s.dir, s.logs, { hook_event_name: "PreToolUse", tool_name: "Bash", tool_use_id: "f2", tool_input: { command: "rm -rf /" } });
+    const a = analyze(readLog(s.dir));
+    assert.deepEqual(a.failed, ["Bash (npm)"]);
+    assert.deepEqual(a.unfinished, ["Bash (rm)"]);
+    const r = report(readLog(s.dir));
+    assert.match(r, /1 action\(s\) ran and failed .*Bash \(npm\)/);
+    assert.match(r, /1 action\(s\) started but never finished \(blocked by a guard, refused or interrupted\): Bash \(rm\)/);
+    assert.ok(!readFileSync(logPath(s.dir), "utf8").includes("private"), "the failure text is never recorded");
+  } finally {
+    s.done();
+  }
+});
+
 test("the report covers only the latest session unless asked for all", () => {
   const e = (o) => ({ t: "x", ...o });
   const events = [e({ sid: "old", ev: "try", tool: "Skill", skill: "starter-kit:debug", id: "1" }), e({ sid: "old", ev: "ok", tool: "Skill", id: "1" }), e({ sid: "new", ev: "start" })];

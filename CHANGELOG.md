@@ -4,6 +4,19 @@ What changed in each release of the starter-kit plugin, newest first, in plain w
 repository's history. Every release bumps `version` in `plugins/starter-kit/.claude-plugin/plugin.json`; a test
 fails if this file has no entry for the current version.
 
+## [2.17.2] — 2026-11-25
+Fixes from the second live trial, which built a working quote builder but skipped the plan and every review.
+- **Plan first, enforced.** Told to plan first, Claude decided the request was detailed enough and built the whole app itself: no
+  questions, no plan, no builder branch, no reviewer. In a project the kit started from an empty folder, a new hook now refuses
+  app code until the owner has approved a plan (`ROADMAP.md`); setup files, records and test configuration are still fine, and
+  existing projects are never affected. A small app gets a short plan (a few questions with defaults, one screen to approve). Only
+  the owner can switch it off (`{ "planGate": false }`).
+- **Your commits carry your name, not your email.** When git has no author, setup takes the name from the signed-in GitHub account
+  and uses GitHub's private no-reply address, for that project only. It never invents a name (the trial got "Quote Builder").
+- The accessibility test no longer calls a native date box a keyboard trap (its month, day and year parts take several Tabs).
+- The flight report tells a command that ran and failed (a failing test before the fix) from one a guard blocked.
+- Claude Code does not tell the kit which model a chat runs on, so the docs no longer promise the Haiku and Fable reminders.
+
 ## [2.17.1] — 2026-11-25
 Fixes from the first live trial.
 - **A new app in an empty folder now starts with a plan.** The kit only spoke up in a folder that already looked like a project, so

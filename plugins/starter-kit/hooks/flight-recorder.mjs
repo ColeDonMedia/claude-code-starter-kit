@@ -49,6 +49,12 @@ if (ev === "SessionStart") {
 }
 else if (ev === "Stop") Object.assign(e, { ev: "stop", stop: input.stop_hook_active ? "again" : "first" });
 else if (ev === "PostCompact") Object.assign(e, { ev: "compact", src: input.trigger === "manual" ? "manual" : "auto" });
+else if (ev === "PostToolUseFailure") {
+  // The tool ran and failed (a failing test run, a missing file): not the same as being blocked by a guard. Names only.
+  const ti = input.tool_input ?? {};
+  Object.assign(e, { ev: "fail", tool: input.tool_name, id: input.tool_use_id });
+  if ((input.tool_name === "Bash" || input.tool_name === "PowerShell") && typeof ti.command === "string") e.prog = (ti.command.trim().match(/^[\w./\\:-]+/) ?? [""])[0].split(/[\\/]/).pop();
+}
 else if (ev === "PreToolUse" || ev === "PostToolUse") {
   const ti = input.tool_input ?? {};
   Object.assign(e, { ev: ev === "PreToolUse" ? "try" : "ok", tool: input.tool_name, id: input.tool_use_id });

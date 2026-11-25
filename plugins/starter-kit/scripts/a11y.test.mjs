@@ -88,4 +88,7 @@ test("the browser test template measures what the judge reads, with the WCAG 2.2
   assert.equal(spawnSync(process.execPath, ["--check", f], { encoding: "utf8" }).status, 0);
   const src = readFileSync(f, "utf8");
   for (const s of ["@axe-core/playwright", '"wcag22aa"', '"wcag21aa"', "keyboard.press(\"Tab\")", "noFocusStyle", "obscured", "trapped", "smallTargets", "reflow", "320", "640", 'reducedMotion: "reduce"', "a11y-results-", "incomplete"]) assert.ok(src.includes(s), s);
+  // Found by the first live trial: a native date box steps Tab through its own parts, which the walk reported as a keyboard trap.
+  assert.match(src, /\(date\|time\|datetime-local\|month\|week\)/, "date and time boxes must get extra Tabs before counting as a trap");
+  assert.match(src, /info\.segmented \? 6 : 3/);
 });

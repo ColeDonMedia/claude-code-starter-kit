@@ -17,6 +17,11 @@ An empty folder is fine: write the template with `TODO` commands; `/starter-kit:
 ## 2. Git
 If the folder is not a git repository, make it one yourself: `git init`, a `.gitignore` suited to the stack,
 and a first commit. It is local, nothing is uploaded, and the build workflow needs it. Say so in one line.
+If git has no author name or email here (`git config user.name` is empty), don't make the owner type them: when the GitHub CLI
+is signed in (`gh api user --jq ".login, .id"`), set them for THIS repository only to the GitHub username and GitHub's private
+no-reply address `<id>+<username>@users.noreply.github.com`, so commits link to their account without exposing a real email.
+Otherwise ask for their GitHub username in plain words and use `<username>@users.noreply.github.com`. Never put a personal email
+into a project's history, never invent a name, and never change the computer-wide git settings.
 
 ## 3. CLAUDE.md
 - If the project has no CLAUDE.md, create one from the template below with every placeholder filled in.

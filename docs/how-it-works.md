@@ -40,6 +40,9 @@ The routing note lives in the plugin, so updates reach every project automatical
 
 - For a new app, the plan researches similar products, picks the technology, writes a design brief (`DESIGN.md`) and a
   `ROADMAP.md` checklist, and asks you to approve it once.
+- **A new app can't skip the plan.** In a project the kit started from an empty folder, a hook refuses to write app code until
+  you have approved a plan (setup files and records are fine). A small app gets a short plan: a few questions with suggested
+  answers and one screen to approve. Only you can switch this off (`{ "planGate": false }`).
 - Claude then builds the roadmap one feature at a time, ticking each off with proof.
 - Every later session starts by telling Claude how far the roadmap is and what's next, so "continue" is all you need to say.
 
@@ -113,7 +116,7 @@ One script, `scripts/model-route.mjs`, decides before each agent starts, from fa
 - **Plans without Opus:** if a launch fails because the plan has no Opus, the kit uses Sonnet, tells you in one sentence, and
   remembers it for this computer. Status and every security report then say so at the top.
 - **Your own conversation matters most.** Planning, debugging and database work happen in the main conversation, on the model you
-  picked. If that is Haiku during a build, the kit suggests a stronger one once.
+  picked. Claude Code doesn't tell the kit which model that is, so choose it yourself: Opus for planning, Sonnet is fine for building.
 - **Measured:** the flight log records which model each agent asked for, which one ran and how many tokens it used.
 
 ### What Haiku does, and what it never does
@@ -139,10 +142,11 @@ scripts, for free.
 - **Builders edit instead of rewriting files,** and commit after every passing test.
 - **Agents use the right model** (see above), and the flight report shows tokens per model, shortened output and whole-file rewrites.
 
-**What only you control (the kit tells you once when it matters):**
+**What only you control:**
 - **A new chat per task.** Every message re-sends the whole conversation, and after a pause the cache has expired, so all of it is
   charged in full again. The project's records let a new chat pick up for much less. When you reopen a large old chat, the kit says so.
 - **The model of your own chat.** Fable costs about twice Opus: worth it for planning a big app or a hard problem, rarely for the build.
+  (The kit can't remind you: Claude Code doesn't tell it which model a chat runs on.)
 - **Plugins.** Every plugin you switch on loads into every session. Ask "which plugins load here?" and the kit lists them
   (`scripts/doctor.mjs --plugins`); it can switch one off for this project only if you ask.
 

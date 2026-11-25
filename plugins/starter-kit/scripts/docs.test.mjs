@@ -252,6 +252,18 @@ test("the feature command dispatches to a fresh conductor, keeps the old flow as
   assert.ok(!/\$ARGUMENTS/.test(flow), "a workflow file is read, not invoked: it has no $ARGUMENTS");
 });
 
+// Found by the first live trial: a detailed request led Claude to skip the plan, and git had no author, so commits got a made-up name.
+test("a small app still gets a short plan, and setup takes the commit name from the GitHub account, never a personal email", () => {
+  const spec = readFileSync(join(PLUGIN, "commands", "spec.md"), "utf8");
+  assert.match(spec, /SHORT plan, never\s+none/);
+  assert.match(spec, /A detailed request is not a reason to skip this/);
+  const init = readFileSync(join(PLUGIN, "commands", "init.md"), "utf8");
+  assert.match(init, /gh api user/);
+  assert.match(init, /users\.noreply\.github\.com/);
+  assert.match(init, /never invent a name, and never change the computer-wide git settings/);
+  assert.match(init, /run `\/starter-kit:spec` next: no app code before the owner has approved a plan/);
+});
+
 test("token savings stay in the instructions: re-review only the fix, edit instead of rewriting, a small CLAUDE.md template", () => {
   const feature = readFileSync(join(PLUGIN, existsSync(join(PLUGIN, "workflows", "feature.md")) ? "workflows" : "commands", "feature.md"), "utf8");
   assert.match(feature, /only the fix, and only by the reviewers that objected/);

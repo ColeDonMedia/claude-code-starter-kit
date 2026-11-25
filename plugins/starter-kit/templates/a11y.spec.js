@@ -55,14 +55,17 @@ async function keyboardWalk(page, maxStops = 40) {
         const top = document.elementFromPoint(x, y);
         return top && top !== el && !el.contains(top) && !top.contains(el);
       });
-      return { key: name(el), visible: hasOutline || focused !== unfocused, hidden };
+      // A native date or time box moves Tab through its own parts (month, day, year) while focus stays on the box.
+      const segmented = el.tagName === "INPUT" && /^(date|time|datetime-local|month|week)$/.test(el.type);
+      return { key: name(el), visible: hasOutline || focused !== unfocused, hidden, segmented };
     });
     if (!info) {
       last = null;
       continue;
     }
     repeats = info.key === last ? repeats + 1 : 0;
-    if (repeats >= 3) {
+    // Stuck = focus stays put for 3 Tabs (6 for a date or time box, whose parts take up to 5): a real trap is caught either way.
+    if (repeats >= (info.segmented ? 6 : 3)) {
       trapped = true;
       break;
     }

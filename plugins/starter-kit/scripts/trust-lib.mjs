@@ -24,6 +24,10 @@ export function projectKey(project) {
   return process.platform === "win32" ? p.toLowerCase() : p;
 }
 
+// A project the kit first met as an empty folder: until its owner approves a plan, hooks/plan-gate.mjs refuses app code there.
+// Kept outside the project, like the approvals, so a project file cannot fake it or remove it.
+export const newProjectMarker = (project) => join(dataDir(), "new-projects", createHash("sha1").update(projectKey(project)).digest("hex").slice(0, 12));
+
 function load() {
   try {
     const j = JSON.parse(readFileSync(trustFile(), "utf8"));

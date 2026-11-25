@@ -7,6 +7,12 @@ Turn this into a build-ready plan: $ARGUMENTS
 Goal: get it right BEFORE any code, because fixing a wrong assumption later costs far more than asking now.
 The user is not a programmer: you make the technical choices and explain them in a line each.
 
+**A small app or tool** (one or two screens, a few features, no accounts, payments or other people's data) gets a SHORT plan, never
+none: one message of at most four questions with defaults (include the size question and two or three apps whose look they like,
+or "you pick"), no research agents unless the owner asks, a plan that fits on one screen (what it does, the defaults you chose,
+what it will not do), and a roadmap of one milestone. A detailed request is not a reason to skip this: the owner must see and
+correct your defaults before any code. In a new project a hook refuses app code until `ROADMAP.md` exists.
+
 ## 1. Look first, ask second
 Read CLAUDE.md and skim the project (manifest, folders, existing screens or routes). Don't ask what you can see.
 

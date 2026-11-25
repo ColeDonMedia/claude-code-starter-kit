@@ -4,6 +4,19 @@ What changed in each release of the starter-kit plugin, newest first, in plain w
 repository's history. Every release bumps `version` in `plugins/starter-kit/.claude-plugin/plugin.json`; a test
 fails if this file has no entry for the current version.
 
+## [2.11.0] — 2026-11-24
+Maps that keep memory honest.
+- New `scripts/schema-map.mjs` → `SCHEMA.md`: tables, columns, keys, indexes, relationships and a Mermaid diagram, replayed from SQL migrations
+  (CREATE/ALTER/RENAME/DROP, MySQL MODIFY/CHANGE), Prisma, Rails `schema.rb`, a schema dump or a local SQLite file (read-only). Deterministic;
+  the drift check flags a stale page; the context pack includes the real columns of the tables a feature touches.
+- New `scripts/arch-map.mjs` → `ARCHITECTURE.md`: areas, dependencies between them, hub files and circular dependencies from the code index,
+  with a hand-written section that is preserved on regeneration.
+- New `scripts/notes-graph.mjs`: `{#D-001}` ids and `[[D-001]]` links across all notes, backlinks, next id, consistency check, and an
+  Obsidian-ready export (a note per id with links and backlinks).
+- Decision status: `status: superseded by [[D-nnn]]` / `status: reversed`. Plans, area notes and live decisions that still rely on a decision
+  that no longer stands are reported (at session start too); superseded decisions are no longer offered as guidance.
+- Workflows write and check these: `/feature`, `/spec`, `/db`, `/onboard`, `/full-scan` and the checkpoint.
+
 ## [2.10.0] — 2026-11-24
 Big databases and live data.
 - New database guard hook (`hooks/db-guard.mjs`, rules in `scripts/db-lib.mjs`): denies connections to any database that isn't local

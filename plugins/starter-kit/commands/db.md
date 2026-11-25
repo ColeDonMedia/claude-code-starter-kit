@@ -30,4 +30,8 @@ the running code still uses the old column. Work slowly and prove each step on a
 6. **Hand over the live change.** Write a section in `RUNBOOK.md` (or `PROJECT.md` if there is no runbook): the exact commands in order
    (backup first, then deploy, migrate, backfill, contract), how long each took in the rehearsal, what to watch, and how to undo each step.
    Tell the owner in plain words that they run it, and that you will check the result with them. Never run it yourself.
-7. Record the design in `DECISIONS.md`, and add tests for the new queries and the backfill.
+7. Regenerate the one-page picture of the database: `node "<SCRIPTS>/schema-map.mjs" --project . --write` (from the migrations; for
+   code-based migrations such as Django or Alembic, point `--sqlite` at the rehearsal copy or `--sql` at a schema dump of a local copy).
+   Read `SCHEMA.md` before writing queries instead of guessing column names.
+8. Record the design in `DECISIONS.md` (with a `{#D-nnn}` id and `[[T-table]]` links to the tables it touches), and add tests for the
+   new queries and the backfill.

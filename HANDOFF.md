@@ -3,13 +3,14 @@
 Read this, then `CLAUDE.md` (how to work on this repo), `README.md` (what the kit does) and `CHANGELOG.md` (history).
 Rewrite this file at the end of every session; keep it under 50 lines and true.
 
-## State at version 2.10.0 (2026-11-24)
+## State at version 2.11.0 (2026-11-24)
 - Public repo `ColeDonMedia/claude-code-starter-kit`, MIT, installed from GitHub; machines self-update daily.
-- `plugins/starter-kit/`: 20 commands, 7 agents, 11 hook scripts, helper scripts, ~340 tests (all unit tests, local only).
+- `plugins/starter-kit/`: 20 commands, 7 agents, 11 hook scripts, helper scripts, ~355 tests (all unit tests, local only).
 - OWNER RULE: never spend API tokens (no `claude -p`, no npx claude-code runs). Live trials are run by the owner in a
   normal session (`DOGFOOD.md`); read the flight report afterwards (`/dogfood`).
 - This session added: 2.7 flight recorder, taste bar, decisions memory; 2.8 drift/compaction/checkpoints/stalls;
-  2.9 code index, impact, scoped tests, `/onboard`; 2.10 database guard, migration check, rehearsal, `/db`.
+  2.9 code index, impact, scoped tests, `/onboard`; 2.10 database guard, migration check, rehearsal, `/db`;
+  2.11 schema map, architecture map, linked notes with decision status (Obsidian export).
 
 ## What was verified, and how
 - Code index: read-only on a real 9.2M-line Python install (31k files; impact and hubs correct; 3.5 min first build;
@@ -26,6 +27,7 @@ Rewrite this file at the end of every session; keep it under 50 lines and true.
   `/onboard`, `/db`, browser tests, the UI reviewer's scoring, scoped tests and impact checks inside `/feature`, the
   session-start drift/checkpoint/stall warnings, the flight recorder (does `tool_use_id` arrive? does `Stop` fire for subagents?).
 - Whether command text expands `${CLAUDE_PLUGIN_ROOT}` is unknown (commands use `<SCRIPTS>`; the session note gives the path).
+- NEVER RUN LIVE: schema-map, arch-map, notes-graph in a real project (tested on synthetic repos; arch-map also read-only on npm's source). Schema parsing covers common SQL; Django/Alembic/Knex need a local DB copy.
 - The code index is pattern-based: dynamic imports, reflection, dependency injection and generated code are missed.
 - The database guard reads commands only: an app or script that connects by itself is not seen.
 

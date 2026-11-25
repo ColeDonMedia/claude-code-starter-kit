@@ -112,8 +112,10 @@ On approval, write the project's memory so any later session can pick up with fu
 - `PROJECT.md` (the master document): what it is, the stack and why, how to run it, the architecture map, the
   decisions made in this planning (with the reasons and what was rejected), current state, known problems, next steps,
   plus `## Success measures` and `## Risks` (one line each, as agreed in the plan).
-- `DECISIONS.md`: append-only, one line per decision (`- <date> — <decision>, because <reason>; rejected: <alternative>`); record the
-  planning decisions in it now. Add a `## Map` heading to `PROJECT.md` (one line per folder or key file) as soon as code exists.
+- `DECISIONS.md`: append-only, one line per decision with an id (`- <date> — <decision> {#D-001}, because <reason>; rejected: <alternative>`;
+  next number from `node "<SCRIPTS>/notes-graph.mjs" --project . --next-id D`); record the planning decisions in it now. Give each roadmap
+  feature an id (`{#F-001}`) and have it point at the decisions it follows (`[[D-001]]`). A decision that is replaced later gets
+  `status: superseded by [[D-nnn]]` (or `status: reversed`) on its old line. Add a `## Map` heading to `PROJECT.md` (one line per folder or key file) as soon as code exists.
 - `HANDOFF.md` and `CHANGELOG.md`: start them as described in `/starter-kit:init` if they don't exist.
 Commit them. Then build the items in order with `/starter-kit:feature`, one at a time: after each merge the records
 are updated (see that command), tell the user in a line or two what now works and how to see it, and carry on to

@@ -86,8 +86,12 @@ Done is something you can show, not something you say. Before reporting or ticki
     Run `node "<SCRIPTS>/roadmap-check.mjs" --project .` and fix anything it reports; it checks the commit and tests are real.
   - `CHANGELOG.md`: one plain-words entry with the commit id.
   - `PROJECT.md`: update current state, the architecture map (one line per folder or key file under a `## Map` heading: `- path — what it is for`), known problems, next steps.
-  - `DECISIONS.md`: one new line per decision made (`- <date> — <decision>, because <reason>; rejected: <alternative>`). Append only; it is
-    what later sessions read first, so keep each line short.
+  - `DECISIONS.md`: one new line per decision made (`- <date> — <decision> {#D-nnn}, because <reason>; rejected: <alternative>`), with the next
+    number from `node "<SCRIPTS>/notes-graph.mjs" --project . --next-id D`. Append only; it is what later sessions read first, so keep each
+    line short. If a decision replaces an earlier one, add `status: superseded by [[D-nnn]]` to the OLD line (or `status: reversed`), then
+    run `notes-graph.mjs --project .` and update every note it lists as still relying on it. In `ROADMAP.md` and `PROJECT.md`, point at
+    decisions with `[[D-nnn]]` and give features and areas their own `{#F-nnn}` / `{#A-name}` anchors, so a change shows what depends on it.
+  - `SCHEMA.md`, when migrations changed: `node "<SCRIPTS>/schema-map.mjs" --project . --write` (the one-page picture of the database).
   - `HANDOFF.md`: rewrite it for the next session, and set its `Covers-through:` line to the newest code commit
     (`git log -1 --format=%H -- . ':(exclude)*.md' ':(exclude).claude'`).
   Write only what is true. If something was not verified, say so in "Failed or not verified" instead of leaving it out.
@@ -99,7 +103,8 @@ Done is something you can show, not something you say. Before reporting or ticki
 - **Checkpoint.** Run `node "<SCRIPTS>/checkpoint.mjs" --project .`. If one is due (every 3 merged features), stop building and
   re-verify everything first: the full test suite, `roadmap-check.mjs`, `drift-check.mjs`, and the approved plan in `PROJECT.md`
   read against what was really built (anything missing, changed or added without agreement). Fix what you can, report the rest in plain
-  words, run `compact-records.mjs` if a record is oversized, then `checkpoint.mjs --project . --record` and commit.
+  words, refresh `ARCHITECTURE.md` (`node "<SCRIPTS>/arch-map.mjs" --project . --write`, in a project with a code index) and
+  `SCHEMA.md`, run `notes-graph.mjs --project .` and fix what it reports, run `compact-records.mjs` if a record is oversized, then `checkpoint.mjs --project . --record` and commit.
 - **Going in circles?** If the same feature has failed review 3 times, or you are about to try an approach that already failed, stop and
   tell the user what is blocking it, with a smaller step or a different approach to choose from.
 - If `ROADMAP.md` has more unticked items and nothing needs the user's decision, start the next one now.

@@ -16,10 +16,24 @@ function section(text, name) {
   return m ? m[1].trim() : "";
 }
 
+// The newest decisions that still stand: superseded and reversed ones are history, not guidance.
 export function lastDecisions(root, n = 5) {
   let lines = read(join(root, "DECISIONS.md")).split("\n").filter((l) => /^[-*] /.test(l));
   if (!lines.length) lines = section(read(join(root, "PROJECT.md")), "Decisions").split("\n").filter((l) => /^[-*] /.test(l));
+  lines = lines.filter((l) => !/status:\s*(superseded|reversed)/i.test(l));
   return lines.slice(-n).map((l) => l.slice(0, 220));
+}
+
+// The tables of SCHEMA.md whose names or columns match the feature's words, so a builder sees the real columns and keys.
+function schemaParts(root, kw) {
+  const text = read(join(root, "SCHEMA.md"));
+  if (!text) return "";
+  const parts = text.split(/(?=^### )/m).filter((p) => p.startsWith("### "));
+  const hit = parts.filter((p) => {
+    const name = /^### (\S+)/.exec(p)[1].toLowerCase();
+    return kw.some((w) => name === w || name === w + "s" || name + "s" === w || (w.length >= 5 && name.includes(w)));
+  });
+  return hit.slice(0, 4).map((p) => p.replace(/\n{2,}Referenced by:[^\n]*/, "").trim().slice(0, 900)).join("\n\n");
 }
 
 export function buildPack(root, feature, max = 3500) {
@@ -48,6 +62,8 @@ export function buildPack(root, feature, max = 3500) {
       out.push("FILES THAT DEFINE RELATED CODE (code index; check the dependents before changing them)\n" + [...hits.values()].slice(0, 10).map((h) => `${h.file}:${h.line} ${h.kind} ${h.name} (${rev.get(h.file)?.size ?? 0} dependents)`).join("\n"));
     }
   }
+  const tables = schemaParts(root, kw);
+  if (tables) out.push("DATABASE TABLES THIS TOUCHES (SCHEMA.md; do not guess columns)\n" + tables);
   const design = read(join(root, "DESIGN.md")).split("\n").slice(0, 30).join("\n").trim();
   if (design && /screen|page|ui|form|button|dashboard|view|layout|style/i.test(feature)) out.push("DESIGN.md (follow it)\n" + design);
   if (!out.length) out.push("No records matched this feature. Read CLAUDE.md and PROJECT.md before starting.");

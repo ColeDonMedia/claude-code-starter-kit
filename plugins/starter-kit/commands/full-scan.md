@@ -38,7 +38,10 @@ Run the full pre-ship sweep using the commands listed under "Commands" in CLAUDE
 12. Database, when migrations changed since the last ship: run `node "<SCRIPTS>/migration-check.mjs" --project . --base <last ship>`.
    A HIGH finding blocks shipping (follow `/starter-kit:db`). List every `accepted-risk` line for the owner, and remind them that the
    live database change is theirs to run from the runbook.
-13. Design, for anything with a screen: run `node "<SCRIPTS>/design-check.mjs" --project .`. A missing or incomplete DESIGN.md, or
+13. Records, for projects with linked notes or a database: `node "<SCRIPTS>/notes-graph.mjs" --project .` must report the notes consistent
+   (no broken links, nothing relying on a superseded decision), and `schema-map.mjs --project .` and `arch-map.mjs --project .` (when those
+   files exist) must say current. Regenerate with `--write` and say what changed.
+14. Design, for anything with a screen: run `node "<SCRIPTS>/design-check.mjs" --project .`. A missing or incomplete DESIGN.md, or
    colors with unreadable contrast, blocks shipping; fix it.
 
 Choosing what "since the last ship" means (never use a plain diff against the current branch — after

@@ -23,7 +23,10 @@ pieces that later sessions reuse. Change NO code while onboarding.
    - what depends on it (from `--impact` on its hub files) and what it must not break
    - traps: generated files, magic, slow or flaky tests, things that look unused but are not
    Write only what you saw in the code; mark guesses as guesses. Set the area's status in `AREAS.md`.
-4. **Update the master records:** `PROJECT.md` gets a `## Map` (one line per area, pointing to its rules file) and the commands; a line
+4. **Draw the big picture.** Run `node "<SCRIPTS>/arch-map.mjs" --project . --write` for `ARCHITECTURE.md` (areas, what depends on what,
+   what everything leans on, circular dependencies; the "Hand-written" part at the bottom is yours to fill with external services and the
+   request flow), and, if the project has a database, `node "<SCRIPTS>/schema-map.mjs" --project . --write` for `SCHEMA.md`.
+5. **Update the master records:** `PROJECT.md` gets a `## Map` (one line per area, pointing to its rules file) and the commands; a line
    per decision in `DECISIONS.md` if you settled anything. Commit the docs.
-5. **Tell the user** in plain words: how big it is, what is mapped now, what is next, and anything risky you noticed. If their task's
+6. **Tell the user** in plain words: how big it is, what is mapped now, what is next, and anything risky you noticed. If their task's
    area is mapped, carry on with it (`/starter-kit:feature`); otherwise say how many more sessions mapping will take.

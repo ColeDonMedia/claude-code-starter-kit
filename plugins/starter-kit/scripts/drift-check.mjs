@@ -6,6 +6,8 @@ import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { buildGraph } from "./notes-graph.mjs";
+import { schemaStatusSync } from "./schema-map.mjs";
 
 const read = (p) => (existsSync(p) ? readFileSync(p, "utf8").replace(/\r/g, "") : "");
 const git = (root, ...args) => {
@@ -69,6 +71,22 @@ export function checkDrift(root) {
   }
 
   for (const c of decisionConflicts(read(join(root, "DECISIONS.md")))) problems.push(c);
+
+  // Linked notes: broken links, decisions that no longer stand but are still relied on.
+  try {
+    for (const p of buildGraph(root).problems.slice(0, 5)) problems.push(p.msg);
+  } catch {
+    /* never let note checks break the drift check */
+  }
+  // The schema page, once it exists, must match what the migrations produce.
+  if (existsSync(join(root, "SCHEMA.md"))) {
+    try {
+      const s = schemaStatusSync(root);
+      if (s.state === "stale") problems.push("SCHEMA.md no longer matches the migrations; regenerate it (node scripts/schema-map.mjs --project . --write)");
+    } catch {
+      /* ignore */
+    }
+  }
 
   for (const [f, max] of Object.entries(LIMITS)) {
     const n = read(join(root, f)).split("\n").length;

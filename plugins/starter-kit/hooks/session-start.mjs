@@ -67,7 +67,7 @@ const parts = [
     "- Feature or non-trivial bug fix -> /starter-kit:feature. One-file tweak -> /starter-kit:tdd, then /starter-kit:review.\n" +
     "- Unclear bug, error or failing test -> /starter-kit:debug. Competitors, market -> /starter-kit:research.\n" +
     "- Where are we, progress, status -> /starter-kit:status. A milestone is finished -> /starter-kit:accept (the owner tries it) before more building.\n" +
-    "- Ship, release, deploy, publish, push, PR -> /starter-kit:full-scan (hooks block pushes and deploys until it passes). First public launch -> /starter-kit:launch after it. Launched app, keep it up to date -> /starter-kit:maintain.\n" +
+    "- Ship, release, deploy, publish, push, PR -> /starter-kit:full-scan (hooks block pushes and deploys until it passes). First public launch -> /starter-kit:launch after it. Launched app, keep it up to date -> /starter-kit:maintain. Privacy policy, terms, user data, children, is-it-legal -> /starter-kit:legal.\n" +
     "- Secure? harden? existing codebase with users -> /starter-kit:audit. Break it, hack it, red team, pen test, or a first launch handling sign-in, payments or personal data -> /starter-kit:redteam (local copy only).\n" +
     "- A link to a skill, plugin or MCP server, or a request to install one -> /starter-kit:vet first; never install it yourself.\n" +
     "- Never say done, fixed or passing without running the check this turn and quoting it. Commit verified work locally; never push unasked.\n" +

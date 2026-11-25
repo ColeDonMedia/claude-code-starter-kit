@@ -31,6 +31,10 @@ Run the full pre-ship sweep using the commands listed under "Commands" in CLAUDE
 10. Operations, only for the first public launch of a hosted app: run `node "<SCRIPTS>/runbook-check.mjs" --project .`. If RUNBOOK.md is
    missing or incomplete (deploy, rollback, backups with a dated restore test, monitoring, costs), run `/starter-kit:launch` to
    build it before anything goes live. After launch, routine care is `/starter-kit:maintain`.
+11. Legal basics, only for the first public launch of something with users, accounts, personal data or analytics: run
+   `node "<SCRIPTS>/legal-check.mjs" --project .` and `node "<SCRIPTS>/license-check.mjs" --project .`. A missing privacy policy or terms, an
+   empty data inventory, unfilled placeholders, or a restrictive or unknown library license blocks the launch; run `/starter-kit:legal`.
+   Say plainly that the documents are drafts until a lawyer has reviewed them.
 
 Choosing what "since the last ship" means (never use a plain diff against the current branch — after
 `/starter-kit:feature` you are already on it, so that diff is empty). Take the first that exists:
@@ -46,7 +50,7 @@ Rules:
 - If the project genuinely has no command for a step (for example no typecheck in a shell-script
   project), report that step as "not applicable" with the reason. Do not silently skip it.
 - Report each step's real output.
-- Ship only when every applicable step is green AND security-reviewer returns APPROVE (and step 7 has no FAIL, step 8 is green, step 9 has nothing waiting, and for a first public launch step 10 is complete).
+- Ship only when every applicable step is green AND security-reviewer returns APPROVE (and step 7 has no FAIL, step 8 is green, step 9 has nothing waiting, and for a first public launch steps 10 and 11 are complete).
   If anything fails, fix it and re-run the full sweep.
 
 When — and only when — every applicable step is green and security-reviewer returned APPROVE, record it

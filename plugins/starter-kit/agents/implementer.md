@@ -69,4 +69,6 @@ final test command and its output summary, and anything you were unsure about. D
 Include a table with one row per acceptance criterion in your brief: `criterion → file::exact test name`, or
 `criterion → manual: how it was checked by hand` for what a test cannot show (how a screen looks). A criterion you did
 not cover must say NOT DONE. Never claim a criterion is met without naming the test that proves it. Also list new
-folders, services, settings and environment variables, and decisions you made with their reasons.
+folders, services, settings and environment variables, and decisions you made with their reasons. If the change collects, stores,
+sends or shows personal data, or adds any third-party service (analytics, payments, email, AI), say exactly what data goes where, so
+`PROJECT.md`'s "Data inventory" (the basis of the privacy policy) stays true.

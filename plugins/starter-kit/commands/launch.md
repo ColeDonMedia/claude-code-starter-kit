@@ -12,7 +12,8 @@ put a secret value in any file, and ask before anything that costs money or crea
 ## 0. Before you start
 - `node "<SCRIPTS>/roadmap-check.mjs" --project . --acceptance` must show nothing waiting (the owner has tried every finished
   milestone), and `/starter-kit:full-scan` must have passed. If the app has sign-in, payments, personal data or uploads, the
-  red team (`/starter-kit:redteam`) must have run. If not, do those first.
+  red team (`/starter-kit:redteam`) must have run, and `node "<SCRIPTS>/legal-check.mjs" --project .` must pass (privacy policy, terms and
+  the data inventory; `/starter-kit:legal` builds them). If not, do those first.
 - Read `PROJECT.md` for the stack and `CLAUDE.md` for the commands. Pick the hosting that fits the stack and the owner's budget;
   if undecided, have the `researcher` agent compare current options and prices (cheap and simple wins) and give the user a recommendation.
 
@@ -48,6 +49,11 @@ reviewer's launch checklist lists. Test the live staging address, not just local
 ## 7. Costs and limits
 Estimate the monthly cost at the expected traffic from CURRENT pricing pages (say they are estimates and when you checked), set a spending
 alert on every paid service, and note each free-tier limit and what happens when it is reached ("Costs and limits").
+
+## 7b. Measure and listen
+Set up what the plan promised: the analytics (or counts) behind the success measures, with consent handled as `/starter-kit:legal` decided,
+and a visible way for users to report a problem or send feedback that lands in an inbox the owner actually reads. Write where to look
+for the numbers into "Monitoring and alerts" and the first date to review them against the goals.
 
 ## 8. Write RUNBOOK.md
 Create it from this template; every section filled in, plain words, no secret values, and a line `Launched: <date>` right under the title once it goes live:

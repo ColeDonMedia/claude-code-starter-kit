@@ -56,3 +56,50 @@ test("every hook is registered, and every registered hook exists", () => {
   for (const f of registered) assert.ok(onDisk.includes(f), `hooks.json names ${f}, which does not exist`);
   for (const f of onDisk) assert.ok(registered.has(f) || f === "auto-update.mjs", `${f} is not registered in hooks.json`);
 });
+
+// ---- no dead references: the instructions must only point at things that exist ----
+const commandNames = readdirSync(join(PLUGIN, "commands")).map((f) => f.replace(/\.md$/, ""));
+const agentNames = readdirSync(join(PLUGIN, "agents")).map((f) => f.replace(/\.md$/, ""));
+const textFiles = [
+  ...readdirSync(join(PLUGIN, "commands")).map((f) => join(PLUGIN, "commands", f)),
+  ...readdirSync(join(PLUGIN, "agents")).map((f) => join(PLUGIN, "agents", f)),
+  join(PLUGIN, "hooks", "session-start.mjs"),
+  join(PLUGIN, "hooks", "docs-gate.mjs"),
+  join(PLUGIN, "hooks", "verify-gate.mjs"),
+  join(REPO, "README.md"),
+];
+
+test("every script that a command or agent tells Claude to run really exists", () => {
+  const scripts = new Set(readdirSync(join(PLUGIN, "scripts")));
+  for (const f of textFiles) {
+    for (const m of readFileSync(f, "utf8").matchAll(/(?:<SCRIPTS>|<plugin>\/scripts|scripts)\/([a-z-]+\.mjs)/g)) {
+      assert.ok(scripts.has(m[1]), `${f.replace(REPO, "")} refers to scripts/${m[1]}, which does not exist`);
+    }
+  }
+});
+
+test("every /starter-kit:command that anything mentions really exists", () => {
+  for (const f of textFiles) {
+    for (const m of readFileSync(f, "utf8").matchAll(/starter-kit:([a-z-]+)/g)) {
+      if (m[1] === "managed" || m[1] === "pre-commit") continue; // markers, not commands
+      assert.ok(commandNames.includes(m[1]) || agentNames.includes(m[1]), `${f.replace(REPO, "")} mentions /starter-kit:${m[1]}, which does not exist`);
+    }
+  }
+});
+
+test("every agent that a command launches really exists, and the routing table can reach every workflow command", () => {
+  for (const f of textFiles.filter((x) => x.includes("commands"))) {
+    for (const m of readFileSync(f, "utf8").matchAll(/`(researcher|reviewer|ui-reviewer|security-reviewer|implementer|red-team|challenger|[a-z-]+)` agent/g)) {
+      assert.ok(agentNames.includes(m[1]), `${f.replace(REPO, "")} launches the "${m[1]}" agent, which does not exist`);
+    }
+  }
+  const routing = readFileSync(join(PLUGIN, "hooks", "session-start.mjs"), "utf8");
+  for (const c of commandNames.filter((n) => n !== "init" && n !== "review")) assert.ok(routing.includes(`/starter-kit:${c}`), `the routing table never mentions /starter-kit:${c}`);
+});
+
+test("every command file has a description that says WHEN to use it (that is what makes Claude pick it)", () => {
+  for (const n of commandNames) {
+    const d = /^description:\s*(.+)$/m.exec(readFileSync(join(PLUGIN, "commands", `${n}.md`), "utf8"))?.[1] ?? "";
+    assert.ok(d.length > 60, `commands/${n}.md has no real description`);
+  }
+});

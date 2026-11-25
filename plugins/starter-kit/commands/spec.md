@@ -82,6 +82,12 @@ and desktop widths. Use the project's existing design system if it has one. Ever
 - **Real-world checks** — for anything with a screen: the three to five user journeys that must always work (sign up,
   sign in, the core action) will be end-to-end tests that click through the running app at phone and desktop sizes, and the
   app gets a speed budget (how big the download may be). Say so in the plan.
+- **Measuring and listening** — how the success goals will be measured once it is live (a privacy-friendly analytics tool, or simple
+  counts from the app's own database, so no needless tracking), the few events that matter (sign-up, the core action), and how users
+  can reach the owner (an in-app "Report a problem" or "Send feedback" that reaches an inbox the owner reads). Check current options and
+  prices from their own pages before naming a service.
+- **Rules that apply** — whether personal data, children, payments or an AI model are involved, because each brings legal duties
+  (`/starter-kit:legal` works them out before launch). Start the `Data inventory` in `PROJECT.md` now.
 - **Biggest risks** — the top five, each with what would trigger it and what you'd do (a service that may refuse
   approval, a hard feature, a cost that could grow, a rule that may apply, something only the user can supply)
 - **Not now** — what is deliberately left for later

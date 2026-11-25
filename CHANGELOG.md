@@ -4,6 +4,18 @@ What changed in each release of the starter-kit plugin, newest first, in plain w
 repository's history. Every release bumps `version` in `plugins/starter-kit/.claude-plugin/plugin.json`; a test
 fails if this file has no entry for the current version.
 
+## [2.6.0] — 2026-11-24
+Legal, licenses, analytics and feedback.
+- New `/legal`: builds the data inventory, works out which rules apply from current sources (privacy, terms, cookies, children, data rights,
+  payments, email, accessibility, AI disclosure, app stores, regulated areas), drafts the privacy policy and terms from how the app really behaves
+  (DRAFT banner, no invented owner details, nothing promised that the code doesn't do), and builds the matching features.
+- New `scripts/legal-check.mjs`: data inventory filled in, both documents present, no placeholders, each marked draft or reviewed. Required by the
+  pre-ship scan for a first public launch.
+- New `scripts/license-check.mjs`: classifies the licenses of shipped libraries (npm and Python), flags restrictive and unknown ones, follows
+  nested dependencies, handles OR / AND expressions, writes a third-party notices list.
+- `PROJECT.md` gains a "Data inventory"; the builder must report any personal data or third-party service it adds.
+- The plan covers how success is measured and how users send feedback; `/launch` sets both up.
+
 ## [2.5.0] — 2026-11-24
 Operations: launching properly and staying healthy afterwards.
 - New `/launch`: separate test and live environments, git-driven deploys, error tracking, uptime alerts, daily backups that are

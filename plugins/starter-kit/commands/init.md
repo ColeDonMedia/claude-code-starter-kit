@@ -132,6 +132,8 @@ the handoff must cover the newest code commit, and roadmap ticks must be backed 
 <what works now; what is in progress; what does not exist yet>
 ## Known problems
 <bugs, shortcuts, things that were not verified>
+## Data inventory
+<each kind of personal data the app collects: what, why, where it is stored and who receives it, who can see it, how long it is kept, how it is deleted. Or "No personal data is collected.">
 ## Success measures
 <two or three measurable goals: how the owner will know this worked>
 ## Risks

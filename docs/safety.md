@@ -63,6 +63,13 @@ A silently broken hook looks exactly like a working one, so the kit checks itsel
 - Pushes, pull requests, releases, `npm publish`, `docker push` and deploy commands (`vercel --prod`, `fly deploy` and others)
   are blocked until the full pre-ship scan has passed for that exact commit. A new commit means a new scan.
 
+## Model check: reviews on the right model
+
+A security review on the cheapest model is a protection quietly switched off. So a hook refuses to start any of the kit's agents
+on a model below what its job needs (the security reviewer needs Opus; reviewers, builders and the red team need at least Sonnet).
+The only exception is this computer's own plan: if it has no Opus, the kit says so in status and at the top of every security
+report. No agent the kit starts can start other agents, and the agents on Haiku can only read.
+
 ## Databases
 
 A database guard keeps Claude on local copies: connections to any database on another computer, migrations with production

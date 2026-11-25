@@ -9,7 +9,7 @@ First decide what to review ($ARGUMENTS can name a commit range or branch to use
 2. If that is empty, the last commit: `git show HEAD`.
 3. If neither has anything, say there is nothing to review and stop.
 
-Then launch:
+Then launch, each with the `model` and `effort` that `node "${CLAUDE_PLUGIN_ROOT}/scripts/model-route.mjs" --project . --role <agent>` prints:
 1. The starter-kit `reviewer` agent — correctness, edge cases, regressions (it runs the tests).
 2. The starter-kit `ui-reviewer` agent — only if the changes touch user-interface files. Skip it otherwise.
 

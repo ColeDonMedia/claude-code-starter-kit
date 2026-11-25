@@ -64,6 +64,44 @@ The routing note lives in the plugin, so updates reach every project automatical
   It never downloads a test runner, skips file names with shell-special characters, and tests a file edited in a worktree
   against that worktree's own files.
 
+## Which model does what
+
+The kit uses three models: **Haiku** (fast and cheap) for finding and reading, **Sonnet** for everyday building, and **Opus**
+where a mistake is expensive. By list price Sonnet costs about 20 times Haiku and Opus about twice Sonnet, so the kit saves on
+reading and spends on judgement. It never picks Fable (about four times Sonnet) by itself.
+
+One script, `scripts/model-route.mjs`, decides before each agent starts, from facts the project already records:
+
+| Agent | Starts on | Moves up to Opus when |
+|---|---|---|
+| Builder (`implementer`) | Sonnet | the roadmap item is medium or large, is risky (sign-in, payments, uploads, personal data and the like), touches code that 10 or more files depend on, or two review rounds have failed |
+| `reviewer` | Opus | already there, and never weaker than the builder |
+| `challenger` | Sonnet | it is checking the plan, the feature is large or risky, or two rounds have failed |
+| `investigator` | Sonnet | a first guess about a bug was wrong, the area is risky, or the live site is down |
+| `security-reviewer`, `red-team` | Opus | already there; the security review is never lowered |
+| `scout`, `researcher` | Haiku | never: if Haiku isn't enough, the job goes to a stronger agent instead |
+
+- **Enforced, not just advised:** a hook refuses to start a review on a weaker model than its job needs.
+- **More care is easy, less needs you:** `{ "rigor": "critical" }` in `.claude/kit.json` puts every builder and reviewer on Opus.
+  `"prototype"` lets small builds be reviewed on the builder's own model, but only after you approve it on this computer.
+- **Plans without Opus:** if a launch fails because the plan has no Opus, the kit uses Sonnet, tells you in one sentence, and
+  remembers it for this computer. Status and every security report then say so at the top.
+- **Your own conversation matters most.** Planning, debugging and database work happen in the main conversation, on the model you
+  picked. If that is Haiku during a build, the kit suggests a stronger one once.
+- **Measured:** the flight log records which model each agent asked for, which one ran and how many tokens it used.
+
+### What Haiku does, and what it never does
+
+Haiku **finds and points**. The `scout` reads a big codebase and hands back `file:lines` pointers, each with one line quoted word
+for word; a script checks every pointer before anyone relies on it, and a wrong one sends the report back. The stronger model then
+reads the real code. Scouts run only in big projects (over 150 source files, or `Size: large`), because in a small one the free code
+index already does this. The `researcher` reads the web and dependency release notes.
+
+Haiku never writes code, reviews, security or legal verdicts, or project records (changelog, handoff, decisions, code comments).
+Writing a record needs what the main conversation already knows, so handing that to Haiku costs about as much as writing it, and a
+wrong record misleads every later session. The mechanical records (database map, architecture map, status) are already written by
+scripts, for free.
+
 ## Cheap research
 
 Web searching and reading run on Haiku (fast and inexpensive), in parallel by angle. The main conversation checks the claims,

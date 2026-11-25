@@ -111,7 +111,7 @@ export function report(events, { all = false } = {}) {
   if (Object.keys(m.asked).length) lines.push(`Models asked for: ${Object.entries(m.asked).map(([k, v]) => `${k} (${fmt(v)})`).join("; ")}`);
   if (Object.keys(m.tokens).length) lines.push(`Agent tokens by model: ${Object.entries(m.tokens).map(([k, v]) => `${k} ${v.toLocaleString("en-US")}`).join(", ")}`);
   if (m.rounds.length) lines.push(`Review rounds per build: ${m.rounds.join(", ")}`);
-  if (m.scout.runs) lines.push(`Scout: ${m.scout.runs} run(s); pointers checked ${m.scout.ok} good, ${m.scout.bad} wrong`);
+  if (m.scout.runs) lines.push(`Scout reports checked: ${m.scout.runs}; pointers ${m.scout.ok} good, ${m.scout.bad} wrong`);
   if (m.misses.length) lines.push(`Files builders had to find for themselves: ${m.misses.join(", ")}`);
   const st = stallStatus(events);
   if (st.stalled) a.notes.push(...st.msgs.map((m) => m + "."));

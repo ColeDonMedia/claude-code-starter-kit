@@ -18,6 +18,9 @@ You are looking at the entire codebase, not a diff. Read-only: change nothing un
 Launch the starter-kit `security-reviewer` agent in **whole-project mode**: tell it to audit the entire repository
 and give it the tool results from step 1. If the project is large, launch several, each assigned a part (for
 example: server and API; database and permissions; front end; build and deploy configuration), and merge the results.
+Pass the `model` and `effort` that `node "${CLAUDE_PLUGIN_ROOT}/scripts/model-route.mjs" --project . --role security-reviewer --mode full`
+prints; if it says capped, say so at the top of the report. If `--role scout` prints SCOUT USE, first have the `scout` agent list
+the entry points (routes, forms, uploads, webhooks, jobs) and hand them over with "this list may be incomplete: find what it missed".
 
 ## 3. Report
 - **Verdict** in one line: safe to launch / fix first / stop and fix now.

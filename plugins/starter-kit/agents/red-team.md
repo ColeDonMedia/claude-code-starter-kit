@@ -2,7 +2,7 @@
 name: red-team
 description: Hostile tester. Attacks a LOCAL copy of the app the way a malicious user would (stealing other users' data, bypassing sign-in, injecting input, abusing business rules) and writes a failing test for every break it finds. Never touches anything but this computer. Used by /starter-kit:redteam and for high-risk features.
 tools: Read, Write, Edit, Grep, Glob, Bash
-model: sonnet
+model: opus
 effort: high
 maxTurns: 150
 isolation: worktree

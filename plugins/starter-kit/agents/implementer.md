@@ -92,6 +92,8 @@ brief and in the project's files.
    checkout's branch.
 
 If the brief is ambiguous or you hit something you cannot resolve, stop and report it instead of guessing.
+If the brief has "Start here" pointers, read the code they name first and search for yourself where they fall short; end your
+report with `PACK MISSES: <n>`, the number of files you needed that the pointers did not name.
 
 Report back, briefly: the BRANCH name and the WORKTREE path (absolute), files changed, tests added, the
 final test command and its output summary, and anything you were unsure about. Do not paste whole files.

@@ -12,7 +12,8 @@ Run the full pre-ship sweep using the commands listed under "Commands" in CLAUDE
    auto-fix or upgrade packages; list what needs upgrading and why. If the tool isn't installed, say so
    and mark the step "not run" rather than skipping it silently.
 6. Only once steps 1–5 are green: the starter-kit `security-reviewer` agent on everything changed since
-   the last ship.
+   the last ship, with the `model` and `effort` that `node "${CLAUDE_PLUGIN_ROOT}/scripts/model-route.mjs" --project . --role security-reviewer --mode range`
+   prints (if it says capped, put that at the top of the report).
 
 7. Launch readiness, only for something that serves real users (a web app, an API, a hosted service) and only the
    first time it ships or when hosting, security settings or access rules changed: have the `security-reviewer`

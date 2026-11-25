@@ -4,6 +4,31 @@ What changed in each release of the starter-kit plugin, newest first, in plain w
 repository's history. Every release bumps `version` in `plugins/starter-kit/.claude-plugin/plugin.json`; a test
 fails if this file has no entry for the current version.
 
+## [2.15.0] — 2026-11-25
+The right model for each job, decided in one place; a Haiku scout that finds code for the stronger models; two new checks (plan
+Phase M, part B).
+- **Which model does what.** New `scripts/model-route.mjs` decides each agent's model and effort from what the project records: the
+  roadmap item's size and `high-risk` tag, risky areas in the feature's words (sign-in, payments, uploads, personal data and the
+  like), whether the code involved has 10 or more dependents, how many review rounds failed, and the project's rigor. Builders start
+  on Sonnet and move to Opus for medium, large, risky or far-reaching features and after two failed rounds; the reviewer and red
+  team now run on Opus; the security reviewer always does. More risk never gives a weaker model (a test checks over 30,000 cases).
+  The kit never picks Fable by itself.
+- **Enforced.** A new hook refuses to start a kit agent on a model below its job's minimum (a security review on Haiku or Sonnet,
+  for example). A plan without Opus is handled: the kit drops to Sonnet, tells the owner, remembers it for this computer only, and
+  says so in status and at the top of every security report. `"rigor": "critical"` in kit.json puts everything on Opus;
+  `"prototype"` (cheaper reviews) counts only after the owner approves it on this computer.
+- **The scout (new agent, Haiku).** In big projects it finds the files, line ranges and tests a job needs and hands over pointers
+  with one quoted line each, never summaries. A script checks every pointer when the scout finishes and sends a wrong report back
+  once. Used before building, while onboarding, while debugging, and as a head start for security audits. Off with `{ "scout": false }`.
+- **The investigator (new agent).** Finds a bug's root cause with file-and-line evidence outside the main conversation, for big
+  projects or once a first guess fails.
+- **A second opinion on the plan.** Before the owner approves a plan, the challenger checks it on Opus: criteria no test could
+  prove, features in the wrong order, sizes that look wrong, promises no roadmap item delivers.
+- **The live site is down.** `/debug` now starts with the runbook's rollback (with the owner's yes) before looking for the cause,
+  and records the incident.
+- Monthly maintenance has the researcher read dependency release notes; a Haiku main conversation during a build gets one
+  suggestion to switch to a stronger model; the flight report shows scout pointer checks and files builders had to find themselves.
+
 ## [2.14.1] — 2026-11-25
 Safer agents, steady effort, and a record of which model did what (plan Phase M, part A).
 - Closed a hole: the researcher (which reads untrusted web pages on the cheapest model) and the UI reviewer could start other

@@ -17,7 +17,10 @@
 | `reviewer` | Correctness, edge cases and regressions; finds the real test behind every acceptance criterion; checks what the change could break beyond the diff. Read-only. |
 | `ui-reviewer` | Looks at the running app and its screenshots at phone and desktop size; scores each screen against `DESIGN.md`; checks accessibility. Read-only. |
 | `security-reviewer` | Hardening review of risky features and before shipping; a launch-readiness checklist for the first launch. Read-only, runs on Opus. |
-| `challenger` | Assumes the work is NOT done and tries to prove it: claims without evidence, tests that couldn't fail, missing cases, collateral damage. Must show what it tried; "does not hold up" blocks the merge. Read-only. |
+| `challenger` | Assumes the work is NOT done and tries to prove it: claims without evidence, tests that couldn't fail, missing cases, collateral damage. Must show what it tried; "does not hold up" blocks the merge. Before you approve a plan, it also checks the plan itself (on Opus): criteria no test could prove, features in the wrong order, sizes that look wrong, promises no roadmap item delivers. Read-only. |
+| `investigator` | Reproduces a bug and finds its root cause with `file:line` evidence, outside the main conversation, so logs and long searches never fill it. Read-only. |
+
+Which model each one runs on is decided by one script from the feature's size and risk: see [Which model does what](how-it-works.md#which-model-does-what).
 
 ## Real-browser tests and screenshots
 

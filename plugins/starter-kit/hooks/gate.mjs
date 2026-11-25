@@ -2,11 +2,12 @@
 // program for every matching hook, and starting Node costs about 0.3 s each, so the old set-up made every shell command wait
 // roughly 0.7 s. This runs the same individual hook scripts inside one process (see scripts/inprocess.mjs), in order:
 //   pre   (before any tool)   flight recorder; for shell commands: safety, database, secret, push, package guards;
-//                             for file edits: file guard. The first block ends the run.
+//                             for file edits: file guard; for agent launches: the model check. The first block ends the run.
 //   post  (after any tool)    flight recorder; after file edits: related tests.
 //   stop  (a turn ends)       flight recorder, verify gate, docs gate.
 //   start (a session starts)  session note (startup, clear, compact), flight recorder, auto-update (startup only).
 //   subagent (one starts)     tells starter-kit subagents where the kit's scripts are.
+//   substop  (one finishes)   checks the scout's pointers before anyone relies on them.
 // Every hook stays a normal script that is tested alone and through here. A hook that crashes is reported, not skipped silently.
 import { pathToFileURL } from "node:url";
 import { dirname, join, resolve } from "node:path";
@@ -22,11 +23,13 @@ export function pipeline(mode, input) {
   // Every shell tool gets every guard: Bash, and PowerShell on Windows (until 2.12.1 PowerShell skipped them all).
   const isShell = tool === "Bash" || tool === "PowerShell" || (!tool && typeof ti.command === "string");
   const isEdit = ["Edit", "Write", "MultiEdit"].includes(tool) || (!tool && typeof ti.file_path === "string" && typeof ti.command !== "string");
-  if (mode === "pre") return ["flight-recorder", ...(isShell ? ["safety-guard", "db-guard", "secret-guard", "push-gate", "package-guard"] : isEdit ? ["file-guard"] : [])];
+  const isAgent = tool === "Agent" || tool === "Task";
+  if (mode === "pre") return ["flight-recorder", ...(isShell ? ["safety-guard", "db-guard", "secret-guard", "push-gate", "package-guard"] : isEdit ? ["file-guard"] : isAgent ? ["agent-route"] : [])];
   if (mode === "post") return ["flight-recorder", ...(isEdit ? ["test-related"] : [])];
   if (mode === "stop") return ["flight-recorder", "verify-gate", "docs-gate"];
   if (mode === "start") return [...(["startup", "clear", "compact", undefined].includes(input?.source) ? ["session-start"] : []), "flight-recorder", ...(input?.source === "startup" ? ["auto-update"] : [])];
   if (mode === "subagent") return ["subagent-start"];
+  if (mode === "substop") return ["scout-check"];
   return [];
 }
 

@@ -24,6 +24,12 @@ yourself unless something fails.
   doesn't, suggest `/starter-kit:init` first and stop.
 
 ## 1. Implement (subagent, own worktree)
+**Models.** Before each agent launch in this workflow, run `node "${CLAUDE_PLUGIN_ROOT}/scripts/model-route.mjs" --project . --role <agent> --feature "<the feature>"`
+and pass the `model` and `effort` it prints (reviewer and challenger also get `--builder <the builder's model>`). Tell the owner
+only when it matters ("this touches payments, so the stronger model builds it"). If `--role scout` prints SCOUT USE, launch the
+`scout` agent first with the feature and the context pack, and put its checked pointers in the brief under "Start here (a head
+start, not a boundary)".
+
 Launch the starter-kit `implementer` agent. It runs in a new git worktree on its own branch. It cannot
 see this conversation, so write it a complete brief. Start it from `node "${CLAUDE_PLUGIN_ROOT}/scripts/context-pack.mjs" --project . --feature "<the feature>"`,
 which pulls the roadmap item, the latest decisions, the related parts of the code map and the design brief out of the
@@ -60,7 +66,9 @@ If a reviewer says CHANGES REQUESTED:
   existing worktree. Do not launch a fresh implementer: that would create a second, empty worktree.
 - If the original implementer can't be resumed, launch a new one and tell it to ignore the worktree it
   was given, and instead work in the existing WORKTREE path on the existing BRANCH.
-- Then review again. Stop after 3 rounds and ask the user.
+- Then review again. If round 2 still fails, run model-route.mjs with `--attempt 3`: if it names a stronger model than the
+  builder had, start a new implementer on it in the existing WORKTREE and BRANCH (as above) with every finding so far. If that
+  round fails too, or the model is no stronger, stop and ask the user.
 
 An agent whose report comes back marked partial (it hit its turn limit) is resumed once; if it is partial again, report that
 instead of trusting half a build or half a review.

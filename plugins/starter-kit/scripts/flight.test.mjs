@@ -181,7 +181,7 @@ test("the report shows models asked for, tokens per model and review rounds per 
   assert.match(r, /claude-opus-5-5 20,000/);
   assert.match(r, /claude-sonnet-5-5 30,000/);
   assert.match(r, /Review rounds per build: 2, 1/);
-  assert.match(r, /Scout: 1 run\(s\); pointers checked 9 good, 1 wrong/);
+  assert.match(r, /Scout reports checked: 1; pointers 9 good, 1 wrong/);
   assert.match(r, /find for themselves: 2/);
 });
 

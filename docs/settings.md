@@ -16,6 +16,8 @@ protection, you approve it in a permission prompt.
 | `{ "docsGate": false }` | Stops holding a turn when the records fall behind the code. |
 | `{ "flightLog": false }` | Turns off the flight recorder. |
 | `{ "relatedTests": false }` | Stops running related tests after each edit (see [How it works](how-it-works.md)). |
+| `{ "scout": false }` | Never launches the Haiku scout, even in a big project. |
+| `{ "rigor": "critical" }` | Puts every builder and reviewer on the strongest model the kit uses (Opus). |
 
 ## Protections (need your approval on this computer before they count)
 
@@ -28,9 +30,13 @@ protection, you approve it in a permission prompt.
 | `{ "dbGuard": false }` | Turns off the database guard. |
 | `{ "autoGate": false }` | Turns off the push gate. |
 | `{ "auto": false }` | Turns off everything automatic. |
+| `{ "rigor": "prototype" }` | Lets small builds be reviewed on the builder's own model, and the red team run on Sonnet (cheaper). The security review stays on Opus. |
 
 Commands a project supplies also run only after your approval: the `verify` list (its check commands) and a custom
 `relatedTests` command.
+
+This computer's own model ceiling (a plan without Opus) is kept outside every project, in the kit's data folder; a project file
+cannot set it.
 
 ## Other per-project files
 

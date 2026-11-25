@@ -1,11 +1,23 @@
 ---
-description: Use for a bug, error message, crash or failing test whose cause isn't obvious. Finds the root cause with evidence before changing code, then fixes it with a regression test.
+description: Use for a bug, error message, crash or failing test whose cause isn't obvious, or a launched app that is down for real users. Finds the root cause with evidence before changing code, then fixes it with a regression test.
 ---
 
 Find and fix the root cause of: $ARGUMENTS
 
 The rule: no fix until you can explain WHY it fails, with evidence. Guessing and patching symptoms is how
 bugs come back.
+
+## 0. Live emergency (a launched app that is down or broken for real users)
+Restoring service comes before finding the cause. Read `RUNBOOK.md`, give the owner its rollback steps in plain words and ask for
+their yes; never run anything against the live system unprompted. Once it is back, reproduce on a local copy and carry on below
+(the investigator gets `--mode emergency`). Afterwards add the incident to `MAINTENANCE.md`: what happened, for how long, the cause,
+and the test added.
+
+**Hand off the digging** when CLAUDE.md says `Size: large`, or as soon as a first hypothesis fails: launch the `investigator` agent
+for steps 3 and 4, with the `model` and `effort` that `node "${CLAUDE_PLUGIN_ROOT}/scripts/model-route.mjs" --project . --role investigator`
+prints (add `--attempt 2` after a failed hypothesis). Give it the failure, what was tried, and, when `--role scout` prints SCOUT USE,
+the `scout` agent's pointers: where the error is raised, who calls it, which tests cover it (save a log over 300 lines under
+`.claude/logs/` and have the scout point at its first error). Then do steps 5 and 6 here from its report.
 
 ## 1. Reproduce
 Get the exact failure: the full error and stack trace, the command or steps that trigger it, and whether it

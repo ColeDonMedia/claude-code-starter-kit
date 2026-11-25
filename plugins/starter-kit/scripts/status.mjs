@@ -8,6 +8,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
 import { checkRoadmap } from "./roadmap-check.mjs";
+import { getCeiling } from "./model-route.mjs";
 
 const read = (p) => {
   try {
@@ -84,6 +85,8 @@ export function buildStatus(root) {
   const head = git("rev-parse", "HEAD").stdout.trim();
   if (!handoff) lines.push("Records: no HANDOFF.md yet.");
   else if (!covers || (head && !head.startsWith(covers.toLowerCase()) && git("merge-base", "--is-ancestor", covers, "HEAD").status !== 0)) lines.push("Records: the handoff note does not match the code history.");
+  const ceiling = getCeiling();
+  if (ceiling) lines.push(`Models: this computer's plan has no Opus, so every review, security reviews included, runs on ${ceiling}.`);
   return lines.join("\n");
 }
 

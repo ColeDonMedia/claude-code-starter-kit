@@ -14,15 +14,14 @@ then stop and report. Do not start the next phase in the same release.
 | 0 — safety and correctness | 2.12.1 | **Done** (P0-1 to P0-9). D1 decided: keep the merged runner, with the canary, self-check and fail-closed net. |
 | Owner requests | 2.12.2–2.14.0 | **Done**: payment keys (2.12.2); sizing an app to its users (2.13.0); design library and WCAG 2.2 AA testing (2.14.0). |
 | Audit 2 | — | **Done** (2026-11-25, against 2.14.0): findings F1–F11 below, and the new one-click phase (OC). |
-| 1 — verifiable | 2.15.0 | **Next.** Needs owner decisions D2, D3 and D7. When P2-4 moves rule blocks into references, the WCAG list in `scripts/wcag.mjs` is the source for the accessibility reference. |
-| M — models and delegation | 2.14.1 (part A), 2.15.0 (part B) | Part A **done** (2.14.1). Part B needs owner decisions D11 and D12. Absorbs P3-6. |
-| OC — one-click shipping | 2.16.0, 2.17.0 | Not started. Waits for the first live trial (P1-6), whose flight report decides the order inside the phase. Absorbs P2-1, P2-2, P2-3, P2-5 and P4-2. |
+| M — models and delegation | 2.14.1 (part A), 2.15.0 (part B) | **Done** except M-14 (needs a trial). D11 and D12 decided as recommended (the owner asked for all of it, 2026-11-25). Absorbed P3-6. Built before the first trial, so there is no before-and-after comparison. |
+| 1 — verifiable | 2.16.0 | **Next.** Needs owner decisions D2, D3 and D7. When P2-4 moves rule blocks into references, the WCAG list in `scripts/wcag.mjs` is the source for the accessibility reference. |
+| OC — one-click shipping | 2.17.0, 2.18.0 | Not started. Waits for the first live trial (P1-6), whose flight report decides the order inside the phase. Absorbs P2-1, P2-2, P2-3, P2-5 and P4-2. |
 | 2, 3, 4 | — | Not started. What is left of Phase 2 after OC follows it. |
 
-**Order of work, from here:** M-1 to M-3 (part A) → P1-1 and P1-2 (tests on GitHub, a stable channel) → P1-6 (the first live trial:
-it is the "before" measurement for part B) → M-4 to M-14 (part B) → OC-1 to OC-12 (one-click shipping, in two releases) → the rest
-of Phase 2 → Phase 3 → Phase 4 only if the trials justify it. If the trial has not run when part B is due, build part B anyway and
-say in `HANDOFF.md` that there is no before-and-after comparison.
+**Order of work, from here:** P1-1 and P1-2 (tests on GitHub, a stable channel) → P1-6 (the first live trial; its flight report
+also gives M-14 its numbers) → M-14 → OC-1 to OC-12 (one-click shipping, in two releases) → the rest of Phase 2 → Phase 3 →
+Phase 4 only if the trials justify it.
 
 **Answers from the official docs (2026-11-25, hooks reference, sub-agents page, plugins reference):**
 - V1. The tool is `PowerShell`; its input has the command in `tool_input.command`, like Bash. The docs advise `Bash|PowerShell` matchers.
@@ -63,10 +62,13 @@ summary, characters 79,900–139,950 and 219,850–279,900: re-read those before
   Only SessionStart receives a `model` field.
 - V16. The built-in Explore agent runs on the parent conversation's model (on Opus when the parent is Fable, on a subscription).
   It is NOT a cheap reader unless `model: haiku` is passed on the call.
-- V17. Not checked yet (needed for M-7): what happens when an agent names a model the account's plan does not include: an
-  error (which text?) or a silent fallback.
-- V18. Not checked yet (needed for M-5 and M-8): does a resumed agent keep the model it started on, and does the SubagentStop
-  matcher filter on the agent type the way SubagentStart's does.
+- V17. Partly answered (model-config, sub-agents and errors pages): when an organisation's allowlist blocks a model, a subagent
+  runs on a fallback with a warning instead of failing. For a model the PLAN does not include, the errors page has an entry titled
+  "Claude Opus is not available with the Claude Pro plan" (its text was not read). So M-7 handles a failed launch defensively:
+  `model-route.mjs` prints what to do (relaunch on Sonnet, tell the owner, set this computer's ceiling) with every Opus answer.
+- V18. Answered: "If Claude passed an alias, the subagent keeps that alias when it resumes or receives a follow-up message", and
+  effort stays too. SubagentStop supports a matcher on the agent type, the same values as SubagentStart; `decision: "block"` with a
+  `reason` keeps the subagent running; Claude Code ends the turn anyway after eight blocks in a row.
 - Prices used for the reasoning in Phase M (API list prices per million tokens, input / output, as cached on 2026-11-03):
   Haiku 5.5 $0.10 / $0.50, Sonnet 5.5 $2 / $10, Opus 5.5 $4 / $20, Fable 5.2 $8 / $40. So Sonnet costs 20 times Haiku, Opus twice
   Sonnet, Fable twice Opus. The owner is on a subscription: treat the ratios as a guide to plan usage, not as exact.
@@ -275,7 +277,7 @@ Small, urgent, low-risk. Nothing here adds a feature.
 
 ---
 
-## Phase 1 — make the kit verifiable (release 2.15.0)
+## Phase 1 — make the kit verifiable (release 2.16.0)
 
 Nothing here changes what the kit does for a project. It makes failures visible before they reach a machine.
 
@@ -352,11 +354,20 @@ fixed model, no agent sets its effort, and 16 of the 21 workflows think in the m
    what they were pointed at, and search for themselves when the pointers fall short.
 
 **Weight budget (ground rule 3 still applies).** At most two new agents (`scout`, `investigator`), each under 350 words with a
-description under 30 words; one new script; two new hook scripts; at most 60 added words per command file; the session note grows by
-nothing (trim as many words as you add). If a task cannot fit, cut the task, not the budget.
+description under 30 words; two new scripts (`model-route.mjs`, `pointer-check.mjs`); two new hook scripts; at most 60 added words
+per command file and task; the session note grows by nothing (trim as many words as you add). If a task cannot fit, cut the task,
+not the budget.
 
 **Not in this phase, on purpose:** Fable in any agent file or route (D12); Haiku for reviews, security, vetting, records or code; a
-records-keeper agent; per-language agents; separate database or speed reviewers (scripts cover them).
+records-keeper agent; per-language agents; separate database or speed reviewers (scripts cover them). **Haiku drafting changelogs,
+handoffs, decisions, code comments or file histories** (the owner asked, 2026-11-25): no. What a record must say is already in the
+main conversation, so briefing Haiku costs about what writing it does, and a wrong record misleads every later session. File history
+is `git log`/`git blame`, which a script or the investigator reads for free. Revisit only if a trial shows records eating real budget.
+
+**As built (2.15.0), where it differs from the tasks below:** the hook does not record its own crashes (P1-3 adds hook outcomes to
+the flight log); `"rigor": "prototype"` lowers review strength, so it needs the owner's approval on this computer like any other
+switch (a `rigor:prototype` trust entry), while `"critical"` takes effect at once; the ceiling file is not guarded against direct
+writes (it can only cap at Sonnet, and status and security reports show it).
 
 ### Part A — release 2.14.1 (small and safe; do it before the first trial)
 
@@ -395,7 +406,7 @@ records-keeper agent; per-language agents; separate database or speed reviewers 
 
 ### Part B — release: the next minor version (needs D11 and D12)
 
-### M-4. One place that decides: `scripts/model-route.mjs` — Opus, M (absorbs P3-6)
+### M-4. DONE in 2.15.0 — One place that decides: `scripts/model-route.mjs` — Opus, M (absorbs P3-6)
 - **Why:** "how does it decide between Sonnet and Opus?" must have one answer that can be read, tested and changed in one file.
 - **Change:** a pure function `route(facts)` returning `{ model, effort, reasons[] }`, and a thin command line:
   `node model-route.mjs --project . --role <agent> [--feature "<text>"] [--attempt <n>] [--mode plan|range|full|launch] [--builder <model>] [--json]`.
@@ -429,7 +440,7 @@ records-keeper agent; per-language agents; separate database or speed reviewers 
   roadmap with and without tags; no index present; `docs.test.mjs` asserts each agent file's `model` equals `route({ role })` at
   defaults, so the files and the script cannot drift apart.
 
-### M-5. Use the decision in the workflows — Sonnet, M (after V18)
+### M-5. DONE in 2.15.0 — Use the decision in the workflows — Sonnet, M (after V18)
 - **Change:** where a command launches a kit agent, one sentence: run `model-route.mjs --role <agent> …` and pass the `model` it
   prints on the Agent call (and `effort`, where the Agent tool offers that parameter). Commands: `feature.md` (implementer, then
   reviewer and challenger with `--builder`), `review.md`, `redteam.md`, `audit.md` and `full-scan.md` (`--mode`), `spec.md` (M-11),
@@ -442,7 +453,7 @@ records-keeper agent; per-language agents; separate database or speed reviewers 
   the hook (M-6 sets the model with `updatedInput`, V15), or let OC-4's `next.mjs` print it with each step. Not before.
 - **Test:** docs tests: every command that launches a kit agent names `model-route.mjs`; `feature.md` contains the escalation rule.
 
-### M-6. Minimums enforced by a hook: `hooks/agent-route.mjs` — Opus, M
+### M-6. DONE in 2.15.0 — Minimums enforced by a hook: `hooks/agent-route.mjs` — Opus, M
 - **Why:** instructions guide, hooks enforce. A security review on a weak model is a protection quietly switched off.
 - **Change:** `gate.mjs` runs it in `pre` mode for the Agent tool. Only for `subagent_type` starting `starter-kit:`. If the call
   names a `model` below the role's minimum (from `model-route.mjs`, the single source), deny with a reason that names the minimum,
@@ -455,7 +466,7 @@ records-keeper agent; per-language agents; separate database or speed reviewers 
   refused, `haiku` on `reviewer` is refused, `opus` on `implementer` passes, a call with no `model` passes, an unknown agent type
   passes, a non-kit agent passes, the canary is unaffected.
 
-### M-7. Plans without the strong models, and a main conversation on the weak one — Sonnet, S (after V17)
+### M-7. DONE in 2.15.0 — Plans without the strong models, and a main conversation on the weak one — Sonnet, S (after V17)
 - **Change (a), the ceiling:** first answer V17. If Claude Code falls back by itself, only document it. If the launch fails: the
   commands say to relaunch one tier down, tell the owner in one plain sentence that reviews are running on a weaker model, and
   record a ceiling for this computer with `model-route.mjs --set-ceiling sonnet`. Store it through `trust-lib` (outside the project,
@@ -467,7 +478,7 @@ records-keeper agent; per-language agents; separate database or speed reviewers 
 - **Test:** the ceiling caps every route; a project's `kit.json` cannot set it; the conditional line appears only for a Haiku
   model, and the default note is still under its word limit.
 
-### M-8. The scout: a Haiku agent that finds and points — Opus (contract and checker), Sonnet (wiring), M
+### M-8. DONE in 2.15.0 — The scout: a Haiku agent that finds and points — Opus (contract and checker), Sonnet (wiring), M
 - **Why:** the builder and the reviewers spend strong-model tokens finding their way around. V16: the built-in Explore agent is
   not cheap. The kit needs its own reader with a fixed contract, a pinned model and no ability to change anything.
 - **Change:** `agents/scout.md`: `model: haiku`, `tools: Read, Grep, Glob`, `effort: low`, `maxTurns: 30`. Its whole report:
@@ -509,13 +520,13 @@ records-keeper agent; per-language agents; separate database or speed reviewers 
 - **Test:** the frontmatter rule from M-1; `pointer-check` on Windows and POSIX paths, CRLF files, ranges past the end, regex
   characters in the quote, a path outside the project, an empty report; the hook blocks once and only once; the same through the gate.
 
-### M-9. More reading on Haiku through the researcher that already exists — Sonnet, S
+### M-9. DONE in 2.15.0 — More reading on Haiku through the researcher that already exists — Sonnet, S
 - **Change:** `maintain.md`: the researcher reads the release notes for each dependency update (versions from the lockfile
   diff) and lists breaking changes with links; the main conversation decides what to update. `researcher.md`: add
   `omitClaudeMd: true` (it needs nothing from the project; fewer tokens per launch; ignored by an older Claude Code, V13).
 - **Test:** docs tests only.
 
-### M-10. The investigator: finding a bug's cause outside the main conversation — Sonnet, M
+### M-10. DONE in 2.15.0 — The investigator: finding a bug's cause outside the main conversation — Sonnet, M
 - **Why:** `debug` reads logs and many files in the main conversation, the one context the owner pays for all session.
 - **Change:** `agents/investigator.md`: `model: sonnet`, `effort: high`, `maxTurns: 80`, `tools: Read, Grep, Glob, Bash`, read-only by instruction exactly like the reviewer (it
   runs tests and read-only git; no bisect, no checkout, no edits: if it needs one, it says so and the main conversation does that
@@ -526,7 +537,7 @@ records-keeper agent; per-language agents; separate database or speed reviewers 
   obvious bug stays as it is. No change to the routing table: `debug` launches it.
 - **Test:** the frontmatter rules; `debug.md` names the agent; the "every agent a command launches exists" test covers it.
 
-### M-11. A second opinion on the plan, before the owner approves it — Sonnet, S
+### M-11. DONE in 2.15.0 — A second opinion on the plan, before the owner approves it — Sonnet, S
 - **Why:** every feature gets a reviewer and a challenger; the plan everything is built from gets nobody.
 - **Change:** `challenger.md` gains a short "Plan mode" section (120 words at most). Given the draft plan, the roadmap, the scale
   profile and the decisions, it hunts for: criteria no test could prove; a feature that uses something a later feature builds;
@@ -536,7 +547,7 @@ records-keeper agent; per-language agents; separate database or speed reviewers 
   (opus), fix what it finds, and show the owner only the choices that are really theirs. Skipped at `prototype` rigor.
 - **Test:** docs tests for both files; `challenger.md` stays under 650 words.
 
-### M-12. "The live site is down" — Sonnet, S
+### M-12. DONE in 2.15.0 — "The live site is down" — Sonnet, S
 - **Why:** `launch` writes rollback steps into `RUNBOOK.md`, but nothing sends Claude to them in an emergency.
 - **Change:** `debug.md` gains a short "Live emergency" section before step 1, for a launched app (a `RUNBOOK.md` exists) that is
   down or broken for real users: read the runbook; give the owner its rollback steps and ask for their yes, because restoring
@@ -545,7 +556,7 @@ records-keeper agent; per-language agents; separate database or speed reviewers 
   test added). The routing line for `debug` in the session note gains "or live site down": trim the same number of words elsewhere.
 - **Test:** the session note is still under its limit; docs test for the section.
 
-### M-13. Documentation and release — Sonnet, S
+### M-13. DONE in 2.15.0 — Documentation and release — Sonnet, S
 - `README.md` agents table (nine agents; the Model column reads "Sonnet or Opus, by size and risk" where that is true);
   `docs/how-it-works.md` gets a "Which model does what" section in plain words; `docs/settings.md` gets `scout`; `docs/quality.md`
   mentions the plan check and the investigator; the two rules go into `CLAUDE.md`; changelog, handoff, version, all tests both
@@ -561,14 +572,14 @@ records-keeper agent; per-language agents; separate database or speed reviewers 
 
 ---
 
-## Phase OC — one-click shipping (releases 2.16.0 and 2.17.0)
+## Phase OC — one-click shipping (releases 2.17.0 and 2.18.0)
 
 **Goal:** the owner describes the app once, answers one batch of questions, does one checklist of things only they can do (accounts,
 payment method, keys in the host's settings), and then only approves milestones and the launch. Between those moments the build
 runs by itself, and each milestone arrives as a link to click. Everything that keeps the kit safe stays: the guards still check
 every command, nothing ships without the checks passing, and nothing is pushed, deployed or charged without the owner's yes.
 
-**Release 2.16.0** = OC-1 to OC-6 (fewer interruptions, deterministic checks). **Release 2.17.0** = OC-7 to OC-12 (golden paths,
+**Release 2.17.0** = OC-1 to OC-6 (fewer interruptions, deterministic checks). **Release 2.18.0** = OC-7 to OC-12 (golden paths,
 previews, one go-live, tidier projects). Do the verifications V9, V10 and V11 first.
 
 ### OC-1. One intake — Opus (design), Sonnet (edits), M (absorbs P2-1, the rigor dial)
@@ -876,8 +887,8 @@ roadmap proof rule, milestone acceptance, the vetting workflow. They are small a
 | D8 | During setup, may the kit's own scripts, local git (commit, branch, merge) and the project's install, test and build commands run without asking each time? Push, deploy and anything risky would still always ask, and the guards still check every command. | Yes, once V9 confirms the guards still run. |
 | D9 | For the ready-made recipes: which host should the kit prefer by default for websites and web apps (cost and simplicity first)? | Decide after checking current prices and free tiers on the hosts' own pages; ask with a short comparison. |
 | D10 | May each milestone be put on a private preview link on the host (test keys and test data only), so you check it by clicking a link? | Yes, once a host is chosen. |
-| D11 | May medium, large and risky features be built and reviewed on the stronger model (Opus, about twice Sonnet's usage), with small ones staying on Sonnet? | Yes. The trial numbers (M-14) decide whether medium features stay there. |
-| D12 | Should the kit ever pick the most expensive model (Fable, about four times Sonnet) by itself? | No. Use it yourself in the main conversation when planning a big app; the kit's agents stop at Opus. |
+| D11 | May medium, large and risky features be built and reviewed on the stronger model (Opus, about twice Sonnet's usage), with small ones staying on Sonnet? | **Decided: yes** (2026-11-25). The trial numbers (M-14) decide whether medium features stay there. |
+| D12 | Should the kit ever pick the most expensive model (Fable, about four times Sonnet) by itself? | **Decided: no** (2026-11-25). Use it yourself in the main conversation when planning a big app; the kit's agents stop at Opus. |
 
 ## Definition of done for the whole plan
 

@@ -14,7 +14,10 @@ pieces that later sessions reuse. Change NO code while onboarding.
 2. **Keep a map of the map.** Create or update `AREAS.md`: one row per area (`| area | files | languages | status | rules file |`), status
    `not mapped`, `mapped <date>` or `no-go`. Areas that are generated, vendored, migrations history or build output are `no-go` (never edited
    by hand).
-3. **Map one to three areas per session**, starting with the one the user's task touches, then the hubs. For each: read its entry points and
+3. **Map one to three areas per session**, starting with the one the user's task touches, then the hubs. If
+   `node "${CLAUDE_PLUGIN_ROOT}/scripts/model-route.mjs" --project . --role scout` prints SCOUT USE, first launch one `scout` agent per area (up to six at
+   once) for its entry points, hubs, tests and conventions, then read the code they point at (never copy scout text into a rules file).
+   For each: read its entry points and
    its most-depended-on files (not every file), its tests, and a few recent commits (`git log --oneline -15 -- <area>`). Then write
    `<area>/CLAUDE.md` (Claude Code loads it automatically when working there), at most 40 lines:
    - what the area is for, and its entry points

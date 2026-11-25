@@ -82,7 +82,7 @@ Claude starts these itself; you can also type them.
 | | `/starter-kit:vet` | Checks someone else's add-on before you install it |
 | **Build** | `/starter-kit:feature` | Builds a feature test-first in its own branch, reviews it, merges it |
 | | `/starter-kit:tdd` | One small test-first fix in the current conversation |
-| | `/starter-kit:debug` | Finds a bug's root cause with evidence, then fixes it |
+| | `/starter-kit:debug` | Finds a bug's root cause with evidence, then fixes it; handles a live outage |
 | | `/starter-kit:db` | Database changes on a local copy, rehearsed at real size |
 | **Check** | `/starter-kit:review` | Reviews changes made in the conversation |
 | | `/starter-kit:audit` | Security audit of the whole project |
@@ -96,17 +96,21 @@ Claude starts these itself; you can also type them.
 | | `/starter-kit:maintain` | The monthly check-up |
 | | `/starter-kit:status` | Where things stand, in plain words |
 
-### 7 agents
+### 9 agents
 
 | Agent | Model | Job |
 |---|---|---|
-| `implementer` | Sonnet | Builds one feature in its own branch and folder |
+| `implementer` | Sonnet; Opus for medium, large or risky features | Builds one feature in its own branch and folder |
+| `scout` | Haiku | In big projects, finds the files and lines a job needs; a script checks each pointer |
 | `researcher` | Haiku | Searches and reads the web, returns a short sourced report |
-| `reviewer` | Sonnet | Reviews correctness and runs the tests (read-only) |
+| `reviewer` | Opus | Reviews correctness and runs the tests (read-only) |
 | `ui-reviewer` | Sonnet | Looks at the running app at phone and desktop size (read-only) |
 | `security-reviewer` | Opus | Hardening review of risky features and before shipping (read-only) |
-| `challenger` | Sonnet | Assumes the work isn't done and tries to prove it (read-only) |
-| `red-team` | Sonnet | Attacks a local copy like a hostile user, writes a test for every break |
+| `challenger` | Sonnet; Opus for plans and risky features | Tries to prove the work isn't done, and checks the plan before you approve it (read-only) |
+| `investigator` | Sonnet; Opus once a first guess fails | Finds a bug's root cause outside the main conversation (read-only) |
+| `red-team` | Opus | Attacks a local copy like a hostile user, writes a test for every break |
+
+How models are picked: [which model does what](docs/how-it-works.md#which-model-does-what).
 
 Plus a design library of 89 styles, 194 palettes and 74 font pairings, WCAG 2.2 AA accessibility checks, speed and load tests,
 database migration checks, and a code index for very large codebases.
@@ -120,6 +124,7 @@ database migration checks, and a code index for very large codebases.
 | Package guard | Installing packages that don't exist (AI-invented names attackers register) |
 | Push gate | Pushes, releases and deploys before the full pre-ship scan passes for that exact commit |
 | Database guard | Connecting to any database that isn't on your computer |
+| Model check | A review or security review started on a weaker model than its job needs |
 
 The guards prove they are running: each update triggers a self-check, and a guard that crashes refuses the command instead of
 letting it through. A project can't switch your protections off without your approval on this computer.
@@ -133,7 +138,7 @@ Details: [Safety and security](docs/safety.md).
 
 ## What's proven and what isn't
 
-- **Proven:** 445 automated tests over the hooks and scripts, including fuzz tests that throw hundreds of disguised attacks at
+- **Proven:** 473 automated tests over the hooks and scripts, including fuzz tests that throw hundreds of disguised attacks at
   the guards. They run before every release.
 - **Not yet proven:** a full real-world build from idea to launch. [Trial runs](docs/trials.md) describe how that is being tested.
 - Tested on Windows so far; macOS and Linux are intended.

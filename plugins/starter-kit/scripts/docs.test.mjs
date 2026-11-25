@@ -202,6 +202,30 @@ test("no kit agent can start another agent, and a Haiku agent can only read", ()
   }
 });
 
+// The MODEL RULE: models are decided in scripts/model-route.mjs. Each agent file carries that script's starting model and effort,
+// so an agent launched without a model never runs on something the script would not pick.
+test("every agent file starts on the model and effort that model-route.mjs gives its role", async () => {
+  const { baseline } = await import("./model-route.mjs");
+  for (const n of agentNames) {
+    const head = frontmatter(readFileSync(join(PLUGIN, "agents", `${n}.md`), "utf8"));
+    const b = baseline(n);
+    assert.equal(/^model:\s*(\S+)/m.exec(head)?.[1], b.model, `agents/${n}.md: model should be ${b.model}`);
+    assert.equal(/^effort:\s*(\S+)/m.exec(head)?.[1], b.effort, `agents/${n}.md: effort should be ${b.effort}`);
+  }
+});
+
+test("every workflow that launches a routed agent asks model-route.mjs first, and the builder escalates once", () => {
+  const routed = /`(implementer|reviewer|challenger|ui-reviewer|investigator|red-team|security-reviewer|scout)` agent/;
+  for (const n of commandNames) {
+    const t = readFileSync(join(PLUGIN, "commands", `${n}.md`), "utf8");
+    if (routed.test(t)) assert.match(t, /scripts\/model-route\.mjs/, `commands/${n}.md launches a kit agent without asking model-route.mjs which model`);
+  }
+  const feature = readFileSync(join(PLUGIN, "commands", "feature.md"), "utf8");
+  assert.match(feature, /--attempt 3/, "feature.md must escalate the builder after two failed rounds");
+  const words = readFileSync(join(PLUGIN, "agents", "challenger.md"), "utf8").split(/\s+/).length;
+  assert.ok(words <= 650, `challenger.md is ${words} words`);
+});
+
 test("every agent pins its effort, and turn limits are whole numbers", () => {
   for (const n of agentNames) {
     const head = frontmatter(readFileSync(join(PLUGIN, "agents", `${n}.md`), "utf8"));

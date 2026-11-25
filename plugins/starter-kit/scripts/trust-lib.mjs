@@ -44,6 +44,7 @@ export function entriesOf(cfg) {
   if (cfg && typeof cfg.relatedTests === "string" && cfg.relatedTests.trim()) out.push(`related:${cfg.relatedTests.trim()}`);
   if (cfg) for (const s of SECURITY_SWITCHES) if (cfg[s] === false) out.push(`switch:${s}`);
   if (cfg && Array.isArray(cfg.guardAllow)) for (const id of cfg.guardAllow) if (typeof id === "string") out.push(`allow:${id}`);
+  if (cfg && cfg.rigor === "prototype") out.push("rigor:prototype"); // lowers review strength (cheaper models): the owner's call
   return out;
 }
 

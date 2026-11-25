@@ -2,7 +2,7 @@
 name: reviewer
 description: Code reviewer. Reviews a diff for correctness, edge cases, and regressions, and runs the tests. Read-only — never edits code.
 tools: Read, Grep, Glob, Bash
-model: sonnet
+model: opus
 effort: high
 maxTurns: 80
 ---

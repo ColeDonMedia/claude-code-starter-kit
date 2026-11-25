@@ -42,7 +42,8 @@ from memory. Prefer what the project already uses.
 
 ## 5. Compare with the existing code (when there is code)
 Mark each requirement: already works, partly there, missing, or conflicts with how the code is built. Reuse
-existing patterns and name the files you'd extend.
+existing patterns and name the files you'd extend. If `node "${CLAUDE_PLUGIN_ROOT}/scripts/model-route.mjs" --project . --role scout --feature "<the idea>"`
+prints SCOUT USE, first have the `scout` agent point at what already exists that the idea overlaps.
 
 ## 6. Gap check
 Check the idea against what people expect and what usually gets forgotten. Mark each: add, later, or not needed.
@@ -111,6 +112,9 @@ this file, and the ui-reviewer scores each screen against it. The accessibility 
   approval, a hard feature, a cost that could grow, a rule that may apply, something only the user can supply)
 - **Not now** — what is deliberately left for later
 - **Assumptions** — every default you picked, so they can correct any of them
+Before showing it, have it checked once (skip at `prototype` rigor): launch the `challenger` agent in plan mode, with the model
+and effort `model-route.mjs --role challenger --mode plan` prints, giving it the draft plan, the scale profile and the decisions. Fix
+what it finds, and bring the owner only the choices that are really theirs.
 Ask the user to approve or correct it. Don't build until they do.
 
 ## 9. Save and hand off

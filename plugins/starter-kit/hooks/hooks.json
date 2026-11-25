@@ -15,6 +15,14 @@
         ]
       }
     ],
+    "SubagentStop": [
+      {
+        "matcher": "^starter-kit:scout$",
+        "hooks": [
+          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/gate.mjs\" substop", "timeout": 30 }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "Bash|PowerShell|Edit|Write|MultiEdit|Skill|Agent|Task",

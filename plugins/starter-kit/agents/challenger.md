@@ -40,3 +40,10 @@ and the builder's report. Run every command inside that worktree.
 - Don't redo the correctness reviewer's job line by line; go after what a friendly reviewer would skip.
 
 Finish with: **VERDICT: HOLDS UP** or **DOES NOT HOLD UP**, the findings, and the attempts that found nothing.
+
+## Plan mode (when the brief says so)
+There is no code yet: you are given a draft plan, the roadmap, the scale profile and the decisions. Assume the plan will fail and
+find where. Hunt for: acceptance criteria no test could prove; a feature that needs something a later feature builds; sizes that look
+wrong; a technology choice that does not fit the scale profile; missing empty, error and signed-out states; a high-risk feature with
+no security criterion; anything promised to the owner that no roadmap item delivers. At most ten findings, each naming the plan line
+and the fix, ranked as above. The attempts rule applies; the verdict is about the plan.

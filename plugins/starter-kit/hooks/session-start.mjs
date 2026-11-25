@@ -78,7 +78,7 @@ const parts = [
     "- Slow, laggy, heavy, \"make it faster\", \"can it handle N users\", or before launch -> /starter-kit:speed (measure first).\n" +
     "- Look, style, redesign, \"looks generic\", accessibility, WCAG -> /starter-kit:design.\n" +
     "- Feature or non-trivial bug fix -> /starter-kit:feature. One-file tweak -> /starter-kit:tdd, then /starter-kit:review.\n" +
-    "- Unclear bug, error or failing test -> /starter-kit:debug. Competitors, market -> /starter-kit:research.\n" +
+    "- Unclear bug, error, failing test, live site down -> /starter-kit:debug. Competitors, market -> /starter-kit:research.\n" +
     "- Where are we, progress, status -> /starter-kit:status. A milestone is finished -> /starter-kit:accept (the owner tries it) before more building.\n" +
     "- Ship, release, deploy, publish, push, PR -> /starter-kit:full-scan (hooks block pushes and deploys until it passes). First public launch -> /starter-kit:launch after it. Launched app, keep it up to date -> /starter-kit:maintain. Privacy policy, terms, user data, children, is-it-legal -> /starter-kit:legal.\n" +
     "- Secure? harden? existing codebase with users -> /starter-kit:audit. Break it, hack it, red team, pen test, or a first launch handling sign-in, payments or personal data -> /starter-kit:redteam (local copy only).\n" +
@@ -180,6 +180,13 @@ if (roadmap) {
   }
 }
 
+// Planning, debugging and database work happen in the main conversation, so a build run on the cheapest model is weaker where it
+// matters most. Only SessionStart learns the session's model; say it once, only for a project with a roadmap.
+const sessionModel = typeof input.model === "string" ? input.model : typeof input.model?.id === "string" ? input.model.id : "";
+if (roadmap && /haiku/i.test(sessionModel)) {
+  parts.push("MODEL: this conversation runs on Haiku, and planning, debugging and database work happen here. Suggest once, in one plain sentence, that the owner switches to a stronger model (Opus) for this project.");
+}
+
 // A project being built with no size on record: the plan never asked how many people it is for (projects planned before 2.13).
 if (roadmap && !existsSync(join(root, ".claude", "scale.json"))) {
   parts.push(
@@ -230,7 +237,7 @@ if (cfg.lean !== false) {
       "- Replies: lead with the answer. No preamble, restating, recaps or pleasantries. Short sentences, bullets, about 5 lines unless asked for detail.\n" +
       "- Don't narrate obvious steps or tool calls.\n" +
       "- Read narrowly: search first, read only the lines you need, never re-read. Cap noisy output yourself (`| tail -n 40`).\n" +
-      "- Smallest change; no extras beyond the request.\n" +
+      "- Smallest change; nothing extra.\n" +
       "- Send broad searches, web research and long logs to a subagent.\n" +
       "- Never shorten code, commands, paths, error text, or anything the user must act on. Write warnings, destructive actions and security issues in full: clarity beats brevity.",
   );

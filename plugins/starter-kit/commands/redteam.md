@@ -16,8 +16,9 @@ anything at a deployed site, a real service, real accounts or real data.
 Launch the starter-kit `red-team` agent (it works in its own worktree). Give it the run command, the main
 features and routes, the security acceptance criteria, and where to focus. For anything beyond a small app, launch two or
 three in parallel on separate areas (sign-in and data access; input and uploads; business logic and any AI-model
-features), each told to use a different localhost port. For a first launch or anything with payments, personal data or
-sign-in, pass `model` as `opus` so the attacker is as capable as possible.
+features), each told to use a different localhost port. Pass the `model` and `effort` that
+`node "${CLAUDE_PLUGIN_ROOT}/scripts/model-route.mjs" --project . --role red-team` prints. If `--role scout` prints SCOUT USE, give
+each attacker the `scout` agent's list of entry points with "this list may be incomplete: find what it missed".
 Each confirmed break comes back with a failing test on its branch and the exact request that proves it.
 
 ## 3. Check the tests themselves (mutation testing)
@@ -29,7 +30,8 @@ the main logic means the tests are too weak to trust: say so.
 
 ## 4. Argue against "done"
 Launch the `challenger` agent on the whole feature set (brief: the roadmap's acceptance criteria and ticked items;
-worktree: the red team's or a fresh one). It must show what it tried even when it finds nothing.
+worktree: the red team's or a fresh one), on the model `model-route.mjs --role challenger` prints. It must show what it tried
+even when it finds nothing.
 
 ## 5. Deal with what was found
 - Rank everything: critical and high (a stranger can read or change other people's data, take over accounts, run

@@ -9,7 +9,8 @@ good agency's maintenance plan covers. Check first: `node "${CLAUDE_PLUGIN_ROOT}
 Keep the user's attention for decisions only; do the rest yourself and report in plain words.
 
 ## 1. Updates, safely
-- List what is out of date with the ecosystem's own tool (`npm outdated`, `pip list --outdated`, `cargo outdated`, ...).
+- List what is out of date with the ecosystem's own tool (`npm outdated`, `pip list --outdated`, `cargo outdated`, ...). Have the
+  `researcher` agent read the release notes for those version ranges and list breaking changes with links; you decide what to update.
 - Do the updates as ONE `/starter-kit:feature` ("maintenance: update dependencies") so they get a separate worktree, the full test suite,
   the browser tests, review and the proof checks. Patch and minor updates go together. A major version that changes behavior is a
   decision: list it for the user with what it changes and the risk, and don't apply it unasked. Never loosen or delete a test to get an update through.

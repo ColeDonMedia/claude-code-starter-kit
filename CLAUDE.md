@@ -42,6 +42,13 @@ the owner's trial runs in a normal session (`docs/trials.md`) and by the hook ca
   and the hook tests again through the merged runner: `KIT_VIA_GATE=1 node --test plugins/starter-kit/hooks/*.test.mjs`.
   Add a test for every bug you fix.
 - The session note in `hooks/session-start.mjs` is how Claude learns which command to run; a new command must be routed there.
+- MODEL RULE: models are chosen in one place, `scripts/model-route.mjs`. Agent files carry its starting models (a test compares
+  them) and `hooks/agent-route.mjs` enforces its minimums. A project file can make the kit more careful, never less without the
+  user's approval on this computer. The kit never picks Fable by itself.
+- HAIKU RULE: a Haiku agent finds and points. It never writes code, gives a verdict (review, security, vetting, legal) or writes a
+  record another session will trust, and it has no write, shell or agent tools (a test enforces it). It hands over `path:lines`
+  pointers with a quoted line, checked by `scripts/pointer-check.mjs`, never summaries.
+- No kit agent may start other agents: an allow-list leaves `Agent` out, a deny-list names it (a test enforces it).
 - The kit's users are not programmers: every command and agent must do the work itself and report in plain words, never hand the user a command to run.
 - RED-TEAM RULE: every time a guard or the scanner is bypassed (or blocks something harmless), add the exact command or text to the
   fuzz tests FIRST (`guard-fuzz.test.mjs`, `guard-fuzz-powershell.test.mjs`, `secret-fuzz.test.mjs`), watch it fail, then fix.

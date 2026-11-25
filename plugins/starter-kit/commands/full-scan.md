@@ -35,7 +35,10 @@ Run the full pre-ship sweep using the commands listed under "Commands" in CLAUDE
    `node "<SCRIPTS>/legal-check.mjs" --project .` and `node "<SCRIPTS>/license-check.mjs" --project .`. A missing privacy policy or terms, an
    empty data inventory, unfilled placeholders, or a restrictive or unknown library license blocks the launch; run `/starter-kit:legal`.
    Say plainly that the documents are drafts until a lawyer has reviewed them.
-12. Design, for anything with a screen: run `node "<SCRIPTS>/design-check.mjs" --project .`. A missing or incomplete DESIGN.md, or
+12. Database, when migrations changed since the last ship: run `node "<SCRIPTS>/migration-check.mjs" --project . --base <last ship>`.
+   A HIGH finding blocks shipping (follow `/starter-kit:db`). List every `accepted-risk` line for the owner, and remind them that the
+   live database change is theirs to run from the runbook.
+13. Design, for anything with a screen: run `node "<SCRIPTS>/design-check.mjs" --project .`. A missing or incomplete DESIGN.md, or
    colors with unreadable contrast, blocks shipping; fix it.
 
 Choosing what "since the last ship" means (never use a plain diff against the current branch — after

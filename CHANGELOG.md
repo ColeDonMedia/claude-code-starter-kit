@@ -4,6 +4,20 @@ What changed in each release of the starter-kit plugin, newest first, in plain w
 repository's history. Every release bumps `version` in `plugins/starter-kit/.claude-plugin/plugin.json`; a test
 fails if this file has no entry for the current version.
 
+## [2.10.0] — 2026-11-24
+Big databases and live data.
+- New database guard hook (`hooks/db-guard.mjs`, rules in `scripts/db-lib.mjs`): denies connections to any database that isn't local
+  (connection strings, host flags and variables, the project's `.env` when a migration tool has no target), production-mode migrations and
+  hosting platforms' database tools; asks before destructive SQL on a local database. Ignores text-only commands (commit messages, grep).
+  Off switch `dbGuard` needs the user's approval on this computer.
+- New `scripts/migration-check.mjs`: dropped/renamed columns and tables, required columns with no default, unbounded writes, type changes,
+  SET NOT NULL, blocking index and foreign-key builds, data changes inside schema migrations, missing rollbacks; SQL, Rails, Django,
+  Alembic, Knex, Laravel and others. Owner-accepted risks are marked and listed by the pre-ship scan.
+- New `scripts/db-rehearse.mjs`: seeds a copy with realistic volumes (foreign keys respected), times migrations, flags full scans and
+  unindexed sorts (SQLite via Node's built-in driver; Postgres from `EXPLAIN (FORMAT JSON)`).
+- New `/db`: local copies only, expand-migrate-contract, batched resumable backfills, runbook hand-over for the live change.
+- Tested with real SQLite at 100,000 users and 200,000 orders.
+
 ## [2.9.0] — 2026-11-24
 Big codebases.
 - New `scripts/code-index.mjs`: symbols and import links for JS/TS, Python, Go, Rust, Java/Kotlin, PHP, Ruby, C/C++, C#, Swift, Dart, with

@@ -48,6 +48,10 @@ brief and in the project's files.
    - Rate-limit sign-in, password reset and costly endpoints. Set safe cookie flags (`HttpOnly`, `Secure`,
      `SameSite`) and sensible response headers. Error messages shown to users must not reveal internals.
    - Uploads: limit type and size, store outside the web root or in a private bucket, never use the original filename as a path.
+   - Databases: only ever a local copy (a guard blocks anything else). Any migration you write must pass
+     `node "<plugin>/scripts/migration-check.mjs" --project .` with no HIGH findings, use expand-migrate-contract for removals, renames
+     and type changes, and keep data changes out of migrations (a separate batched, resumable backfill, as `/starter-kit:db` describes).
+     Index the columns new queries filter, join or sort on.
    - Add a test for each security criterion in the brief (for example "user A cannot read user B's record").
    New dependencies: add only what you need. Before adding one you haven't used, confirm it exists and is
    established (`node "<plugin>/scripts/pkg-check.mjs" npm <name>`, or pypi / cargo); a package guard also checks

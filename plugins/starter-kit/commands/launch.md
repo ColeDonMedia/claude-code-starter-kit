@@ -22,6 +22,25 @@ Development (this computer), a preview/staging copy that looks like the real thi
 and its OWN keys; staging never touches live data. List the setting NAMES each environment needs in RUNBOOK.md ("Environments and
 settings"), never the values. Values go into the host's settings page, put there by the user.
 
+## 1b. Payments (only if the app takes money: Stripe, Square, PayPal, Lemon Squeezy, Paddle ...)
+Billing keys never go in the code or the repository, public or private (the secret guard and the pre-commit hook refuse them); the
+code reads them by name from the environment, so billing works the moment the host has them. Check current details on the provider's
+own docs pages before naming a setting. Work through this with the user, in plain words:
+- **Which keys go where.** Server only, in the host's secret settings: secret keys (Stripe `sk_`), restricted keys (`rk_`, preferred:
+  give the server only the permissions it uses), webhook signing secrets (`whsec_`), Square access tokens and application secret.
+  Allowed in front-end code: the publishable key (`pk_`) and Square's application ID. Locally they live in `.env`; `.env.example` lists
+  the names with empty values so the next person knows what to set.
+- **Test first, live last.** Build and test everything with test-mode keys and the provider's test cards. Live keys are set only in the
+  production environment's settings, by the user, at launch; staging keeps test keys.
+- **Webhooks.** Each environment has its own webhook endpoint and its own signing secret. The handler verifies the signature on the raw
+  request body, ignores events it has already processed (webhooks are retried), and answers quickly (slow work goes to a background job).
+- **What happens when it fails.** Failed and retried payments, cancelled and expired subscriptions, refunds and disputes: each has a
+  test in the test suite, using the provider's test events.
+- **Prices are decided on the server**, never taken from the browser.
+- **If a key ever leaked** (committed, pasted in a chat, shown in a log): roll it in the provider's dashboard now. Write the steps in
+  RUNBOOK.md ("Common problems").
+Record in RUNBOOK.md, under "Environments and settings", the NAMES of the payment settings per environment, never the values.
+
 ## 2. Automated, repeatable deploys
 Deploys come from git, not from someone's laptop: merging to `main` updates staging automatically; production is a deliberate
 second step (a promote button, or a tagged release). Use the host's own git integration, or an official-actions-only workflow

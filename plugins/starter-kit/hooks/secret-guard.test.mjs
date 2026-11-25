@@ -127,6 +127,29 @@ test("blocks a commit that stages a secret", () => {
   }
 });
 
+test("a blocked billing key comes with where to put it, so billing keeps working; a publishable key is not blocked", () => {
+  const r = repo();
+  try {
+    const live = ["sk", "live", "k8Zq2LmP9wXr4TvN1b7Yc3Hs"].join("_");
+    r.put("billing.js", `const stripe = require("stripe")("${live}");\n`);
+    r.g("add", "billing.js");
+    const d = guard('git commit -m "billing"', r.dir);
+    assert.equal(d.decision, "deny");
+    assert.match(d.reason, /public or a private repository/);
+    assert.match(d.reason, /process\.env/);
+    assert.match(d.reason, /hosting service's secret or environment settings/);
+    assert.match(d.reason, /Only the publishable key \(pk_\)/);
+    assert.ok(!d.reason.includes(live), "the key itself is never repeated");
+    r.g("reset", "-q");
+    const pub = ["pk", "live", "k8Zq2LmP9wXr4TvN1b7Yc3Hs"].join("_");
+    r.put("billing.js", `export const STRIPE_PUBLISHABLE_KEY = "${pub}";\n`);
+    r.g("add", "billing.js");
+    assert.equal(guard('git commit -m "billing"', r.dir).decision, "allow", "publishable keys are meant for front-end code");
+  } finally {
+    r.cleanup();
+  }
+});
+
 test("allows a clean commit", () => {
   const r = repo();
   try {

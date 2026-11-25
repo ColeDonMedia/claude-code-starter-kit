@@ -4,6 +4,21 @@ What changed in each release of the starter-kit plugin, newest first, in plain w
 repository's history. Every release bumps `version` in `plugins/starter-kit/.claude-plugin/plugin.json`; a test
 fails if this file has no entry for the current version.
 
+## [2.12.2] — 2026-11-25
+Payment keys: caught, and the block message says where they go so billing keeps working.
+- The secret scanner now catches Stripe test secret and restricted keys (`sk_test_`, `rk_test_`, not only live ones), Stripe webhook
+  signing secrets (`whsec_`), and Square access tokens and the application secret, even when written bare in code with no telling
+  variable name. Stripe's docs say no key belongs in code checked into version control. Square does not publish its token formats,
+  so its rules use the prefixes the established secret scanners use.
+- Publishable keys (Stripe `pk_`) and Square's application ID are meant for front-end code and are never flagged, even under a
+  key-like name such as `STRIPE_PUBLISHABLE_KEY=`.
+- When the guard or the pre-commit hook refuses a key, the message says the same rule applies to private repositories and why, and
+  where the value goes instead (read by name from the environment; `.env` locally; the host's secret settings for the live site),
+  plus, for payment keys, which keys may reach the browser, test keys until launch, and rolling a leaked key.
+- `/launch` has a payments checklist (which key goes where, restricted keys, test first, a webhook secret per environment, signature
+  checks and repeated events, failed-payment tests, server-side prices, what to do after a leak). The builder follows the same rules.
+- Tests: 10 payment leak formats, 11 look-alikes that must pass, the advice text, and a commit blocked or allowed end to end.
+
 ## [2.12.1] — 2026-11-25
 Safety and correctness fixes from the audit (`IMPROVEMENT-PLAN.md`, Phase 0). No new features.
 - **The guards now watch the PowerShell tool.** Before, every protection (dangerous commands, secrets, push gate, packages,

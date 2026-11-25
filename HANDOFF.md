@@ -3,11 +3,14 @@
 Read this, then `IMPROVEMENT-PLAN.md` (the work list), `CLAUDE.md` (how to work on this repo) and `CHANGELOG.md` (history).
 Rewrite this file at the end of every session; keep it under 55 lines and true.
 
-## State at version 2.12.1 (2026-11-25)
+## State at version 2.12.2 (2026-11-25)
+- 2.12.2 (owner request, outside the plan): payment keys. Stripe test and restricted keys, webhook secrets and Square tokens are
+  caught; publishable keys pass; block messages say where a key goes. Owner's question was "can a private repo hold keys with a
+  warning?"; answer given and agreed: no repo holds secret keys, the code reads them from the environment.
 - Public repo, MIT, installed from GitHub. Auto-update checks once per 24 hours at session start, in the background; a new
   version takes effect on the session AFTER that (a single restart is not enough). This machine was still on 2.6.0 at the audit.
-- `plugins/starter-kit/`: 20 commands, 7 agents, 13 hook scripts (`gate.mjs` runs the rest), 34 helper scripts, 402 tests
-  (401 pass, 1 skipped; unit tests only, run on one Windows machine). Hook tests also pass through the gate (`KIT_VIA_GATE=1`, 244).
+- `plugins/starter-kit/`: 20 commands, 7 agents, 13 hook scripts (`gate.mjs` runs the rest), 34 helper scripts, 415 tests
+  (414 pass, 1 skipped; unit tests only, run on one Windows machine). Hook tests also pass through the gate (`KIT_VIA_GATE=1`, 257).
 - OWNER RULE: never spend API tokens (no `claude -p`, no npx claude-code runs, no `claude plugin eval`). `CLAUDE.md` now says so.
 - Phase 0 of `IMPROVEMENT-PLAN.md` is DONE (see its Progress table). Owner decision D1: keep the merged hook runner, with the
   canary, the self-check and fail-closed as the safety net.

@@ -189,6 +189,17 @@ names). The reason shows file and line with the value redacted, never the secret
 `your-key-here` are allowed. If a real key ever got committed, rotate it: deleting it later does not remove it
 from GitHub's history. Switch off with `{ "secretGuard": false }` in `.claude/kit.json`.
 
+*Private repositories get the same rule, and features that need keys still work.* The guard never changes your code; it only
+refuses to let a key leave the computer. The code names a key (`process.env.STRIPE_SECRET_KEY`), the value lives in `.env` on your
+computer (git ignores it) and, for the live site, in the hosting service's secret settings. That is what Stripe and Square
+themselves tell developers to do. A private repository is not a safe place for keys: it can be made public with one click, shared,
+forked, or copied into build logs, and git keeps every old version. When it blocks a key, the message says exactly where the key
+goes instead. Payment keys: Stripe secret and restricted keys (`sk_`, `rk_`, live and test) and webhook signing secrets (`whsec_`),
+and Square access tokens and the application secret, are refused; the Stripe publishable key (`pk_`) and Square's application ID are
+meant for front-end code and pass. `/starter-kit:launch` has a payments checklist (which key goes where, test keys until launch, a
+webhook secret per environment, failed-payment tests). Limits: Square does not publish its token formats, so its rules use the
+prefixes common secret scanners use; other providers' keys are caught only when assigned to a key-like name (`PAYPAL_SECRET=...`).
+
 **Security, built in at every stage.**
 - *Planning:* the plan includes a threat check (what's worth stealing, who could misuse it, the likely attacks) and turns
   each defence into a test, such as "user A cannot read user B's data". High-risk features are tagged.

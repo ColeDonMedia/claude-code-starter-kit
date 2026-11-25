@@ -10,7 +10,7 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { scanDiff, scanFiles, loadPrivateTerms, FORBIDDEN_NAME, FILE_OK } from "../scripts/secret-scan.mjs";
+import { scanDiff, scanFiles, loadPrivateTerms, placementAdvice, FORBIDDEN_NAME, FILE_OK } from "../scripts/secret-scan.mjs";
 import { switchedOff } from "../scripts/trust-lib.mjs";
 
 const allow = () => process.exit(0);
@@ -100,9 +100,9 @@ const more = findings.length > 12 ? ` (+${findings.length - 12} more)` : "";
 const reason =
   `Blocked by the starter-kit secret guard: ${scope} contain ${findings.length} possible secret(s) or private item(s)${more}:\n` +
   shown.join("\n") +
-  "\nDo not push or publish this. Remove the value from the code, move it to an environment variable or a local .env file " +
-  "that is listed in .gitignore, and rotate the key if it was ever real. Then try again. Never disable this guard yourself; " +
-  "the user can set {\"secretGuard\": false} in .claude/kit.json.";
+  "\nDo not push or publish this, to a public or a private repository. Take the value out of the code, then try again.\n" +
+  placementAdvice(findings) +
+  "\nNever disable this guard yourself; the user can set {\"secretGuard\": false} in .claude/kit.json.";
 
 process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: "PreToolUse", permissionDecision: "deny", permissionDecisionReason: reason } }));
 process.exit(0);

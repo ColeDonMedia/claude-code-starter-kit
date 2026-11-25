@@ -1,11 +1,12 @@
 // Red team for the secret scanner: the same kinds of secret, written in the many places and formats they really turn
 // up, and the harmless look-alikes that must NOT be flagged (false alarms make people turn guards off).
-// Fake secrets are built from pieces at runtime so this file contains none. When a leak format slips through in real
+// Fake secrets are built from pieces at runtime so this file contains none. That includes placeholders: GitHub's push
+// protection refused `sk_test_` followed by 24 x's written out in full (2.12.2), so build those from pieces too. When a leak format slips through in real
 // life, add it here first, watch it fail, then fix the scanner.
 // Run: node --test plugins/starter-kit/hooks/secret-fuzz.test.mjs
 import test from "node:test";
 import assert from "node:assert/strict";
-import { scanText } from "../scripts/secret-scan.mjs";
+import { placementAdvice, scanText } from "../scripts/secret-scan.mjs";
 
 const j = (...p) => p.join("");
 const LEAKS = {
@@ -58,8 +59,56 @@ test("false alarms: ordinary code, placeholders, hashes and docs are not flagged
   assert.deepEqual(flagged.map((x) => `${x.t}  ->  ${x.f.map((y) => y.rule).join(",")}`), []);
 });
 
+// Round 2 (2.12.2): payment keys, written the way billing code really holds them, often with no telling variable name.
+// Stripe: secret (sk_) and restricted (rk_) keys, live and test, and webhook signing secrets (whsec_) stay on the server;
+// only publishable keys (pk_) belong in front-end code. Square: access tokens and the application secret are secret; the
+// application ID is used in front-end code (Square's docs do not publish token formats: the prefixes below are the ones the
+// established secret scanners use).
+const r = (n) => "k8Zq2LmP9wXr4TvN1b7Yc3Hs5Qd0kAbCdEfGhIjKlMnOpQrStUvWxYz0123456789".slice(0, n);
+const PAY_LEAKS = {
+  "stripe live secret, bare in code": [`const stripe = new Stripe("${j("sk_", "live_", r(24))}");`, "stripe-key"],
+  "stripe test secret, bare in code": [`const stripe = require("stripe")("${j("sk_", "test_", r(24))}");`, "stripe-key"],
+  "stripe restricted live key": [`stripe.setApiKey('${j("rk_", "live_", r(24))}')`, "stripe-key"],
+  "stripe restricted test key": [`key: ${j("rk_", "test_", r(24))}`, "stripe-key"],
+  "stripe webhook signing secret, bare": [`stripe.webhooks.constructEvent(body, sig, "${j("whsec_", r(32))}")`, "stripe-webhook-secret"],
+  "stripe webhook secret in env file": [`STRIPE_WEBHOOK_SECRET=${j("whsec_", r(32))}`, "stripe-webhook-secret"],
+  "square access token, bare": [`const client = new SquareClient({ token: "${j("EAAA", r(60))}" });`, "square-access-token"],
+  "square older access token": [`squareToken(${j("sq0atp-", r(22))})`, "square-access-token"],
+  "square application secret": [`oauth.obtainToken({ clientSecret: "${j("sq0csp-", r(43))}" })`, "square-secret"],
+  "square token in env file": [`SQUARE_ACCESS_TOKEN=${j("EAAA", r(60))}`, "square-access-token"],
+};
+const PAY_FINE = [
+  `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${j("pk_", "live_", r(24))}`, `const stripe = Stripe("${j("pk_", "test_", r(24))}");`, `STRIPE_PUBLISHABLE_KEY: "${j("pk_", "test_", r(24))}"`,
+  `SQUARE_APPLICATION_ID=${j("sq0idp-", r(22))}`, `const appId = "${j("sandbox-", "sq0idb-", r(22))}";`, `STRIPE_SECRET_KEY=${j("sk_", "test_", "x".repeat(24))}`,
+  "const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;", "// the signing secret looks like whsec_..., keep it in .env", "set STRIPE_SECRET_KEY=sk_live_... in your host",
+  "const token = process.env.SQUARE_ACCESS_TOKEN;", "EAAA is the start of a Square token",
+];
+for (const [name, [text, rule]] of Object.entries(PAY_LEAKS)) {
+  test(`payments: catches ${name}`, () => {
+    const found = scanText("src/billing.js", text);
+    assert.ok(found.some((f) => f.rule === rule), `wanted ${rule}, got ${JSON.stringify(found.map((f) => f.rule))} for ${JSON.stringify(text.slice(0, 70))}`);
+  });
+}
+test("payments: publishable keys, the Square application ID, placeholders and env lookups are never flagged", () => {
+  const flagged = PAY_FINE.map((t) => ({ t, f: scanText("src/billing.js", t) })).filter((x) => x.f.length);
+  assert.deepEqual(flagged.map((x) => `${x.t}  ->  ${x.f.map((y) => y.rule).join(",")}`), []);
+});
+test("payments: the advice says where a payment key goes so billing keeps working", () => {
+  const found = scanText("src/billing.js", PAY_LEAKS["stripe live secret, bare in code"][0]);
+  const advice = placementAdvice(found);
+  assert.match(advice, /process\.env/);
+  assert.match(advice, /\.env/);
+  assert.match(advice, /hosting/i);
+  assert.match(advice, /publishable key/i);
+  assert.match(advice, /test keys/i);
+  assert.match(advice, /rotate|roll/i);
+  const plain = placementAdvice(scanText("src/a.js", LEAKS["gitlab token"]));
+  assert.match(plain, /process\.env/);
+  assert.doesNotMatch(plain, /publishable/i, "payment advice only for payment keys");
+});
+
 test("no finding ever prints the whole secret", () => {
-  for (const text of Object.values(LEAKS)) {
+  for (const text of [...Object.values(LEAKS), ...Object.values(PAY_LEAKS).map((x) => x[0])]) {
     for (const f of scanText("a.js", text)) {
       assert.ok(f.sample.length < 40, `sample too long: ${f.sample}`);
       assert.ok(!/^[A-Za-z0-9+/=_.-]{30,}$/.test(f.sample), `sample looks like the raw secret: ${f.sample}`);

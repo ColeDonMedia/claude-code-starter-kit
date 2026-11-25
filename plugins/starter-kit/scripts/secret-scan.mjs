@@ -21,7 +21,14 @@ const RULES = [
   ["private-key", "HIGH", /-----BEGIN ((RSA|DSA|EC|OPENSSH|PGP|ENCRYPTED) )?PRIVATE KEY( BLOCK)?-----/, "private key"],
   ["aws-access-key", "HIGH", /\b(AKIA|ASIA)[0-9A-Z]{16}\b/, "AWS access key id"],
   ["github-token", "HIGH", /\b(gh[pousr]_[A-Za-z0-9]{36,}|github_pat_[A-Za-z0-9_]{60,})\b/, "GitHub token"],
-  ["stripe-key", "HIGH", /\b(sk|rk)_live_[A-Za-z0-9]{16,}\b/, "Stripe live key"],
+  // Payments. Stripe: secret (sk_) and restricted (rk_) keys, live AND test, and webhook signing secrets stay on the server
+  // ("Don't put keys in source code or configuration files checked into version control", Stripe's docs); publishable keys
+  // (pk_) are meant for front-end code and are never flagged. Square does not publish its formats: these are the prefixes the
+  // established secret scanners use for access tokens and the application secret; the application ID (sq0idp-) is public.
+  ["stripe-key", "HIGH", /\b(sk|rk)_(live|test)_[A-Za-z0-9]{16,}\b/, "Stripe secret or restricted key"],
+  ["stripe-webhook-secret", "HIGH", /\bwhsec_[A-Za-z0-9]{24,}\b/, "Stripe webhook signing secret"],
+  ["square-access-token", "HIGH", /\b(EAAA[A-Za-z0-9_+=-]{60}|sq0atp-[A-Za-z0-9_-]{22})(?![A-Za-z0-9_+=-])/, "Square access token"],
+  ["square-secret", "HIGH", /\bsq0csp-[A-Za-z0-9_-]{43}(?![A-Za-z0-9_-])/, "Square application secret"],
   ["anthropic-key", "HIGH", /\bsk-ant-[A-Za-z0-9_-]{20,}\b/, "Anthropic API key"],
   ["openai-key", "HIGH", /\bsk-(proj-)?[A-Za-z0-9_-]{32,}\b/, "OpenAI-style API key"],
   ["google-api-key", "HIGH", /\bAIza[0-9A-Za-z_-]{35}\b/, "Google API key"],
@@ -78,6 +85,10 @@ const NAME_BASED = new Set(["secret-assignment", "credential-literal", "bearer-t
 // Passwords that are obviously just examples when they appear in a connection string.
 const DUMMY_PASSWORDS = /^(password|passwd|pass|secret|test|testing|admin|root|user|username|12345\d*|1234|qwerty|changeme|example|postgres|mysql|redis|guest|none|null|undefined)$/i;
 
+// Values that are public by design, even under a key-like name: Stripe publishable keys and Square application IDs go in
+// front-end code. Flagging them would teach people to ignore the guard.
+const PUBLIC_BY_DESIGN = /^["']?(pk_(live|test)_|sq0idp-|sandbox-sq0idb-)/;
+
 // Values that are obviously placeholders, not secrets.
 const PLACEHOLDER = /EXAMPLE|XXXX|x{6,}|\*{4,}|<[^>]+>|\$\{|%[A-Z_]+%|\{\{|your[_-]?(key|token|secret|password)|changeme|placeholder|dummy|redacted|process\.env|os\.environ|getenv/i;
 
@@ -111,7 +122,7 @@ export function scanText(file, text, terms = []) {
       const m = re.exec(line);
       if (!m) continue;
       const value = (pick ? pick(m) : m[0]) ?? m[0];
-      if (NAME_BASED.has(id) && (PLACEHOLDER.test(value) || !/\d/.test(value) || !/[A-Za-z]/.test(value))) continue;
+      if (NAME_BASED.has(id) && (PLACEHOLDER.test(value) || PUBLIC_BY_DESIGN.test(value) || !/\d/.test(value) || !/[A-Za-z]/.test(value))) continue;
       if (id === "credentialed-url" && (PLACEHOLDER.test(value) || DUMMY_PASSWORDS.test(value))) continue; // judge the password, not the host name
       if (!NAME_BASED.has(id) && id !== "credentialed-url" && PLACEHOLDER.test(m[0])) continue;
       findings.push({ sev, file, line: i + 1, rule: id, message: desc, sample: redact(value) });
@@ -124,6 +135,26 @@ export function scanText(file, text, terms = []) {
     }
   });
   return findings;
+}
+
+// What to do instead, in plain words, so removing a key never breaks the feature that needs it (billing, email, AI ...).
+const PAYMENT_RULES = new Set(["stripe-key", "stripe-webhook-secret", "square-access-token", "square-secret"]);
+export function placementAdvice(findings) {
+  const lines = [
+    "Keep the feature working without the value in the code: the code reads it by name (process.env.STRIPE_SECRET_KEY in JavaScript, " +
+      "os.environ[...] in Python, ENV[...] in Ruby); the value goes in a .env file on this computer (git ignores it) and, for the live " +
+      "site, in the hosting service's secret or environment settings. A private repository is not a safe place either: it can be made " +
+      "public, shared, forked or copied into build logs, and git keeps old versions forever.",
+  ];
+  if (findings.some((f) => PAYMENT_RULES.has(f.rule))) {
+    lines.push(
+      "Payments: secret and restricted keys (sk_, rk_), webhook signing secrets (whsec_), and Square access tokens and the application " +
+        "secret stay on the server, in those settings. Only the publishable key (pk_) and Square's application ID belong in front-end " +
+        "code. Use test keys until launch, set the live keys only in the host's settings, and give each environment its own webhook secret.",
+    );
+  }
+  lines.push("If the key was ever real and has been committed or pushed, rotate it now (Stripe calls this rolling a key): deleting it later does not remove it from git history.");
+  return lines.join("\n");
 }
 
 export function scanFiles(paths, terms = []) {
@@ -216,6 +247,7 @@ function cli(argv) {
   }
   console.log(`secret-scan: ${findings.length} finding(s)`);
   for (const f of findings) console.log(`${f.sev} ${f.file}${f.line ? ":" + f.line : ""} [${f.rule}] ${f.message}${f.sample ? " | " + f.sample : ""}`);
+  console.log(`\n${placementAdvice(findings)}`);
   return 1;
 }
 

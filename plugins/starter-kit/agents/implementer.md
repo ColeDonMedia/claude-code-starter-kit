@@ -60,6 +60,9 @@ brief and in the project's files.
      `node "${CLAUDE_PLUGIN_ROOT}/scripts/migration-check.mjs" --project .` with no HIGH findings, use expand-migrate-contract for removals, renames
      and type changes, and keep data changes out of migrations (a separate batched, resumable backfill, as `/starter-kit:db` describes).
      Index the columns new queries filter, join or sort on.
+   - Payments: read every key from the environment by name (never a literal, not even a test key); only the publishable key
+     (Stripe `pk_`, Square's application ID) may reach the browser; add the names, with empty values, to `.env.example`; verify
+     webhook signatures on the raw body and ignore repeated events; compute prices and totals on the server; develop with test keys.
    - Add a test for each security criterion in the brief (for example "user A cannot read user B's record").
    New dependencies: add only what you need. Before adding one you haven't used, confirm it exists and is
    established (`node "${CLAUDE_PLUGIN_ROOT}/scripts/pkg-check.mjs" npm <name>`, or pypi / cargo); a package guard also checks

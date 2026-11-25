@@ -5,6 +5,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { dependents, findSymbol, loadIndex } from "./code-index.mjs";
 
 const STOP = new Set("the a an and or to of for in on with is are be it its that this user users can add make new page screen".split(" "));
 const words = (s) => [...new Set((s.toLowerCase().match(/[a-z][a-z0-9]{2,}/g) ?? []).filter((w) => !STOP.has(w)))];
@@ -36,6 +37,17 @@ export function buildPack(root, feature, max = 3500) {
   const map = (section(read(join(root, "PROJECT.md")), "Architecture|Map") || "").split("\n").filter((l) => l.trim());
   const rel = map.filter((l) => words(l).some((w) => kw.includes(w))).slice(0, 8);
   if (rel.length) out.push("RELATED PARTS OF THE CODE (from PROJECT.md)\n" + rel.join("\n"));
+  // With a code index (big codebases), name the files that define things the feature talks about, and how many files
+  // depend on each, so the builder starts in the right place and knows what it could break.
+  const index = loadIndex(root);
+  if (index) {
+    const hits = new Map();
+    for (const w of kw.filter((x) => x.length >= 4)) for (const h of findSymbol(index, w, 10)) if (!hits.has(h.file)) hits.set(h.file, h);
+    if (hits.size) {
+      const rev = dependents(index);
+      out.push("FILES THAT DEFINE RELATED CODE (code index; check the dependents before changing them)\n" + [...hits.values()].slice(0, 10).map((h) => `${h.file}:${h.line} ${h.kind} ${h.name} (${rev.get(h.file)?.size ?? 0} dependents)`).join("\n"));
+    }
+  }
   const design = read(join(root, "DESIGN.md")).split("\n").slice(0, 30).join("\n").trim();
   if (design && /screen|page|ui|form|button|dashboard|view|layout|style/i.test(feature)) out.push("DESIGN.md (follow it)\n" + design);
   if (!out.length) out.push("No records matched this feature. Read CLAUDE.md and PROJECT.md before starting.");

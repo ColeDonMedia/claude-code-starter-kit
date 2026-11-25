@@ -58,7 +58,11 @@ brief and in the project's files.
    description; comment the WHY of anything non-obvious (a workaround, a security check, a surprising choice). Don't
    comment the obvious. If you add a folder, a data table, an external service, a setting or an environment variable,
    say so in your report so `PROJECT.md` (the master document) can be updated.
-6. Run the FULL test suite, plus typecheck and lint if the project has them. All must be green.
+6. Run the FULL test suite, plus typecheck and lint if the project has them. All must be green. Exception: in a project whose
+   CLAUDE.md says `Size: large`, run the tests that `node "<plugin>/scripts/scoped-tests.mjs" --project . --base <MAIN>` lists (all of
+   them; when it prints FULL SUITE, run the full suite), and say in your report that the run was scoped and why. Before changing a
+   function, type or file that other code uses, run `node "<plugin>/scripts/code-index.mjs" --project . --impact <file>` and update the
+   dependents it lists in the same change; find where things live with `--find <name>` instead of reading folders.
 7. Commit your work on your branch with a clear message. Never push, never merge, never switch the main
    checkout's branch.
 

@@ -4,6 +4,16 @@ What changed in each release of the starter-kit plugin, newest first, in plain w
 repository's history. Every release bumps `version` in `plugins/starter-kit/.claude-plugin/plugin.json`; a test
 fails if this file has no entry for the current version.
 
+## [2.9.0] — 2026-11-24
+Big codebases.
+- New `scripts/code-index.mjs`: symbols and import links for JS/TS, Python, Go, Rust, Java/Kotlin, PHP, Ruby, C/C++, C#, Swift, Dart, with
+  `--find`, `--impact`, `--hubs`, `--areas`. Incremental (git content hashes; only changed files re-read); stored outside the project.
+- New `scripts/scoped-tests.mjs`: the tests a change can affect; falls back to the full suite when it can't be sure.
+- `Size: large` projects use scoped tests while building and the full suite at checkpoints and before shipping. The builder updates
+  dependents before changing shared code; the reviewer checks dependents beyond the diff; the context pack names defining files.
+- New `/onboard`: maps an existing codebase area by area (`AREAS.md`, one `CLAUDE.md` per area), changes no code.
+- Tested on a synthetic 10,000-file repository and, read-only, on a real 9.2-million-line Python installation.
+
 ## [2.8.0] — 2026-11-24
 Builds that last weeks.
 - New `scripts/drift-check.mjs`: map paths that no longer exist, a handoff behind the latest code commits, a decision that picks what an

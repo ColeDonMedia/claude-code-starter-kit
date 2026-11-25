@@ -18,6 +18,8 @@ yourself unless something fails.
   MAIN and BASE. The feature merges back into MAIN.
 - If this is a whole new app, or the request is large or vague and has no written acceptance criteria,
   run `/starter-kit:spec` first and use the approved spec as the brief. Skip this for a clear, small request.
+- In an existing codebase that is big (thousands of files) or that you have not mapped yet, run `/starter-kit:onboard` first for the area
+  the feature touches, so the builder works from that area's rules, not guesses.
 - Check CLAUDE.md has a "Commands" section with test, install and build/typecheck/lint commands. If it
   doesn't, suggest `/starter-kit:init` first and stop.
 
@@ -66,7 +68,9 @@ that block "done" are resolved (and, for high-risk features, no red-team break i
 - Confirm the main checkout is still clean and still on MAIN.
 - `git merge --no-ff BRANCH` into MAIN.
 - If there is a merge conflict, run `git merge --abort`, and report it. Do not resolve conflicts unasked.
-- Run the full test suite once on the merged result. If it fails, report it; do not continue.
+- Run the full test suite once on the merged result. If it fails, report it; do not continue. In a project whose CLAUDE.md says
+  `Size: large`, run the scoped tests instead (`node "<SCRIPTS>/scoped-tests.mjs" --project . --base BASE`, or the full suite when it
+  says FULL SUITE); the full suite then runs at every checkpoint and before shipping, and you say so in the report.
 - On success: remove the worktree (`git worktree remove WORKTREE`) and delete the branch (`git branch -d BRANCH`).
 - Never push. Pushing is the user's call.
 

@@ -3,9 +3,10 @@
 Read this, then `CLAUDE.md` (how to work on this repo), `README.md` (what the kit does) and `CHANGELOG.md` (history).
 Rewrite this file at the end of every session; keep it under 40 lines and true.
 
-## State at version 2.8.0 (2026-11-24)
+## State at version 2.9.0 (2026-11-24)
 - Public repo `ColeDonMedia/claude-code-starter-kit`, MIT, installed from GitHub; machines self-update daily.
-- The plugin lives in `plugins/starter-kit/`: 18 commands, 7 agents, 10 hook scripts, helper scripts, ~315 tests.
+- The plugin lives in `plugins/starter-kit/`: 19 commands, 7 agents, 10 hook scripts, helper scripts, ~325 tests.
+- Code index verified read-only on a real 9.2M-line Python install (correct impact/hubs; 3.5 min first build, ~30 s re-index outside git on Windows). `/onboard`, scoped tests inside `/feature`, and the reviewer's impact check have NEVER RUN LIVE.
 - OWNER RULE: never spend API tokens (no `claude -p`, no npx claude-code runs). Test with unit tests only; live trials are run by the owner in a normal session (`DOGFOOD.md`).
 - Everything is unit-tested against real git repositories and (for packages) the live registries.
 

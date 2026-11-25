@@ -5,7 +5,7 @@ Rewrite this file at the end of every session; keep it under 40 lines and true.
 
 ## State at version 2.6.0 (2026-11-24)
 - Public repo `ColeDonMedia/claude-code-starter-kit`, MIT, installed from GitHub; machines self-update daily.
-- The plugin lives in `plugins/starter-kit/`: 17 commands, 7 agents, 11 hooks, helper scripts, ~300 tests.
+- The plugin lives in `plugins/starter-kit/`: 17 commands, 7 agents, 11 hooks, helper scripts, ~285 tests.
 - Everything is unit-tested against real git repositories and (for packages) the live registries.
 
 ## Not verified (be honest about this)

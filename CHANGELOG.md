@@ -15,6 +15,8 @@ Legal, licenses, analytics and feedback.
   nested dependencies, handles OR / AND expressions, writes a third-party notices list.
 - `PROJECT.md` gains a "Data inventory"; the builder must report any personal data or third-party service it adds.
 - The plan covers how success is measured and how users send feedback; `/launch` sets both up.
+- Dead-reference tests: every script, command and agent that an instruction names must exist, every workflow command must be reachable from the routing table, and every command needs a description that says when to use it (verified by planting a bad reference).
+- Fixed: the `status` and `launch` command descriptions contained `: ` and failed YAML parsing (the plugin validator caught it); both are quoted now and a test prevents a repeat.
 
 ## [2.5.0] — 2026-11-24
 Operations: launching properly and staying healthy afterwards.

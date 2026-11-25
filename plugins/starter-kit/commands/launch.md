@@ -1,5 +1,5 @@
 ---
-description: Use for the FIRST launch of an app that real people will use (after the pre-ship scan passes). Sets up what an agency sets up at go-live: separate test and live environments, automated deploys, error tracking, uptime alerts, tested backups, a practised rollback, a cost estimate, and a RUNBOOK.md.
+description: "Use for the FIRST launch of an app that real people will use (after the pre-ship scan passes). Sets up what an agency sets up at go-live (separate test and live environments, automated deploys, error tracking, uptime alerts, tested backups, a practised rollback, a cost estimate, and a RUNBOOK.md)."
 ---
 
 Take this project live properly: $ARGUMENTS

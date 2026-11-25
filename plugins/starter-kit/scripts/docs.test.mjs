@@ -97,6 +97,13 @@ test("every agent that a command launches really exists, and the routing table c
   for (const c of commandNames.filter((n) => n !== "init" && n !== "review")) assert.ok(routing.includes(`/starter-kit:${c}`), `the routing table never mentions /starter-kit:${c}`);
 });
 
+test("command descriptions are valid YAML (an unquoted ': ' silently drops the whole header)", () => {
+  for (const n of commandNames) {
+    const d = /^description:\s*(.+)$/m.exec(readFileSync(join(PLUGIN, "commands", `${n}.md`), "utf8"))?.[1] ?? "";
+    if (!/^["']/.test(d)) assert.ok(!d.includes(": ") && !d.includes(" #"), `commands/${n}.md has an unquoted description containing ': ' or ' #'; wrap it in quotes`);
+  }
+});
+
 test("every command file has a description that says WHEN to use it (that is what makes Claude pick it)", () => {
   for (const n of commandNames) {
     const d = /^description:\s*(.+)$/m.exec(readFileSync(join(PLUGIN, "commands", `${n}.md`), "utf8"))?.[1] ?? "";

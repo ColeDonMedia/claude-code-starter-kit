@@ -1,5 +1,5 @@
 ---
-description: Use when the user asks where things stand: status, progress, how far along, what's next, a report. Gives a plain-words status built from the project's own records and git history.
+description: "Use when the user asks where things stand (status, progress, how far along, what's next, a report). Gives a plain-words status built from the project's own records and git history."
 ---
 
 Report the project's status to the user in plain words: $ARGUMENTS

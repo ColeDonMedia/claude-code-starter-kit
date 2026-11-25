@@ -176,10 +176,11 @@ test("SECURITY: approving a project's commands is always a real prompt that list
   }
 });
 
-test("SECURITY: the approval list itself cannot be read or edited from the shell", () => {
-  for (const c of ['cat ~/.claude/plugins/data/starter-kit/trusted.json', 'echo "{}" > trusted.json', 'node -e "require(\'fs\').writeFileSync(\'/x/trusted.json\',\'{}\')"']) {
+test("SECURITY: the approval list itself cannot be changed from the shell (reading it is fine)", () => {
+  for (const c of ['echo "{}" > trusted.json', 'node -e "require(\'fs\').writeFileSync(\'/x/trusted.json\',\'{}\')"', "rm ~/.claude/plugins/data/starter-kit/trusted.json"]) {
     assert.equal(decide(c).decision, "deny", c);
   }
+  assert.equal(decide("cat ~/.claude/plugins/data/starter-kit/trusted.json").decision, "allow");
 });
 
 test("listing approvals with --list does not prompt", () => {

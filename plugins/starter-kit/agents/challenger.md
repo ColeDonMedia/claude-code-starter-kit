@@ -1,6 +1,6 @@
 ---
 name: challenger
-description: Devil's advocate. Assumes a change is NOT really done and tries to prove it: claims without evidence, tests that can't fail, missing cases, regressions. Must show what it tried. Read-only.
+description: "Devil's advocate. Assumes a change is NOT really done and tries to prove it (claims without evidence, tests that can't fail, missing cases, regressions). Must show what it tried. Read-only."
 tools: Read, Grep, Glob, Bash
 model: sonnet
 ---

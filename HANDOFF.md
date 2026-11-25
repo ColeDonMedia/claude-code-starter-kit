@@ -3,47 +3,48 @@
 Read this, then `IMPROVEMENT-PLAN.md` (the work list), `CLAUDE.md` (how to work on this repo) and `CHANGELOG.md` (history).
 Rewrite this file at the end of every session; keep it under 55 lines and true.
 
-## State at version 2.12.0 (2026-11-25)
+## State at version 2.12.1 (2026-11-25)
 - Public repo, MIT, installed from GitHub. Auto-update checks once per 24 hours at session start, in the background; a new
-  version takes effect on the session AFTER that (a single restart is not enough).
-- `plugins/starter-kit/`: 20 commands, 7 agents, 12 hook scripts (`gate.mjs` runs the rest), 33 helper scripts, 379 tests
-  (378 pass, 1 skipped; unit tests only, run on one Windows machine).
-- OWNER RULE: never spend API tokens (no `claude -p`, no npx claude-code runs, no `claude plugin eval`). One line in
-  `CLAUDE.md` still says to test with a headless run: IGNORE IT (plan task P0-2 removes it).
-- An audit on 2026-11-25 produced `IMPROVEMENT-PLAN.md`: 20 findings with evidence, then tasks in phases 0 to 4.
+  version takes effect on the session AFTER that (a single restart is not enough). This machine was still on 2.6.0 at the audit.
+- `plugins/starter-kit/`: 20 commands, 7 agents, 13 hook scripts (`gate.mjs` runs the rest), 34 helper scripts, 402 tests
+  (401 pass, 1 skipped; unit tests only, run on one Windows machine). Hook tests also pass through the gate (`KIT_VIA_GATE=1`, 244).
+- OWNER RULE: never spend API tokens (no `claude -p`, no npx claude-code runs, no `claude plugin eval`). `CLAUDE.md` now says so.
+- Phase 0 of `IMPROVEMENT-PLAN.md` is DONE (see its Progress table). Owner decision D1: keep the merged hook runner, with the
+  canary, the self-check and fail-closed as the safety net.
 
-## Confirmed bugs, found live (fix first: Phase 0 of the plan)
-- The `challenger` and `security-reviewer` agents load with no description and ALL tools: unquoted `: ` in their YAML.
-- No guard sees the PowerShell tool. On Windows every protection can be bypassed by using it instead of Bash.
-- Subagents are told to run `<plugin>/scripts/…` and nothing tells them where that is.
-- Since 2.7.0 every tool call (Read, Grep, Glob too) starts Node twice: about 0.6 s of added wait per call on Windows.
-- The push gate's "passed" marker is written by Claude from a prose instruction.
-- The approval-file rule blocks any command that merely mentions the file's name.
+## Fixed in 2.12.1 (all were confirmed bugs)
+- Guards now cover the PowerShell tool (all 47 dangerous PowerShell test commands had been let through before).
+- `challenger` and `security-reviewer` load with their real settings (they had every tool).
+- Subagents get the kit's scripts folder (SubagentStart hook, `${CLAUDE_PLUGIN_ROOT}` in commands and agents).
+- Read, Grep and Glob no longer start a hook process.
+- A crashed guard refuses a shell command instead of letting it run unchecked; `starter-kit-canary` proves the guards run.
+- Automatic test runs stop when `.env` points at a database on another computer.
+- The approval-file rule blocks changes to it only, not reads.
 
 ## What was verified, and how
-- Hook tests: all 225 also pass through `gate.mjs` (`KIT_VIA_GATE=1`). Merged is about 470 ms against 540 ms per shell command.
-- Code index: read-only on a real 9.2M-line Python install (correct impact and hubs; 3.5 min first build).
-- Long builds: a simulated 50-session project. Databases: real SQLite with 100k users and 200k orders.
-- Live in a real session: the safety guard denied a command twice (once correctly placed, once a false alarm).
+- Docs (2026-11-25): PowerShell payload shape, matcher rules, SubagentStart, `${CLAUDE_PLUGIN_ROOT}` in markdown, exit codes
+  (answers V1-V5 and V8 are in the plan).
+- `scripts/doctor.mjs` on this machine: both canaries refused through `gate.mjs`, hooks registered, data folder writable.
+- Earlier: code index on a real 9.2M-line Python install; a simulated 50-session build; SQLite at 100k/200k rows.
 
 ## Not verified (be honest about this)
-- Nothing has run end to end. No trial in `DOGFOOD.md` has been run. Every workflow command, every agent, the flight
-  recorder, the session-start warnings, the speed test template (Playwright not installed) and the merged hook runner have
-  never been watched inside Claude Code.
-- If `gate.mjs` breaks in real use, every guard and the session note stop at once and nothing says so (plan task P0-6).
-- macOS and Linux: untested. Postgres and MySQL: only the plan parser is tested, on sample output.
-- The code index, the API check and the migration check match patterns; they are screens, not proof.
-- Open questions about Claude Code's own behaviour are listed in the plan under "Verify against the docs".
+- Nothing has run inside a live Claude Code session since these changes: not the PowerShell guarding, the SubagentStart hook,
+  `${CLAUDE_PLUGIN_ROOT}` substitution in command text, the self-check line, or fail-closed. The first session on 2.12.1 will ask
+  Claude to run the canary with each shell tool: that is the first live proof. If it is not refused, roll back `hooks.json` to the
+  2.11.0 shape (one process per hook) plus the `Bash|PowerShell` matchers.
+- No end-to-end trial has run (`DOGFOOD.md`). macOS and Linux are untested. Postgres and MySQL: only the plan parser is tested.
+- The push gate's ship marker is still written by Claude from a prose instruction (plan task P2-2 makes a script write it).
+- The PowerShell reader is pattern-based: aliases defined at run time, variables holding paths, and scripts run with -File are not seen.
 
 ## Known risks
-- The GitHub repo is the source of code that auto-runs on every computer, straight from `main`: keep two-factor on.
+- The GitHub repo is the source of code that auto-runs on every computer, straight from `main`: keep two-factor on (P1-2 adds a stable channel).
 - Third-party skills are never bundled; `VETTED.md` lists what was reviewed (commits pinned).
 
 ## Do this first next session
-1. Do Phase 0 of `IMPROVEMENT-PLAN.md` as release 2.12.1, in the order written. Ask the owner decision D1 first.
-2. Then Phase 1. Do not start Phase 2 until one trial run has happened.
+1. Ask the owner whether the first session on 2.12.1 refused the canary with both shell tools.
+2. Phase 1 of `IMPROVEMENT-PLAN.md` (needs owner decisions D2 and D3). Do not start Phase 2 until one trial run has happened.
 
 ## Rules that must not regress
 - Nothing from a project's own files may run or take effect without the user's approval on this computer (see `CLAUDE.md`).
-- Keep the session note small (test limit 520 words); every command description is loaded each session.
-- Every release: bump `plugin.json`, add a `CHANGELOG.md` entry, update this file, run all tests, push.
+- Every guard covers every shell tool. Keep the session note small (test limit 520 words).
+- Every release: bump `plugin.json`, add a `CHANGELOG.md` entry, update this file and the plan, run all tests both ways, validate, push.

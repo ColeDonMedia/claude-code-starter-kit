@@ -117,3 +117,24 @@ const HEREDOC_DANGEROUS = [
 ];
 test("round 4: text inside a heredoc given to git, cat or tee is never mistaken for commands", async () => expectAll(HEREDOC_HARMLESS, "allow"));
 test("round 4: a heredoc given to a shell still runs, so a wipe inside it is denied; commands after it are still checked", async () => expectAll(HEREDOC_DANGEROUS, "deny"));
+
+// Round 5 (2.12.1): the approval list. Changing it in any way stays denied; merely mentioning or reading it is fine. The old rule
+// matched the name anywhere, and blocked a read-only audit live (`grep … trusted.json … 2>/dev/null`).
+const TS = "~/.claude/plugins/data/starter-kit/trusted.json";
+const TRUST_WRITE = [
+  `echo "{}" > ${TS}`, `echo x >> ${TS}`, `echo x>${TS}`, `printf '{}' | tee ${TS}`, `tee -a ${TS} < x`, `cp /tmp/forged.json ${TS}`,
+  `cp -f a.json "${TS}"`, `mv /tmp/forged.json ${TS}`, `mv ${TS} /tmp/gone.json`, `rm ${TS}`, `rm -f "${TS}"`, `unlink ${TS}`,
+  `truncate -s 0 ${TS}`, `sed -i 's/a/b/' ${TS}`, `perl -pi -e 's/a/b/' ${TS}`, `vim ${TS}`, `nano ${TS}`, `ln -sf /tmp/x ${TS}`,
+  `install -m 600 x ${TS}`, `rsync /tmp/x ${TS}`, `dd if=/tmp/x of=${TS}`, `touch ${TS}`,
+  `node -e "require('fs').writeFileSync('/x/trusted.json','{}')"`, `node -e "fs.appendFileSync(p + '/trusted.json', 'x')"`,
+  `python3 -c "open('/x/trusted.json','w').write('{}')"`, `python -c "import os; os.remove('/x/trusted.json')"`,
+  `bash -c 'echo {} > ${TS}'`, `cd ~/.claude/plugins/data/starter-kit && echo {} > trusted.json`, `ls; cp x ${TS}`,
+  `Set-Content -Path ${TS} -Value '{}'`, `Remove-Item ${TS}`, `Copy-Item x.json -Destination ${TS}`, `'{}' | Out-File ${TS}`,
+];
+const TRUST_READ = [
+  `cat ${TS}`, `grep -n "trusted" ${TS}`, `grep -rn "trusted.json" plugins/ 2>/dev/null | head`, `echo "about trusted.json"`,
+  `ls -la ~/.claude/plugins/data/starter-kit/`, `wc -l ${TS}`, `git log -- trusted.json`, `node -e "console.log(require('fs').readFileSync('${TS}','utf8'))"`,
+  `cp ${TS} /tmp/backup-of-approvals.json`, `Get-Content ${TS}`, `Select-String -Path ${TS} -Pattern x`, `diff ${TS} /tmp/old.json > /tmp/d.txt`,
+];
+test("round 5: anything that changes, moves or deletes the approval list is denied", async () => expectAll(TRUST_WRITE, "deny"));
+test("round 5: reading or mentioning the approval list is never blocked", async () => expectAll(TRUST_READ, "allow"));

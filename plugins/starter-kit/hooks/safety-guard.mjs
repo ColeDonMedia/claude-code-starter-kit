@@ -28,6 +28,18 @@ try {
 }
 const command = input?.tool_input?.command;
 if (typeof command !== "string" || !command.trim()) process.exit(0);
+// PowerShell reads a command differently from Bash (see parse); commands nested inside one (`bash -c`, `powershell -c`,
+// `cmd /c`) are read in their own shell's way.
+let ps = input?.tool_name === "PowerShell";
+const inMode = (mode, fn) => {
+  const prev = ps;
+  ps = mode;
+  try {
+    fn();
+  } finally {
+    ps = prev;
+  }
+};
 
 const root = resolve(process.env.CLAUDE_PROJECT_DIR || input.cwd || process.cwd());
 let cfg = {};
@@ -67,9 +79,27 @@ function parse(cmd) {
     const c = cmd[i];
     if (quote) {
       if (c === quote) quote = null;
-      else if (quote === '"' && c === "\\" && (cmd[i + 1] === '"' || cmd[i + 1] === "\\")) {
-        cur += cmd[++i];
+      else if (ps && quote === '"' && c === "`" && i + 1 < cmd.length) cur += cmd[++i]; // PowerShell escapes with a backtick
+      else if (!ps && quote === '"' && c === "\\" && (cmd[i + 1] === '"' || cmd[i + 1] === "\\")) {
+        cur += cmd[++i]; // in PowerShell a backslash is a plain character: "C:\" is the string C:\
       } else cur += c;
+      continue;
+    }
+    if (ps && c === "`") {
+      // PowerShell: a backtick escapes the next character, and a backtick at the end of a line continues the command
+      const n = cmd[i + 1];
+      if (n === "\r" || n === "\n") {
+        i += n === "\r" && cmd[i + 2] === "\n" ? 2 : 1;
+        endToken();
+      } else if (n !== undefined) {
+        cur += n;
+        has = true;
+        i++;
+      }
+      continue;
+    }
+    if (ps && (c === "{" || c === "}")) {
+      endSeg(false); // a script block: its contents are commands too
       continue;
     }
     if (c === "'" || c === '"') {
@@ -130,6 +160,8 @@ function commandWord(tokens) {
 // ---------- classification helpers ----------
 const ROOTY = [
   /^(\/|\/\*|~|~\/|~\/\*|\$HOME[\\/]?\*?|\$\{HOME\}[\\/]?\*?|\$env:USERPROFILE[\\/]?\*?|%USERPROFILE%[\\/]?\*?|\$env:HOMEPATH)$/i,
+  /^\$\{?env:(USERPROFILE|HOMEPATH|HOMEDRIVE|SystemDrive|SystemRoot|windir|ProgramFiles|ProgramFiles\(x86\)|ProgramW6432|ProgramData)\}?[\\/]?\*?$/i,
+  /^%(SystemDrive|SystemRoot|windir|HOMEDRIVE|ProgramFiles|ProgramData)%[\\/]?\*?$/i,
   /^[a-z]:[\\/]?\*?$/i,
   /^\/(usr|etc|var|bin|sbin|lib|lib32|lib64|boot|home|root|opt|sys|proc|dev|mnt|srv|tmp|Users|System|Library|Applications|Volumes)[\\/]?\*?$/i,
   /^\/(home|Users)\/[^/]+[\\/]?\*?$/i,
@@ -205,7 +237,8 @@ function checkAttackScope(cmd, args) {
   else if (!targets.length) add("ask", "attack-scope", `${cmd} is ${tool} and no target was given; confirm it only touches this computer`);
 }
 
-const SECRET_READERS = new Set(["cat", "type", "more", "less", "head", "tail", "bat", "gc", "get-content", "cp", "copy", "curl", "wget", "scp", "sftp", "rsync", "nc", "ncat", "base64", "tar", "zip", "7z", "xxd", "strings", "openssl", "gpg", "http", "https"]);
+const SECRET_READERS = new Set(["cat", "type", "more", "less", "head", "tail", "bat", "gc", "get-content", "cp", "copy",
+  "copy-item", "cpi", "select-string", "sls", "iwr", "irm", "invoke-webrequest", "invoke-restmethod", "compress-archive", "format-hex", "curl", "wget", "scp", "sftp", "rsync", "nc", "ncat", "base64", "tar", "zip", "7z", "xxd", "strings", "openssl", "gpg", "http", "https"]);
 // An argument may be a secret file directly (`cat .env`), or hidden in an option (`-d @.env`, `--data=@.env`, `file=@.env`).
 function touchesSecretFile(args) {
   return args.some((a) => [a, ...a.split(/[@=]/)].some((p) => p && !p.startsWith("-") && SECRET_FILE.test(p)));
@@ -240,7 +273,39 @@ function checkGit(args) {
 
 // Code passed inline to python, node, perl, ruby, php: only what it deletes or hands to a shell matters. Printing
 // the text "rm -rf /" is harmless, so only strings given to exec-style functions are read as commands.
+// ---------- the approval list (trusted.json) ----------
+// Changing it in any way (write, append, move, delete, edit, link) is denied: only the trust script, which asks the user, may.
+// Reading it or mentioning its name is fine (it holds hashes, nothing secret), so audits and searches are not blocked.
+const TRUST = /trusted\.json/i;
+const TRUST_ANY_ARG = new Set([
+  "tee", "rm", "del", "erase", "unlink", "shred", "truncate", "touch", "ln", "chmod", "chown", "attrib", "mv", "move", "ren", "rename",
+  "vi", "vim", "nvim", "nano", "emacs", "ed", "code", "notepad", "subl",
+  "remove-item", "ri", "set-content", "sc", "add-content", "ac", "out-file", "clear-content", "clc", "new-item", "ni", "rename-item", "rni", "move-item", "mi",
+]);
+const TRUST_DEST = new Set(["cp", "copy", "copy-item", "cpi", "install", "rsync", "scp", "xcopy", "robocopy"]);
+const CODE_WRITES = /writeFile|appendFile|createWriteStream|copyFile|rename|unlink|rmSync|\brm\s*\(|truncate|open\s*\([^)]*,\s*["'][wax+]|os\.remove|os\.unlink|shutil\.(copy|move)|\.write_text|\.write_bytes|\.unlink\(|File\.(Write|Append|Delete|Copy|Move)|Set-Content|Out-File|Add-Content|Remove-Item/i;
+
+function writesTrustStore(text, segs) {
+  if (!TRUST.test(text)) return false;
+  // a redirect into it: `> …/trusted.json`, `>>trusted.json`, `>| x`, dd's `of=`
+  if (/>\|?\s*["']?[^\s;|&"'<>]*trusted\.json/i.test(text) || /\bof=["']?[^\s;|&"']*trusted\.json/i.test(text)) return true;
+  for (const seg of segs) {
+    const { cmd, args } = commandWord(seg.tokens);
+    if (!cmd || !args.some((a) => TRUST.test(a))) continue;
+    if (TRUST_ANY_ARG.has(cmd)) return true;
+    if ((cmd === "sed" || cmd === "perl") && args.some((a) => /^-[a-z]*i/i.test(a) || a === "--in-place")) return true;
+    if (TRUST_DEST.has(cmd)) {
+      const d = args.findIndex((a) => /^-(destination|dest)$/i.test(a));
+      const plain = args.filter((a) => !a.startsWith("-"));
+      if ((d >= 0 && TRUST.test(args[d + 1] ?? "")) || TRUST.test(plain[plain.length - 1] ?? "")) return true;
+    }
+    if (["node", "nodejs", "python", "python3", "py", "perl", "ruby", "deno", "bun", "php"].includes(cmd) && args.some((a) => TRUST.test(a) && CODE_WRITES.test(a))) return true;
+  }
+  return false;
+}
+
 function inspectCode(code, depth) {
+  if (TRUST.test(code) && CODE_WRITES.test(code)) add("deny", "trust-store", "code that changes the approval list, which only the trust script may do (it asks the user)");
   for (const m of code.matchAll(/(?:rmtree|rmSync|rmdirSync|removeSync|remove_all|unlinkSync)\(\s*(["'])((?:(?!\1).)*)\1/g)) {
     const t = normTarget(m[2]);
     if (ROOTY.some((re) => re.test(t))) add("deny", "rm-root", `inline code deletes "${m[2]}", a system, home or drive folder`);
@@ -272,17 +337,92 @@ function stripHeredocs(text, depth) {
   return out.join("\n");
 }
 
+// PowerShell only. Here-strings (@' … '@ and @" … "@) are text, unless they are handed to Invoke-Expression, which runs them.
+// $( … ) runs a command even inside a double-quoted string, so each one is read as a command of its own.
+const RUNS_TEXT = /\b(iex|invoke-expression|invoke-command|icm)\b|\[scriptblock\]::create/i;
+function prepPowerShell(text, depth) {
+  text = text.replace(/@(['"])\r?\n([\s\S]*?)\r?\n\1@/g, (whole, q, body, at, all) => {
+    const statement = all.slice(Math.max(0, all.lastIndexOf("\n", at) + 1), at) + all.slice(at + whole.length).split(/[;\n]/)[0];
+    if (RUNS_TEXT.test(statement)) analyze(body, depth + 1);
+    else if (q === '"') for (const s of subexpressions(body)) analyze(s, depth + 1);
+    return q === "'" ? "''" : '""';
+  });
+  for (const s of subexpressions(text)) analyze(s, depth + 1);
+  return text;
+}
+function subexpressions(text) {
+  const found = [];
+  let inSingle = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (c === "`") {
+      i++;
+      continue;
+    }
+    if (c === "'") inSingle = !inSingle;
+    if (inSingle || c !== "$" || text[i + 1] !== "(") continue;
+    let d = 0;
+    let j = i + 1;
+    for (; j < text.length; j++) {
+      if (text[j] === "(") d++;
+      else if (text[j] === ")" && --d === 0) break;
+    }
+    found.push(text.slice(i + 2, j));
+    i = j;
+  }
+  return found;
+}
+
+// `powershell` / `pwsh` started from a command: -Command text, -EncodedCommand base64, or a command given with no flag.
+function checkPowerShellHost(args, depth) {
+  const enc = args.findIndex((a) => /^-(e|ec|en|enc|enco|encod|encode|encoded|encodedc\w*)$/i.test(a));
+  if (enc >= 0 && args[enc + 1]) {
+    add("ask", "encoded-command", "runs a command hidden in base64 (-EncodedCommand), which cannot be read before it runs");
+    let decoded = "";
+    try {
+      decoded = Buffer.from(args[enc + 1], "base64").toString("utf16le");
+    } catch {
+      /* not base64 */
+    }
+    if (decoded) inMode(true, () => analyze(decoded, depth + 1));
+    return;
+  }
+  const c = args.findIndex((a) => /^-(c|co|com|comm|comma|comman|command)$/i.test(a));
+  if (c >= 0) {
+    if (args[c + 1]) inMode(true, () => analyze(args.slice(c + 1).join(" "), depth + 1));
+    return;
+  }
+  if (args.some((a) => /^-(f|fi|fil|file)$/i.test(a))) return; // runs a script file, which can't be seen from here
+  const VALUE = /^-(ep|ex|exe\w*|executionpolicy|w|wi\w*|windowstyle|config\w*|v|ve\w*|version|of|outputformat|if|inputformat|wd|workingdirectory)$/i;
+  const rest = [];
+  for (let i = 0; i < args.length; i++) {
+    if (args[i].startsWith("-")) {
+      if (VALUE.test(args[i])) i++;
+      continue;
+    }
+    rest.push(...args.slice(i));
+    break;
+  }
+  if (rest.length) inMode(true, () => analyze(rest.join(" "), depth + 1));
+}
+
+const LISTERS = new Set(["get-childitem", "gci", "dir", "ls", "get-item", "gi"]);
+const LAUNCHERS = new Set(["start-process", "saps", "start", "invoke-item", "ii"]);
+
 function analyze(text, depth = 0) {
   if (depth > 3) return;
   text = stripHeredocs(text, depth);
-  // The approval list is the user's. Nothing may read or edit it except through the trust script, which asks.
-  if (/trusted\.json/i.test(text)) add("deny", "trust-store", "the approval list can only be changed with the trust script, which asks the user");
+  if (ps) text = prepPowerShell(text, depth);
+  // The approval list is the user's: nothing may change it except the trust script, which asks. Reading it is fine.
+  if (writesTrustStore(text, parse(text))) add("deny", "trust-store", "the approval list can only be changed with the trust script, which asks the user");
   if (/:\(\)\s*\{\s*:\s*\|\s*:\s*&\s*\}\s*;\s*:/.test(text)) add("deny", "fork-bomb", "fork bomb");
   if (
     /\b(bash|sh|zsh)\s+<\(\s*(curl|wget)\b/.test(text) ||
     /\b(iex|invoke-expression)\b[^|]*\b(iwr|irm|invoke-webrequest|invoke-restmethod|downloadstring)\b/i.test(text) ||
     /\b(ba|z|da|k)?sh\s+(-\w+\s+)*-\w*c\s+["']?\s*(\$\(|`)\s*(curl|wget|iwr)\b/.test(text) || // sh -c "$(curl ...)"
-    /\beval\s+["']?\s*(\$\(|`)\s*(curl|wget|iwr)\b/.test(text)
+    /\beval\s+["']?\s*(\$\(|`)\s*(curl|wget|iwr)\b/.test(text) ||
+    /\b(iwr|irm|invoke-webrequest|invoke-restmethod|downloadstring|curl|wget)\b[\s\S]*\|\s*(iex|invoke-expression)\b/i.test(text) || // (iwr url).Content | iex
+    /\[scriptblock\]::create\s*\([\s\S]*\b(iwr|irm|invoke-webrequest|invoke-restmethod|downloadstring)\b/i.test(text)
   )
     add("ask", "pipe-to-shell", "downloads and runs code in one step");
   const segs = parse(text);
@@ -290,14 +430,28 @@ function analyze(text, depth = 0) {
   segs.forEach((seg, idx) => {
     const { cmd, args } = commandWord(seg.tokens);
     if (!cmd) return;
+    // The canary: a command that does nothing and is always refused, so anyone can prove the guards are running.
+    if (cmd === "starter-kit-canary") add("deny", "canary", "canary ok: the starter-kit guards are running (nothing was run)");
     // download now, run later: `curl -O url && sh install.sh`
+    const fileName = (a) => basename(String(a).replace(/\\/g, "/")).toLowerCase();
+    const remember = (name) => {
+      downloaded.add(name);
+      downloaded.add(name.replace(/\.(exe|ps1|bat|cmd|msi|sh)$/i, ""));
+    };
     if (DOWNLOADERS.has(cmd)) {
       args.forEach((a, k) => {
-        if (/^https?:\/\//i.test(a)) downloaded.add(basename(a.split("?")[0]).toLowerCase());
-        if (/^(-o|--output|-O)$/.test(a) && args[k + 1] && !args[k + 1].startsWith("-")) downloaded.add(basename(args[k + 1]).toLowerCase());
+        if (/^https?:\/\//i.test(a)) remember(fileName(a.split("?")[0]));
+        if ((/^(-o|--output|-O)$/.test(a) || /^-(outfile|outf|outfi|outfil)$/i.test(a)) && args[k + 1] && !args[k + 1].startsWith("-")) remember(fileName(args[k + 1]));
       });
-    } else if (downloaded.size && (downloaded.has(cmd) || (INTERPRETERS.has(cmd) && args.some((a) => downloaded.has(basename(a).toLowerCase()))))) {
+    } else if (downloaded.size && (downloaded.has(cmd) || ((INTERPRETERS.has(cmd) || LAUNCHERS.has(cmd)) && args.some((a) => downloaded.has(fileName(a)))))) {
       add("ask", "pipe-to-shell", "runs a file that was just downloaded, unseen");
+    }
+    // PowerShell: `Get-ChildItem C:\ -Recurse | Remove-Item`: the files to delete come from the listing before the pipe.
+    if (["rm", "del", "erase", "rd", "rmdir", "remove-item", "ri"].includes(cmd) && seg.pipeIn && idx > 0) {
+      const src = commandWord(segs[idx - 1].tokens);
+      if (LISTERS.has(src.cmd)) {
+        for (const a of src.args.filter((x) => !x.startsWith("-"))) if (ROOTY.some((re) => re.test(normTarget(a)))) add("deny", "rm-root", `deletes everything listed under "${a}", a system, home or drive folder`);
+      }
     }
     if (seg.pipeIn && idx > 0 && INTERPRETERS.has(cmd)) {
       // Walk back along the whole pipeline: `curl url | tee x | sh` and `echo ... | base64 -d | sh` run unseen code too.
@@ -335,10 +489,12 @@ function analyze(text, depth = 0) {
       const sub = commandWord(args.slice(i));
       if (["rm", "rmdir", "remove-item"].includes(sub.cmd) && sub.args.some((a) => /^-[a-zA-Z]*[rR][a-zA-Z]*$/.test(a) || a === "--recursive")) add("ask", "rm-wide", "`xargs rm -r` deletes whatever is piped into it");
     }
-    if (SHELLS.has(cmd)) {
-      const k = args.findIndex((a) => /^(-c|-command|\/c)$/i.test(a) || /^-[a-z]*c$/.test(a));
-      if (k >= 0 && args[k + 1]) analyze(args.slice(k + 1).join(" "), depth + 1);
+    if (cmd === "powershell" || cmd === "pwsh") checkPowerShellHost(args, depth);
+    else if (SHELLS.has(cmd)) {
+      const k = args.findIndex((a) => /^(-c|-command|\/c|\/k)$/i.test(a) || /^-[a-z]*c$/.test(a));
+      if (k >= 0 && args[k + 1]) inMode(false, () => analyze(args.slice(k + 1).join(" "), depth + 1));
     } else if (cmd === "eval" && args.length) analyze(args.join(" "), depth + 1);
+    else if ((cmd === "iex" || cmd === "invoke-expression") && args.length) inMode(true, () => analyze(args.filter((a) => !/^-command$/i.test(a)).join(" "), depth + 1));
     // Approving a project's commands: always shown to the user as a real permission prompt with the exact list.
     if (cmd === "node" && args.some((a) => /(^|[\\/])trust\.mjs$/i.test(a)) && !args.includes("--list")) {
       const pi = args.indexOf("--project");
@@ -354,7 +510,7 @@ function analyze(text, depth = 0) {
       add("ask", "trust-commands", `approve letting "${target}" run these automatically on your computer — ${list.join("; ")}`);
     } else if (["rm", "rmdir", "rd", "del", "erase", "remove-item", "ri"].includes(cmd)) checkRm(cmd, args);
     else if (cmd === "git") checkGit(args);
-    else if (/^mkfs/.test(cmd) || ["diskpart", "fdisk", "parted", "wipefs"].includes(cmd)) add("deny", "disk-write", `${cmd} can erase a whole disk`);
+    else if (/^mkfs/.test(cmd) || ["diskpart", "fdisk", "parted", "wipefs", "format-volume", "clear-disk", "initialize-disk", "remove-partition"].includes(cmd)) add("deny", "disk-write", `${cmd} can erase a whole disk`);
     else if (cmd === "dd" && args.some((a) => /^of=\/dev\//.test(a))) add("deny", "disk-write", "dd writing straight to a disk device");
     else if (cmd === "shred" && args.some((a) => a.startsWith("/dev/"))) add("deny", "disk-write", "shred on a disk device");
     else if (cmd === "format" && args.some((a) => /^[a-z]:$/i.test(a))) add("deny", "disk-write", "format erases a drive");

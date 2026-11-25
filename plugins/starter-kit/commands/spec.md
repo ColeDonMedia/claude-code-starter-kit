@@ -73,7 +73,7 @@ or the previous data instead of a blank screen; actions save optimistically; ima
 spinner at most per screen), and a `Quality bar` section: one primary action per screen, a clear visual
 hierarchy, a real empty/loading/error state on every screen, no placeholder text, specific microcopy ("Save recipe", not
 "Submit"), motion short and subtle, nothing that looks like an unstyled browser default. Use the project's existing design
-system if it has one. Run `node "<SCRIPTS>/design-check.mjs" --project .` and fix what it reports. Every later screen follows this
+system if it has one. Run `node "${CLAUDE_PLUGIN_ROOT}/scripts/design-check.mjs" --project .` and fix what it reports. Every later screen follows this
 file, and the ui-reviewer scores each screen against the Quality bar.
 
 ## 8. Present the plan — short, plain words
@@ -117,7 +117,7 @@ On approval, write the project's memory so any later session can pick up with fu
   decisions made in this planning (with the reasons and what was rejected), current state, known problems, next steps,
   plus `## Success measures` and `## Risks` (one line each, as agreed in the plan).
 - `DECISIONS.md`: append-only, one line per decision with an id (`- <date> — <decision> {#D-001}, because <reason>; rejected: <alternative>`;
-  next number from `node "<SCRIPTS>/notes-graph.mjs" --project . --next-id D`); record the planning decisions in it now. Give each roadmap
+  next number from `node "${CLAUDE_PLUGIN_ROOT}/scripts/notes-graph.mjs" --project . --next-id D`); record the planning decisions in it now. Give each roadmap
   feature an id (`{#F-001}`) and have it point at the decisions it follows (`[[D-001]]`). A decision that is replaced later gets
   `status: superseded by [[D-nnn]]` (or `status: reversed`) on its old line. Add a `## Map` heading to `PROJECT.md` (one line per folder or key file) as soon as code exists.
 - `HANDOFF.md` and `CHANGELOG.md`: start them as described in `/starter-kit:init` if they don't exist.

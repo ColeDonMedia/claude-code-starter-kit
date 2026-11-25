@@ -202,3 +202,17 @@ test("windows: a drive-letter case mismatch between project dir and file still w
     s.cleanup();
   }
 });
+
+test("SAFETY: related tests never run while the project's settings point at a database that is not on this computer", () => {
+  const s = sandbox();
+  try {
+    s.put("package.json", '{"devDependencies":{"vitest":"3"}}');
+    const f = s.put("src/a.ts");
+    s.put(".env", "DATABASE_URL=postgres://app:pw@db.prod.example.com:5432/app\n");
+    assert.match(run(f, s.dir).out, /^SKIPPED: .*not on this computer/);
+    s.put(".env", "DATABASE_URL=postgres://app:pw@127.0.0.1:5432/app\n");
+    assert.match(run(f, s.dir).out, /vitest related/);
+  } finally {
+    s.cleanup();
+  }
+});

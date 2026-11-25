@@ -25,7 +25,7 @@ yourself unless something fails.
 
 ## 1. Implement (subagent, own worktree)
 Launch the starter-kit `implementer` agent. It runs in a new git worktree on its own branch. It cannot
-see this conversation, so write it a complete brief. Start it from `node "<SCRIPTS>/context-pack.mjs" --project . --feature "<the feature>"`,
+see this conversation, so write it a complete brief. Start it from `node "${CLAUDE_PLUGIN_ROOT}/scripts/context-pack.mjs" --project . --feature "<the feature>"`,
 which pulls the roadmap item, the latest decisions, the related parts of the code map and the design brief out of the
 project's records, so a big project doesn't mean a big brief. Then add:
 - what to build, why, the acceptance criteria, relevant files or areas, anything already decided here
@@ -69,7 +69,7 @@ that block "done" are resolved (and, for high-risk features, no red-team break i
 - `git merge --no-ff BRANCH` into MAIN.
 - If there is a merge conflict, run `git merge --abort`, and report it. Do not resolve conflicts unasked.
 - Run the full test suite once on the merged result. If it fails, report it; do not continue. In a project whose CLAUDE.md says
-  `Size: large`, run the scoped tests instead (`node "<SCRIPTS>/scoped-tests.mjs" --project . --base BASE`, or the full suite when it
+  `Size: large`, run the scoped tests instead (`node "${CLAUDE_PLUGIN_ROOT}/scripts/scoped-tests.mjs" --project . --base BASE`, or the full suite when it
   says FULL SUITE); the full suite then runs at every checkpoint and before shipping, and you say so in the report.
 - On success: remove the worktree (`git worktree remove WORKTREE`) and delete the branch (`git branch -d BRANCH`).
 - Never push. Pushing is the user's call.
@@ -83,15 +83,15 @@ Done is something you can show, not something you say. Before reporting or ticki
 - **Write the records**, all in one docs commit:
   - `ROADMAP.md`: tick the feature as `- [x] <name> — <goal> (merged <short id>)`, tick each criterion and add
     `→ test: <file>::<test name>` (or `→ manual: <how it was checked by hand>` for things a test can't show, such as how a screen looks).
-    Run `node "<SCRIPTS>/roadmap-check.mjs" --project .` and fix anything it reports; it checks the commit and tests are real.
+    Run `node "${CLAUDE_PLUGIN_ROOT}/scripts/roadmap-check.mjs" --project .` and fix anything it reports; it checks the commit and tests are real.
   - `CHANGELOG.md`: one plain-words entry with the commit id.
   - `PROJECT.md`: update current state, the architecture map (one line per folder or key file under a `## Map` heading: `- path — what it is for`), known problems, next steps.
   - `DECISIONS.md`: one new line per decision made (`- <date> — <decision> {#D-nnn}, because <reason>; rejected: <alternative>`), with the next
-    number from `node "<SCRIPTS>/notes-graph.mjs" --project . --next-id D`. Append only; it is what later sessions read first, so keep each
+    number from `node "${CLAUDE_PLUGIN_ROOT}/scripts/notes-graph.mjs" --project . --next-id D`. Append only; it is what later sessions read first, so keep each
     line short. If a decision replaces an earlier one, add `status: superseded by [[D-nnn]]` to the OLD line (or `status: reversed`), then
     run `notes-graph.mjs --project .` and update every note it lists as still relying on it. In `ROADMAP.md` and `PROJECT.md`, point at
     decisions with `[[D-nnn]]` and give features and areas their own `{#F-nnn}` / `{#A-name}` anchors, so a change shows what depends on it.
-  - `SCHEMA.md`, when migrations changed: `node "<SCRIPTS>/schema-map.mjs" --project . --write` (the one-page picture of the database).
+  - `SCHEMA.md`, when migrations changed: `node "${CLAUDE_PLUGIN_ROOT}/scripts/schema-map.mjs" --project . --write` (the one-page picture of the database).
   - `HANDOFF.md`: rewrite it for the next session, and set its `Covers-through:` line to the newest code commit
     (`git log -1 --format=%H -- . ':(exclude)*.md' ':(exclude).claude'`).
   Write only what is true. If something was not verified, say so in "Failed or not verified" instead of leaving it out.
@@ -100,10 +100,10 @@ Done is something you can show, not something you say. Before reporting or ticki
   to run or the page to open), and anything the reviewer flagged that was left as-is. No git details unless
   something went wrong.
 - If anything stopped early, say exactly where the work is (branch and worktree path) so nothing is lost.
-- **Checkpoint.** Run `node "<SCRIPTS>/checkpoint.mjs" --project .`. If one is due (every 3 merged features), stop building and
+- **Checkpoint.** Run `node "${CLAUDE_PLUGIN_ROOT}/scripts/checkpoint.mjs" --project .`. If one is due (every 3 merged features), stop building and
   re-verify everything first: the full test suite, `roadmap-check.mjs`, `drift-check.mjs`, and the approved plan in `PROJECT.md`
   read against what was really built (anything missing, changed or added without agreement). Fix what you can, report the rest in plain
-  words, refresh `ARCHITECTURE.md` (`node "<SCRIPTS>/arch-map.mjs" --project . --write`, in a project with a code index) and
+  words, refresh `ARCHITECTURE.md` (`node "${CLAUDE_PLUGIN_ROOT}/scripts/arch-map.mjs" --project . --write`, in a project with a code index) and
   `SCHEMA.md`, run `notes-graph.mjs --project .` and fix what it reports, run `compact-records.mjs` if a record is oversized, then `checkpoint.mjs --project . --record` and commit.
 - **Going in circles?** If the same feature has failed review 3 times, or you are about to try an approach that already failed, stop and
   tell the user what is blocking it, with a smaller step or a different approach to choose from.

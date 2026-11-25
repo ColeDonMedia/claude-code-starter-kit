@@ -4,6 +4,30 @@ What changed in each release of the starter-kit plugin, newest first, in plain w
 repository's history. Every release bumps `version` in `plugins/starter-kit/.claude-plugin/plugin.json`; a test
 fails if this file has no entry for the current version.
 
+## [2.12.1] — 2026-11-25
+Safety and correctness fixes from the audit (`IMPROVEMENT-PLAN.md`, Phase 0). No new features.
+- **The guards now watch the PowerShell tool.** Before, every protection (dangerous commands, secrets, push gate, packages,
+  databases) only looked at Bash, so on Windows they could all be skipped by using PowerShell. The safety guard reads PowerShell
+  the PowerShell way: backtick escapes and line continuations, `{ }` script blocks, `$( )` inside strings, here-strings handed to
+  `Invoke-Expression`, `-EncodedCommand` (decoded and checked, and always asked about), `& { }`, `cmd /c`, `Get-ChildItem C:\ | Remove-Item`,
+  `Format-Volume` and the other disk cmdlets, download-then-run with `-OutFile`/`Start-Process`, and reading or uploading `.env`.
+  New `guard-fuzz-powershell.test.mjs`: 101 cases (47 denied, 20 asked, 31 allowed, 3 database), through the real entry point and the
+  safety guard alone. All 47 dangerous ones had been let through before the fix.
+- **Two reviewers were not read-only.** `challenger` and `security-reviewer` had an unquoted `: ` in their headers, so they loaded with
+  no description and every tool (and the security reviewer not on Opus). Fixed, with a test over every agent header.
+- **Subagents can find the kit's scripts.** Commands and agents name them as `${CLAUDE_PLUGIN_ROOT}/scripts/…` (filled in by Claude Code),
+  a new SubagentStart hook gives every starter-kit agent the real folder, and the session note asks for it in every brief.
+- **Hooks no longer start for every tool call.** Read, Grep and Glob start no hook process (since 2.7.0 every call started Node twice).
+- **Proof that the guards run:** the `starter-kit-canary` command is always refused; the first session after an update asks Claude to
+  run it with each shell tool; a guard that crashes on a shell command now refuses the command instead of letting it run unchecked;
+  the project CLAUDE.md template has a tripwire line for a missing session note; new `scripts/doctor.mjs`.
+- **No automatic test runs against a remote database:** when a project's `.env` points at a database on another computer, the related-tests
+  hook and the stop-time checks do not run, and the session note says why.
+- The approval-file rule blocks only changes to it (writes, moves, deletes, edits), not reading or mentioning it (it blocked a read-only audit).
+- The repo's `CLAUDE.md` no longer tells a session to run headless model tests (which spend API credit); it states the opposite.
+- Smaller: init's off-switch list, `Speed test:`/`Size:`/`Database:` lines in the CLAUDE.md template, one speed step in `/full-scan` and a
+  final rule naming every blocking step, current descriptions and an author in the manifests, `.gitattributes`, Node requirement in the README.
+
 ## [2.12.0] — 2026-11-25
 Fast and snappy, at every level.
 - Speed budget: `.claude/speed.json` (defaults: main content 2.5 s, no layout jumping, taps answer in 100 ms, results in 1 s, 600 KB first load)

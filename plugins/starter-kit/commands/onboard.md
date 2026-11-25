@@ -7,7 +7,7 @@ Map this codebase before changing it: $ARGUMENTS
 A big codebase cannot be read in one go, and changing what you don't understand is how things break. This builds understanding in
 pieces that later sessions reuse. Change NO code while onboarding.
 
-1. **Index it.** Run `node "<SCRIPTS>/code-index.mjs" --project .` (it is incremental, so re-running is cheap), then `--areas` and
+1. **Index it.** Run `node "${CLAUDE_PLUGIN_ROOT}/scripts/code-index.mjs" --project .` (it is incremental, so re-running is cheap), then `--areas` and
    `--hubs` (the files most others depend on). If it reports more than about 2,000 files, add the line `Size: large` under CLAUDE.md's
    "Commands" section, so building and reviewing use scoped tests and impact checks. Say what the index does not cover (languages it
    didn't recognise, generated code).
@@ -23,9 +23,9 @@ pieces that later sessions reuse. Change NO code while onboarding.
    - what depends on it (from `--impact` on its hub files) and what it must not break
    - traps: generated files, magic, slow or flaky tests, things that look unused but are not
    Write only what you saw in the code; mark guesses as guesses. Set the area's status in `AREAS.md`.
-4. **Draw the big picture.** Run `node "<SCRIPTS>/arch-map.mjs" --project . --write` for `ARCHITECTURE.md` (areas, what depends on what,
+4. **Draw the big picture.** Run `node "${CLAUDE_PLUGIN_ROOT}/scripts/arch-map.mjs" --project . --write` for `ARCHITECTURE.md` (areas, what depends on what,
    what everything leans on, circular dependencies; the "Hand-written" part at the bottom is yours to fill with external services and the
-   request flow), and, if the project has a database, `node "<SCRIPTS>/schema-map.mjs" --project . --write` for `SCHEMA.md`.
+   request flow), and, if the project has a database, `node "${CLAUDE_PLUGIN_ROOT}/scripts/schema-map.mjs" --project . --write` for `SCHEMA.md`.
 5. **Update the master records:** `PROJECT.md` gets a `## Map` (one line per area, pointing to its rules file) and the commands; a line
    per decision in `DECISIONS.md` if you settled anything. Commit the docs.
 6. **Tell the user** in plain words: how big it is, what is mapped now, what is next, and anything risky you noticed. If their task's

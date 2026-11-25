@@ -16,6 +16,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { isTrusted } from "../scripts/trust-lib.mjs";
+import { remoteDbHosts } from "../scripts/db-lib.mjs";
 
 const done = () => process.exit(0);
 let raw = "";
@@ -95,6 +96,10 @@ if (unapproved.length) {
   );
   process.exit(2);
 }
+
+// Never run the project's checks against a database somewhere else: tests can change or wipe data. The session note tells
+// Claude why the checks are off (see session-start.mjs).
+if (remoteDbHosts(root).length) done();
 
 const budgetMs = Number(process.env.KIT_VERIFY_BUDGET_MS || 240000);
 const started = Date.now();

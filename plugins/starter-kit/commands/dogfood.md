@@ -7,7 +7,9 @@ Review how the kit behaved in a session and turn the gaps into fixes: $ARGUMENTS
 The flight recorder keeps a private log of names only (which workflows and agents ran, which actions were blocked or never
 finished). It holds no code, prompts or secrets and lives outside the project. Nothing here sends anything anywhere.
 
-1. Run `node "<SCRIPTS>/flight-report.mjs" --project .` (add `--all` to include earlier sessions). Read it as it is.
+1. Run `node "${CLAUDE_PLUGIN_ROOT}/scripts/doctor.mjs" --project .` (is the kit able to run here at all?), then run the shell command
+   `starter-kit-canary` with each shell tool you have: it must be blocked with "canary ok". If either fails, that is the first finding.
+   Then run `node "${CLAUDE_PLUGIN_ROOT}/scripts/flight-report.mjs" --project .` (add `--all` to include earlier sessions). Read it as it is.
 2. Compare with what should have happened for what the user asked: a new app should show spec, then feature runs with the implementer,
    reviewer and challenger agents, then accept at each milestone and full-scan before any push. Anything else is a gap.
 3. For each gap and each action that was blocked or never finished, find out why: read the relevant command, hook or guard.

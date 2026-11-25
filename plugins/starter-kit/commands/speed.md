@@ -7,18 +7,18 @@ Make this fast, and prove it: $ARGUMENTS
 Speed is measured, never guessed: a change that was not timed before and after is not an optimisation. Work from the biggest cost down
 and stop when the budget is met. Over-tuning costs more than it saves.
 
-1. **Know the target.** Read `.claude/speed.json` (create it with `node "<SCRIPTS>/speed-check.mjs" --project . --init`). The defaults mean
+1. **Know the target.** Read `.claude/speed.json` (create it with `node "${CLAUDE_PLUGIN_ROOT}/scripts/speed-check.mjs" --project . --init`). The defaults mean
    "on a mid-range phone on slow 4G: main content in 2.5 s, no jumping, taps answer in 100 ms". Tighten them for the pages and actions that
    matter most (sign-in, the core action). If the user named something that feels slow, put exactly that page or action in the budget.
 2. **Measure, in a real browser.** Run the speed test (`CLAUDE.md` names it; `e2e/speed.spec.js`), then
-   `node "<SCRIPTS>/speed-check.mjs" --project .`. It names which measure is over and what usually fixes it. No browser test set up yet:
+   `node "${CLAUDE_PLUGIN_ROOT}/scripts/speed-check.mjs" --project .`. It names which measure is over and what usually fixes it. No browser test set up yet:
    run `/starter-kit:init`'s browser step first, or say plainly that you could only measure the build (`perf-budget.mjs`, `delivery-check.mjs`).
 3. **Find the cause at the right level**, in this order, because each level hides the next:
-   - **Delivery:** `node "<SCRIPTS>/delivery-check.mjs" --dir <build folder> --project .` (blocking scripts, unsized images, nothing lazy,
+   - **Delivery:** `node "${CLAUDE_PLUGIN_ROOT}/scripts/delivery-check.mjs" --dir <build folder> --project .` (blocking scripts, unsized images, nothing lazy,
      giant images, fonts, caching, compression) and `perf-budget.mjs` (bundle size). Cheapest fixes, often the biggest win.
    - **Browser work:** long tasks and big bundles: split code by page, load heavy parts on demand, remove libraries for one function, avoid
      re-rendering everything on each change, never block the first paint on data the user doesn't see yet.
-   - **Server and API:** `node "<SCRIPTS>/api-check.mjs" --project .` (queries in loops, unbounded lists), then time the slow endpoint and count
+   - **Server and API:** `node "${CLAUDE_PLUGIN_ROOT}/scripts/api-check.mjs" --project .` (queries in loops, unbounded lists), then time the slow endpoint and count
      its queries. Add caching only for what is read far more than written, with a clear way to expire it.
    - **Database:** `/starter-kit:db`'s rehearsal at real volume (`db-rehearse.mjs --explain`): missing indexes, full scans, sorts without an index.
    - **Slow work in the user's way:** email, reports, image processing, third-party calls: move them to a background job and answer immediately.

@@ -22,7 +22,7 @@ Each confirmed break comes back with a failing test on its branch and the exact 
 
 ## 3. Check the tests themselves (mutation testing)
 Create a separate worktree for the current code (`git worktree add`), install dependencies there, then run
-`node "<SCRIPTS>/mutate.mjs" --project <that worktree> --test "<the project's test command>" --diff <base>` where `<base>` is
+`node "${CLAUDE_PLUGIN_ROOT}/scripts/mutate.mjs" --project <that worktree> --test "<the project's test command>" --diff <base>` where `<base>` is
 the last release or first commit. It breaks the code in small ways, one at a time, and reports every change the tests
 did NOT notice (each is behavior no test checks). Remove the worktree afterwards. A score below about 70% on
 the main logic means the tests are too weak to trust: say so.

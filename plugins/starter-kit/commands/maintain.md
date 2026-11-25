@@ -5,7 +5,7 @@ description: Use when a launched app is due for routine care (30+ days since the
 Do the routine maintenance for this launched project: $ARGUMENTS
 
 Software goes stale: libraries get security fixes, certificates and keys expire, backups silently stop. This is the monthly visit a
-good agency's maintenance plan covers. Check first: `node "<SCRIPTS>/maintenance-due.mjs" --project .` (not launched means there is nothing to do yet).
+good agency's maintenance plan covers. Check first: `node "${CLAUDE_PLUGIN_ROOT}/scripts/maintenance-due.mjs" --project .` (not launched means there is nothing to do yet).
 Keep the user's attention for decisions only; do the rest yourself and report in plain words.
 
 ## 1. Updates, safely
@@ -16,7 +16,7 @@ Keep the user's attention for decisions only; do the rest yourself and report in
 - New or changed packages go through the package guard as usual.
 
 ## 2. Security re-check
-Run `/starter-kit:audit` on what changed since the last maintenance (secret scan, the dependency audit, `node "<SCRIPTS>/license-check.mjs"` if it exists),
+Run `/starter-kit:audit` on what changed since the last maintenance (secret scan, the dependency audit, `node "${CLAUDE_PLUGIN_ROOT}/scripts/license-check.mjs"` if it exists),
 and re-read the red team's last findings for anything still open. Rotate any key that is old or may have been exposed.
 
 ## 3. Operations health

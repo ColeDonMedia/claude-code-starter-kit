@@ -109,6 +109,21 @@ test("pipeline: which hooks run for which events", () => {
   assert.deepEqual(pipeline("start", { source: "startup" }), ["session-start", "flight-recorder", "auto-update"]);
   assert.deepEqual(pipeline("start", { source: "clear" }), ["session-start", "flight-recorder"]);
   assert.deepEqual(pipeline("start", { source: "resume" }), ["flight-recorder"]);
+  assert.deepEqual(pipeline("subagent", { agent_type: "starter-kit:reviewer" }), ["subagent-start"]);
+});
+
+test("end to end: a starter-kit subagent is told where the kit's scripts are; other agents get nothing", () => {
+  const s = sandbox();
+  try {
+    const r = s.run("subagent", { hook_event_name: "SubagentStart", agent_type: "starter-kit:implementer", agent_id: "a1" });
+    const out = JSON.parse(r.stdout).hookSpecificOutput;
+    assert.equal(out.hookEventName, "SubagentStart");
+    const folder = /KIT SCRIPTS: (.+?)\. Wherever/.exec(out.additionalContext)[1];
+    assert.ok(readdirSync(folder).includes("code-index.mjs"), "the folder named is the real scripts folder");
+    assert.equal(s.run("subagent", { hook_event_name: "SubagentStart", agent_type: "general-purpose" }).stdout, "");
+  } finally {
+    s.done();
+  }
 });
 
 // ---- end to end through the real entry point ----
@@ -136,6 +151,23 @@ test("end to end: the push gate blocks with exit 2 and its message; a refusal be
     assert.match(r.stderr, /full-scan/);
     const f = s.run("pre", bash("git push --force origin main"));
     assert.equal(decision(f), "deny");
+  } finally {
+    s.done();
+  }
+});
+
+test("end to end: the push gate and the secret guard also stop the PowerShell tool", () => {
+  const s = sandbox({ "CLAUDE.md": "<!-- starter-kit:managed -->\n", "package.json": "{}" });
+  try {
+    for (const a of [["init", "-q"], ["config", "user.email", "t@example.com"], ["config", "user.name", "t"], ["config", "commit.gpgsign", "false"], ["add", "-A"], ["commit", "-q", "-m", "x"]]) spawnSync("git", ["-C", s.dir, ...a]);
+    const pwsh = (command) => ({ hook_event_name: "PreToolUse", tool_name: "PowerShell", tool_use_id: "t", tool_input: { command } });
+    const push = s.run("pre", pwsh("git push origin main; Write-Host done"));
+    assert.equal(push.status, 2, "an unscanned push is blocked from PowerShell too");
+    writeFileSync(join(s.dir, "config.js"), 'const key = "sk_live_' + "a1B2c3D4e5F6g7H8i9J0kLmN" + '";\n');
+    spawnSync("git", ["-C", s.dir, "add", "config.js"]);
+    const commit = s.run("pre", pwsh('git commit -m "add config"'));
+    assert.equal(decision(commit), "deny", "a staged secret is refused from PowerShell too");
+    assert.ok(!commit.stdout.includes("a1B2c3D4e5F6g7H8i9J0kLmN"), "the secret is never repeated");
   } finally {
     s.done();
   }

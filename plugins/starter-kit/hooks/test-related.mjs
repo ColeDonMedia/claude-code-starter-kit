@@ -15,6 +15,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { basename, dirname, extname, join, resolve } from "node:path";
 import { isTrusted } from "../scripts/trust-lib.mjs";
+import { remoteDbHosts } from "../scripts/db-lib.mjs";
 
 const done = () => process.exit(0);
 
@@ -129,6 +130,12 @@ if (!cmd) done();
 // project code. Run them only if the user approved this on this computer (scripts/trust-lib.mjs).
 const entry = typeof cfg.relatedTests === "string" ? `related:${cfg.relatedTests.trim()}` : "auto-runner";
 if (!isTrusted(root, entry)) done();
+
+// Never run tests against a database somewhere else: they can change or wipe real data (the session note says why).
+if (remoteDbHosts(root).length) {
+  if (process.env.KIT_DRY_RUN) process.stdout.write("SKIPPED: the project's settings point at a database that is not on this computer\n");
+  done();
+}
 
 if (process.env.KIT_DRY_RUN) {
   process.stdout.write(`CMD: ${cmd}\nCWD: ${cwd}\n`);

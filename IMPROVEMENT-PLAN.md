@@ -6,6 +6,28 @@ implementing session (Opus or Sonnet). It is ordered: do the phases in order, on
 **How to use this file.** Read `CLAUDE.md`, `HANDOFF.md` and this file. Do one phase, release it, tick its tasks here,
 then stop and report. Do not start the next phase in the same release.
 
+## Progress
+
+| Phase | Release | State |
+|---|---|---|
+| 0 — safety and correctness | 2.12.1 | **Done** (P0-1 to P0-9). D1 decided: keep the merged runner, with the canary, self-check and fail-closed net. |
+| 1 — verifiable | 2.13.0 | Next. Needs owner decisions D2 and D3. |
+| 2, 3, 4 | — | Not started. Phase 2 waits for one live trial (P1-6). |
+
+**Answers from the official docs (2026-11-25, hooks reference, sub-agents page, plugins reference):**
+- V1. The tool is `PowerShell`; its input has the command in `tool_input.command`, like Bash. The docs advise `Bash|PowerShell` matchers.
+- V2. A matcher of letters, digits, `_`, `-`, spaces, `,` and `|` is an exact list; anything else is an unanchored regex. The subagent
+  tool is `Agent` (`Task` is an older alias); the skill tool is `Skill`.
+- V3. `SubagentStart` exists, its matcher is the agent type (plugin agents are `<plugin>:<name>`), and it can add `additionalContext`.
+  Whether subagents also see the SessionStart note: not stated.
+- V4. `${CLAUDE_PLUGIN_ROOT}` is substituted inside skill, command and agent Markdown when Claude Code loads it (not only in hooks.json).
+  Not yet seen working live: the session note and the SubagentStart hook give the real path as a fallback.
+- V5. PreToolUse and PostToolUse carry `tool_use_id`. `Stop` is the main agent; subagents finish with `SubagentStop`.
+- V6. Not checked yet (needed for P1-2).
+- V7. Not checked yet (needed for P2-4).
+- V8. Exit 0 = go ahead (JSON fields apply); exit 2 = block, stderr goes to Claude; any other code = a non-blocking error, the action goes
+  ahead. So failing closed must use exit 2 (it does). Hooks for one event run in parallel; the default timeout is 600 s.
+
 ## Ground rules for the implementer
 
 1. **Never spend API tokens.** No `claude -p`, no `npx @anthropic-ai/claude-code`, no headless or SDK model calls, no
@@ -80,7 +102,8 @@ Use the `claude-code-guide` agent or the official docs, not memory. Record each 
 
 Small, urgent, low-risk. Nothing here adds a feature.
 
-### P0-1. Fix the two agents whose settings are silently dropped — Sonnet, S
+### P0-1. DONE in 2.12.1 — Fix the two agents whose settings are silently dropped — Sonnet, S
+- **Delivered:** agent headers quoted; docs test over every agent header (YAML, required fields, read-only means no writing tools).
 - **Why:** E1. Read-only reviewers currently have every tool.
 - **Change:** quote the `description:` of `agents/challenger.md` and `agents/security-reviewer.md` (or reword without `: `).
 - **Test:** extend the YAML test in `scripts/docs.test.mjs` to agents: an unquoted description containing `: ` or ` #` fails.
@@ -88,14 +111,16 @@ Small, urgent, low-risk. Nothing here adds a feature.
   described as read-only does not list `Write` or `Edit`.
 - **Done when:** the test fails on the old files and passes on the new ones.
 
-### P0-2. Remove the instruction that spends API credit; refresh `CLAUDE.md` — Sonnet, S
+### P0-2. DONE in 2.12.1 — Remove the instruction that spends API credit; refresh `CLAUDE.md` — Sonnet, S
+- **Delivered:** CLAUDE.md rewritten with a NEVER SPEND API TOKENS section and the current layout; docs test forbids headless-run instructions.
 - **Why:** E5.
 - **Change:** delete the "Test real behavior end to end with a current CLI: `npx …`" rule. Replace it with: "Never spend API
   tokens. Live behaviour is checked by the owner's trial runs (`DOGFOOD.md`) and the hook self-check (P0-6)." Update the layout
   section to the current commands, agents, hooks and scripts, and the session-note limit.
 - **Test:** a docs test that `CLAUDE.md` does not contain `claude-code@` or ` -p "`, and that it names every command file.
 
-### P0-3. Tell subagents where the kit's scripts are — Sonnet, S
+### P0-3. DONE in 2.12.1 — Tell subagents where the kit's scripts are — Sonnet, S
+- **Delivered:** done differently than written, after V3/V4: `${CLAUDE_PLUGIN_ROOT}/scripts/…` in all commands and agents (59 places), a SubagentStart hook (`hooks/subagent-start.mjs`) gives starter-kit agents the real folder, the session note asks for it in every brief; docs test forbids `<SCRIPTS>`/`<plugin>`.
 - **Why:** E3. Today every "run this kit script" line in an agent prompt is unresolvable.
 - **Change:** in `feature.md`, `review.md`, `redteam.md`, `audit.md` and `full-scan.md`: every agent brief must begin with the
   line `KIT SCRIPTS: <the real folder from the session note>`. In the agents, replace `<plugin>/scripts/` with
@@ -104,7 +129,8 @@ Small, urgent, low-risk. Nothing here adds a feature.
 - **Test:** extend the dead-reference test: no file may contain `<plugin>`; every command that launches an agent mentions
   `KIT SCRIPTS`.
 
-### P0-4. Guard the PowerShell tool — Opus, L
+### P0-4. DONE in 2.12.1 — Guard the PowerShell tool — Opus, L
+- **Delivered:** gate runs all guards for PowerShell; safety guard has a PowerShell reading mode; `guard-fuzz-powershell.test.mjs` (101 cases) plus push-gate and secret-guard tests through PowerShell. Remaining gaps are listed in the README limits.
 - **Why:** E2. On Windows every protection can be bypassed today by using the other shell tool.
 - **Change (after V1, V2):**
   1. `gate.mjs` `pipeline()`: treat the PowerShell tool as a shell command, so all five guards run.
@@ -124,7 +150,8 @@ Small, urgent, low-risk. Nothing here adds a feature.
 - **Done when:** the live probe from E2 is blocked the same way through both tools (the owner confirms after updating).
 - **Not in scope:** making the parser perfect. State the remaining gaps in the README limits.
 
-### P0-5. Stop hooks from running on every tool call — Sonnet, S
+### P0-5. DONE in 2.12.1 — Stop hooks from running on every tool call — Sonnet, S
+- **Delivered:** matchers are `Bash|PowerShell|Edit|Write|MultiEdit|Skill|Agent|Task`; docs test forbids `*` and checks the list.
 - **Why:** E4. About 0.6 s is added to every Read, Grep and Glob for no benefit.
 - **Change:** in `hooks.json` replace `"matcher": "*"` on PreToolUse and PostToolUse with the tools that need a hook:
   the shell tools, `Edit|Write|MultiEdit`, `Skill`, and `Agent|Task`. The flight recorder then records those only (they are
@@ -132,7 +159,8 @@ Small, urgent, low-risk. Nothing here adds a feature.
 - **Test:** a test that `hooks.json` has no `*` matcher, and that every tool named in `gate.mjs` `pipeline()` is matched.
 - **Done when:** a Read, Grep or Glob call starts no hook process.
 
-### P0-6. Make hook health visible, and fail safe — Opus, M
+### P0-6. DONE in 2.12.1 — Make hook health visible, and fail safe — Opus, M
+- **Delivered:** canary (`starter-kit-canary`), once-per-version self-check in the session note (only real hook runs record the version), fail-closed for shell commands in `gate.mjs`, tripwire in the CLAUDE.md template, `scripts/doctor.mjs`; `hooks/health.test.mjs`. No `/doctor` command (routing table is full); `/dogfood` runs the doctor.
 - **Why:** E18, E20. If the hooks stop working, nothing says so. This is worth more than choosing between the merged and
   separate hook set-ups, because neither has been watched live.
 - **Change:**
@@ -156,7 +184,8 @@ Small, urgent, low-risk. Nothing here adds a feature.
 - **OWNER DECISION D1:** keep the merged runner with this safety net (recommended), or go back to one process per hook.
   If the canary ever fails live, go back at once: restore the 2.11.0 `hooks.json` shape plus the PowerShell matcher.
 
-### P0-7. Do not auto-run tests against a remote database — Sonnet, M
+### P0-7. DONE in 2.12.1 — Do not auto-run tests against a remote database — Sonnet, M
+- **Delivered:** `remoteDbHosts()` in db-lib; verify-gate and test-related skip, the session note explains; tests in verify-gate, test-related and health tests.
 - **Why:** E14.
 - **Change:** `verify-gate.mjs` and `test-related.mjs` call `envHosts()` and `isLocalHost()` from `db-lib.mjs` before running
   anything. If the project's local settings name a database host that is not on this computer, they do not run and say why,
@@ -164,13 +193,15 @@ Small, urgent, low-risk. Nothing here adds a feature.
   Point local development at a local copy." Add the same warning to the session note.
 - **Test:** sandbox with a remote `DATABASE_URL`: no command runs, message printed once. Local or Compose host: runs as before.
 
-### P0-8. Narrow the approval-file rule — Sonnet, S
+### P0-8. DONE in 2.12.1 — Narrow the approval-file rule — Sonnet, S
+- **Delivered:** trust-store rule now matches writes only (redirects, tee, cp/mv destination, rm, editors, sed -i, PowerShell cmdlets, inline code that writes); fuzz round 5 (35 deny, 12 allow).
 - **Why:** E12.
 - **Change:** deny only when the file is the target of a write (redirect, `tee`, `cp`/`mv`/`rm` destination, `sed -i`, an
   editor, `Set-Content`/`Out-File`/`Add-Content`, a script that opens it for writing). Reading or mentioning it is allowed.
 - **Test:** fuzz entries first: `grep trusted.json x`, `echo "about trusted.json"`, `cat <path>` pass; every write form is denied.
 
-### P0-9. Small corrections — Sonnet, S
+### P0-9. DONE in 2.12.1 — Small corrections — Sonnet, S
+- **Delivered:** all listed items done.
 - `plugin.json` and `marketplace.json` descriptions rewritten to describe the current kit; add `author` (a generic name).
 - `init.md`: add `dbGuard`, `docsGate`, `flightLog` to the off-switch list; add `Speed test:` and `Size:` lines to the
   CLAUDE.md template; make the `HANDOFF.md` limit match the drift check; remove "three short documents".

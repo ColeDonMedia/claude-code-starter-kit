@@ -81,6 +81,13 @@ export function codePart(command) {
     .join("\n");
 }
 
+// The database hosts in the project's own settings that are NOT on this computer. The kit's automatic test runs (after an edit,
+// at the end of a turn) use those settings, so when this is not empty they must not run: tests could change real data.
+export function remoteDbHosts(root) {
+  const services = composeServices(root);
+  return [...new Set(envHosts(root).filter((h) => !isLocalHost(h, services)))];
+}
+
 export function assessDbCommand(fullCommand, root = null) {
   const command = codePart(fullCommand);
   const services = root ? composeServices(root) : new Set();

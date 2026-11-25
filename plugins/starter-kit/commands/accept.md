@@ -7,7 +7,7 @@ Get the owner's acceptance of a finished milestone: $ARGUMENTS
 Nothing counts as accepted because the tests pass. The owner has to see it and say so. A milestone is a group of roadmap features
 (`## Milestone N — name` in ROADMAP.md) with an `Accepted:` line.
 
-1. **Find it.** Run `node "<SCRIPTS>/roadmap-check.mjs" --project . --acceptance` to see which finished milestone is waiting. If
+1. **Find it.** Run `node "${CLAUDE_PLUGIN_ROOT}/scripts/roadmap-check.mjs" --project . --acceptance` to see which finished milestone is waiting. If
    none is, say so and stop.
 2. **Make it easy to try.** Start the app (the run command in CLAUDE.md) and give the user the way in (an address to open, a
    command, a file). If it can't be started here, say what is missing.

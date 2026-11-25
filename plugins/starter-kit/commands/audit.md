@@ -7,11 +7,11 @@ Audit the whole project's security and report in plain words: $ARGUMENTS
 You are looking at the entire codebase, not a diff. Read-only: change nothing until the user approves fixes.
 
 ## 1. Run the tools first (cheap and objective)
-- Secret scan of everything tracked, including old history: `node "<SCRIPTS>/secret-scan.mjs" --files $(git ls-files)`
+- Secret scan of everything tracked, including old history: `node "${CLAUDE_PLUGIN_ROOT}/scripts/secret-scan.mjs" --files $(git ls-files)`
   and, for history, `git log -p --all` through the same scanner if the project has been public or shared.
 - The ecosystem's dependency audit (`npm audit`, `pip-audit`, `cargo audit`, `bundler-audit`, `govulncheck`) and any
   static analyser that is already installed (`semgrep`, `bandit`, `gosec`). Don't install anything.
-- Dependencies: list direct dependencies and run `node "<SCRIPTS>/pkg-check.mjs" <npm|pypi|cargo> <name>`
+- Dependencies: list direct dependencies and run `node "${CLAUDE_PLUGIN_ROOT}/scripts/pkg-check.mjs" <npm|pypi|cargo> <name>`
   on any you don't recognise. Flag names that don't exist, brand-new ones, and any that run install scripts.
 
 ## 2. Have the security reviewer read it

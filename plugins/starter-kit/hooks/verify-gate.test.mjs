@@ -200,3 +200,20 @@ test("a missing tool is skipped, not reported as failing code", () => {
     p.cleanup();
   }
 });
+
+test("SAFETY: checks never run while the project's settings point at a database that is not on this computer", () => {
+  const RAN = 'node -e "require(\'fs\').writeFileSync(\'checks-ran\',\'x\')"';
+  const p = project({ verify: [RAN] });
+  try {
+    p.put(".env", "DATABASE_URL=postgres://app:pw@db.prod.example.com:5432/app\n");
+    p.put("src/a.js", "export const a = 2;\n");
+    assert.equal(stop(p).status, 0);
+    assert.equal(existsSync(join(p.dir, "checks-ran")), false, "tests must not run against a remote database");
+    p.put(".env", "DATABASE_URL=postgres://app:pw@localhost:5432/app\n");
+    p.put("src/a.js", "export const a = 3;\n");
+    stop(p);
+    assert.equal(existsSync(join(p.dir, "checks-ran")), true, "a local database is fine");
+  } finally {
+    p.cleanup();
+  }
+});

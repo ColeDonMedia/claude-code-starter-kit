@@ -36,15 +36,15 @@ brief and in the project's files.
    its user-facing criteria: the test opens the running app, does what a person would do, and checks what they would see,
    at the phone (375 px) and desktop (1280 px) sizes. Save a screenshot of each state to `.claude/screens/<feature>/` for the
    reviewers, and map the criterion to it as `→ test: e2e/<file>::<test name>`. If CLAUDE.md names a "Speed budget", run
-   `node "<plugin>/scripts/perf-budget.mjs" --dir <build folder>` after building and fix anything over budget before reporting.
+   `node "${CLAUDE_PLUGIN_ROOT}/scripts/perf-budget.mjs" --dir <build folder>` after building and fix anything over budget before reporting.
    Fast by default, every time (slowness is much cheaper to avoid than to fix): never run a query or network call inside a loop (load
    what the loop needs in one query first); every list endpoint takes a limit and a page, and the database has an index for each column
    a new query filters, joins or sorts on; for any endpoint that returns a list, write a test that counts the database queries and
    asserts the count does not grow with the number of rows; give images a width and height and `loading="lazy"` below the first screen;
    load heavy libraries and routes on demand; never block the first paint on data that isn't shown yet; slow work (email, reports,
    images, third-party calls) goes to a background job, not the user's request; every tap shows a result or pressed state at once, with
-   optimistic updates and skeletons instead of blank screens. After building, run `node "<plugin>/scripts/api-check.mjs" --project .
-   --base <MAIN>` (fix every HIGH) and, for screens, the speed test and `node "<plugin>/scripts/speed-check.mjs" --project .`; report the numbers.
+   optimistic updates and skeletons instead of blank screens. After building, run `node "${CLAUDE_PLUGIN_ROOT}/scripts/api-check.mjs" --project .
+   --base <MAIN>` (fix every HIGH) and, for screens, the speed test and `node "${CLAUDE_PLUGIN_ROOT}/scripts/speed-check.mjs" --project .`; report the numbers.
    Secure by default, every time (these are the mistakes that become breaches):
    - Check who is asking on every endpoint, action and query: authenticate, then authorize (can THIS user touch THIS
      record?). Never trust an id, role, price or flag sent by the browser.
@@ -57,12 +57,12 @@ brief and in the project's files.
      `SameSite`) and sensible response headers. Error messages shown to users must not reveal internals.
    - Uploads: limit type and size, store outside the web root or in a private bucket, never use the original filename as a path.
    - Databases: only ever a local copy (a guard blocks anything else). Any migration you write must pass
-     `node "<plugin>/scripts/migration-check.mjs" --project .` with no HIGH findings, use expand-migrate-contract for removals, renames
+     `node "${CLAUDE_PLUGIN_ROOT}/scripts/migration-check.mjs" --project .` with no HIGH findings, use expand-migrate-contract for removals, renames
      and type changes, and keep data changes out of migrations (a separate batched, resumable backfill, as `/starter-kit:db` describes).
      Index the columns new queries filter, join or sort on.
    - Add a test for each security criterion in the brief (for example "user A cannot read user B's record").
    New dependencies: add only what you need. Before adding one you haven't used, confirm it exists and is
-   established (`node "<plugin>/scripts/pkg-check.mjs" npm <name>`, or pypi / cargo); a package guard also checks
+   established (`node "${CLAUDE_PLUGIN_ROOT}/scripts/pkg-check.mjs" npm <name>`, or pypi / cargo); a package guard also checks
    automatically and will stop a name that doesn't exist. Never invent a package name; look up the real one in the
    official docs. Commit the lockfile so versions are exact.
    Document as you go, so a stranger (or the next bot) can read the code and understand it: every new file starts
@@ -71,9 +71,9 @@ brief and in the project's files.
    comment the obvious. If you add a folder, a data table, an external service, a setting or an environment variable,
    say so in your report so `PROJECT.md` (the master document) can be updated.
 6. Run the FULL test suite, plus typecheck and lint if the project has them. All must be green. Exception: in a project whose
-   CLAUDE.md says `Size: large`, run the tests that `node "<plugin>/scripts/scoped-tests.mjs" --project . --base <MAIN>` lists (all of
+   CLAUDE.md says `Size: large`, run the tests that `node "${CLAUDE_PLUGIN_ROOT}/scripts/scoped-tests.mjs" --project . --base <MAIN>` lists (all of
    them; when it prints FULL SUITE, run the full suite), and say in your report that the run was scoped and why. Before changing a
-   function, type or file that other code uses, run `node "<plugin>/scripts/code-index.mjs" --project . --impact <file>` and update the
+   function, type or file that other code uses, run `node "${CLAUDE_PLUGIN_ROOT}/scripts/code-index.mjs" --project . --impact <file>` and update the
    dependents it lists in the same change; find where things live with `--find <name>` instead of reading folders.
 7. Commit your work on your branch with a clear message. Never push, never merge, never switch the main
    checkout's branch.

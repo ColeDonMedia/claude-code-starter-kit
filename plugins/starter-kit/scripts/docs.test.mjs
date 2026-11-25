@@ -28,6 +28,12 @@ test("HANDOFF.md exists and is about the current version", () => {
   for (const heading of ["Not verified", "Do this first next session"]) assert.ok(h.includes(heading), `HANDOFF.md needs a "${heading}" section`);
 });
 
+test("the repo's own CLAUDE.md never tells a session to spend API tokens on a headless run", () => {
+  const rules = read("CLAUDE.md");
+  assert.ok(!/claude-code@|\s-p\s+["']|--plugin-dir|--output-format/.test(rules), "CLAUDE.md must not instruct a headless or scripted model run");
+  assert.match(rules, /NEVER SPEND API TOKENS/);
+});
+
 test("the README mentions every command and every hook, so nothing is undocumented", () => {
   const readme = read("README.md");
   for (const f of readdirSync(join(PLUGIN, "commands"))) {
@@ -81,6 +87,28 @@ test("every script that a command or agent tells Claude to run really exists", (
   }
 });
 
+test("commands and agents name the kit's files only through ${CLAUDE_PLUGIN_ROOT}, never an undefined placeholder", () => {
+  for (const f of textFiles.filter((x) => /[\\/](commands|agents)[\\/]/.test(x))) {
+    const t = readFileSync(f, "utf8");
+    for (const bad of ["<SCRIPTS>", "<plugin>"]) assert.ok(!t.includes(bad), `${f.replace(REPO, "")} still uses ${bad}`);
+    for (const m of t.matchAll(/\$\{CLAUDE_PLUGIN_ROOT\}\/([a-z]+)\//g)) assert.ok(existsSync(join(PLUGIN, m[1])), `${f.replace(REPO, "")} points at ${m[1]}/, which the plugin does not have`);
+  }
+  assert.ok(existsSync(join(PLUGIN, "templates", "speed.spec.js")));
+});
+
+test("hooks run only for the tools that need them (no hook process for every Read, Grep or Glob), and every shell tool is covered", () => {
+  const cfg = JSON.parse(readFileSync(join(PLUGIN, "hooks", "hooks.json"), "utf8")).hooks;
+  for (const ev of ["PreToolUse", "PostToolUse"]) {
+    for (const g of cfg[ev]) {
+      assert.ok(g.matcher && g.matcher !== "*", `${ev} must not match every tool`);
+      const tools = g.matcher.split("|");
+      for (const t of ["Bash", "PowerShell", "Edit", "Write", "MultiEdit", "Skill", "Agent"]) assert.ok(tools.includes(t), `${ev} does not match ${t}`);
+      for (const t of ["Read", "Grep", "Glob"]) assert.ok(!tools.includes(t), `${ev} should not start a hook for ${t}`);
+    }
+  }
+  assert.ok(cfg.SubagentStart, "subagents must be told where the kit's scripts are");
+});
+
 test("every /starter-kit:command that anything mentions really exists", () => {
   for (const f of textFiles) {
     for (const m of readFileSync(f, "utf8").matchAll(/starter-kit:([a-z-]+)/g)) {
@@ -104,6 +132,28 @@ test("command descriptions are valid YAML (an unquoted ': ' silently drops the w
   for (const n of commandNames) {
     const d = /^description:\s*(.+)$/m.exec(readFileSync(join(PLUGIN, "commands", `${n}.md`), "utf8"))?.[1] ?? "";
     if (!/^["']/.test(d)) assert.ok(!d.includes(": ") && !d.includes(" #"), `commands/${n}.md has an unquoted description containing ': ' or ' #'; wrap it in quotes`);
+  }
+});
+
+// The same YAML rule for agents, plus the settings that keep reviewers read-only. A broken header makes Claude Code load the
+// agent with no description and ALL tools, silently (2.12.0 shipped two agents like that).
+const frontmatter = (text) => (/^---\r?\n([\s\S]*?)\r?\n---/.exec(text)?.[1] ?? "");
+test("agent headers are valid YAML, complete, and read-only agents cannot write", () => {
+  for (const n of agentNames) {
+    const head = frontmatter(readFileSync(join(PLUGIN, "agents", `${n}.md`), "utf8"));
+    const field = (k) => new RegExp(`^${k}:\\s*(.+)$`, "m").exec(head)?.[1]?.trim() ?? "";
+    for (const k of ["name", "description", "model"]) assert.ok(field(k), `agents/${n}.md has no ${k}`);
+    for (const k of ["name", "description", "model", "tools", "disallowedTools"]) {
+      const v = field(k);
+      if (v && !/^["']/.test(v)) assert.ok(!v.includes(": ") && !v.includes(" #"), `agents/${n}.md: ${k} contains ': ' or ' #' unquoted; wrap it in quotes`);
+    }
+    assert.ok(field("tools") || field("disallowedTools"), `agents/${n}.md must limit its tools`);
+    if (/read-only/i.test(field("description"))) {
+      const tools = field("tools");
+      const denied = field("disallowedTools");
+      if (tools) assert.ok(!/\b(Write|Edit|MultiEdit|NotebookEdit)\b/.test(tools), `agents/${n}.md says read-only but lists a writing tool`);
+      else assert.ok(/\bWrite\b/.test(denied) && /\bEdit\b/.test(denied), `agents/${n}.md says read-only but does not disallow Write and Edit`);
+    }
   }
 });
 

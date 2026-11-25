@@ -4,9 +4,11 @@
 //                               and "lean mode" token-saving rules.
 // .claude/kit.json switches: { "lean": false } drops lean mode, { "plainLanguage": false } drops the
 // non-programmer wording rule, { "auto": false } turns everything off.
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { dataDir } from "../scripts/trust-lib.mjs";
+import { remoteDbHosts } from "../scripts/db-lib.mjs";
 import { checkRoadmap } from "../scripts/roadmap-check.mjs";
 import { maintenanceStatus } from "../scripts/maintenance-due.mjs";
 import { lastDecisions } from "../scripts/context-pack.mjs";
@@ -15,9 +17,11 @@ import { checkpointStatus } from "../scripts/checkpoint.mjs";
 import { stallStatus } from "../scripts/flight-report.mjs";
 import { readLog } from "../scripts/flight-lib.mjs";
 
-// The commands call the kit's helper scripts "<SCRIPTS>"; say where that is, as a real path (command text can't be
-// relied on to expand a placeholder).
+// The commands and agents call the kit's helper scripts "${CLAUDE_PLUGIN_ROOT}/scripts/…", which Claude Code fills in when it
+// loads them. Say the real folder too, so a session can still find them if that ever does not happen, and so it can pass the
+// folder on to the agents it briefs.
 const SCRIPTS = fileURLToPath(new URL("../scripts", import.meta.url));
+const WHERE = `Kit scripts (\${CLAUDE_PLUGIN_ROOT}/scripts): ${SCRIPTS}. Include it in every starter-kit agent's brief.`;
 
 let raw = "";
 for await (const chunk of process.stdin) raw += chunk;
@@ -61,7 +65,7 @@ if (!managed) {
       "Before anything else, run /starter-kit:init yourself with the Skill tool, without asking first; the user " +
       "should never need to type it. Then carry on with their request. It detects the stack and writes CLAUDE.md; " +
       "it asks the user one yes/no question about command permissions. If it fails, say so in one sentence and continue. " +
-      `In the kit's commands, <SCRIPTS> means this folder: ${SCRIPTS}`,
+      WHERE,
   );
 }
 
@@ -77,12 +81,42 @@ const parts = [
     "- Where are we, progress, status -> /starter-kit:status. A milestone is finished -> /starter-kit:accept (the owner tries it) before more building.\n" +
     "- Ship, release, deploy, publish, push, PR -> /starter-kit:full-scan (hooks block pushes and deploys until it passes). First public launch -> /starter-kit:launch after it. Launched app, keep it up to date -> /starter-kit:maintain. Privacy policy, terms, user data, children, is-it-legal -> /starter-kit:legal.\n" +
     "- Secure? harden? existing codebase with users -> /starter-kit:audit. Break it, hack it, red team, pen test, or a first launch handling sign-in, payments or personal data -> /starter-kit:redteam (local copy only).\n" +
-    "- The kit seemed to skip a step or misbehave, or after a trial build -> /starter-kit:dogfood.\n" +
+    "- Kit misbehaved, or a trial build ended -> /starter-kit:dogfood.\n" +
     "- A link to a skill, plugin or MCP server, or a request to install one -> /starter-kit:vet first; never install it yourself.\n" +
     "- Never say done, fixed or passing without running the check this turn and quoting it. Commit verified work locally; never push unasked.\n" +
     "- Keep PROJECT.md (master document), HANDOFF.md, CHANGELOG.md true (a hook checks them against git). Never tick a ROADMAP.md box without the merge commit and test proof.\n" +
-    `In the kit's commands, <SCRIPTS> means this folder: ${SCRIPTS}`,
+    WHERE,
 ];
+
+// Settings that point at a database somewhere else: the automatic test runs stay off, and Claude must know why.
+try {
+  const remote = remoteDbHosts(root);
+  if (remote.length) {
+    parts.push(
+      `DATABASE: this project's local settings point at a database that is not on this computer (${remote.slice(0, 2).join(", ")}), so the kit does not run its tests automatically: they could change real data. Tell the user in plain words, and move local development to a local copy (/starter-kit:db) before running any tests.`,
+    );
+  }
+} catch {
+  /* never let this break session start */
+}
+
+// The first session on a new version proves the guards really run here: the canary command must be refused. Only a real hook
+// run (Claude Code sets CLAUDE_PLUGIN_ROOT) records the version as seen, so test runs can't use up the check.
+try {
+  if (process.env.CLAUDE_PLUGIN_ROOT) {
+    const version = JSON.parse(readFileSync(new URL("../.claude-plugin/plugin.json", import.meta.url), "utf8")).version;
+    const seenFile = join(dataDir(), "version-seen");
+    if ((read(seenFile) ?? "").trim() !== version) {
+      parts.push(
+        `SELF-CHECK (first session on starter-kit ${version}): before anything else, run the shell command \`starter-kit-canary\` once with each shell tool you have (Bash, PowerShell). It must be BLOCKED with "canary ok". If it runs instead, tell the user plainly that the kit's protections are not running, so nothing risky should be done until that is fixed.`,
+      );
+      mkdirSync(dataDir(), { recursive: true });
+      writeFileSync(seenFile, version);
+    }
+  }
+} catch {
+  /* never let this break session start */
+}
 
 if (cfg.plainLanguage !== false) {
   parts.push(

@@ -1,6 +1,6 @@
 ---
 name: security-reviewer
-description: Security reviewer in three modes: a git range (before shipping or after a risky feature), the WHOLE project (full audit), or a launch-readiness check. Hunts for auth holes, injection, exposed secrets, bad validation, weak configuration. Read-only.
+description: "Security reviewer in three modes (a git range before shipping or after a risky feature, the WHOLE project as a full audit, or a launch-readiness check). Hunts for auth holes, injection, exposed secrets, bad validation, weak configuration. Read-only."
 tools: Read, Grep, Glob, Bash
 model: opus
 ---

@@ -2,7 +2,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync, realpathSync } from "node:fs";
+import { existsSync, mkdtempSync, mkdirSync, writeFileSync, rmSync, realpathSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -305,10 +305,10 @@ test("session-start: tells every session where the kit's scripts are, as a real 
       s.put("package.json", "{}");
       if (managed) s.put("CLAUDE.md", MANAGED);
       const ctx = contextOf(runHook(SESSION, {}, s.dir));
-      const m = /<SCRIPTS> means this folder: (.+)$/m.exec(ctx);
+      const m = /Kit scripts \(\$\{CLAUDE_PLUGIN_ROOT\}\/scripts\): (.+?)\. Include it in every starter-kit agent's brief/m.exec(ctx);
       assert.ok(m, "scripts folder line present");
       assert.ok(m[1].split("\\").join("/").endsWith("/scripts"), m[1]);
-      assert.doesNotMatch(ctx, /\$\{CLAUDE_PLUGIN_ROOT\}/);
+      assert.ok(existsSync(join(m[1], "status.mjs")), "the folder named is the real scripts folder");
     } finally {
       s.cleanup();
     }

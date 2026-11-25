@@ -47,10 +47,10 @@ loads before consent); account deletion and data export if section 2 requires th
 button. These are normal features: build each through `/starter-kit:feature` with its own tests.
 
 ## 5. Library licenses
-Run `node "<SCRIPTS>/license-check.mjs" --project .` (after installing dependencies). Restrictive licenses (GPL, AGPL, non-commercial, source-available)
+Run `node "${CLAUDE_PLUGIN_ROOT}/scripts/license-check.mjs" --project .` (after installing dependencies). Restrictive licenses (GPL, AGPL, non-commercial, source-available)
 and libraries with no stated license are problems: replace them or have the owner decide. Generate the attribution list with `--notices` into
 `THIRD_PARTY_LICENSES.md` and link it from the app's about or legal page.
 
 ## 6. Check and record
-Run `node "<SCRIPTS>/legal-check.mjs" --project .` and fix what it reports. Add a "Legal" note and any open items to `PROJECT.md` and
+Run `node "${CLAUDE_PLUGIN_ROOT}/scripts/legal-check.mjs" --project .` and fix what it reports. Add a "Legal" note and any open items to `PROJECT.md` and
 `HANDOFF.md`, and a line to `CHANGELOG.md`. Tell the user in plain words what is done, what only a lawyer can settle, and what they must fill in.

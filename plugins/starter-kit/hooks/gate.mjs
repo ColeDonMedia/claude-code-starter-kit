@@ -6,6 +6,7 @@
 //   post  (after any tool)    flight recorder; after file edits: related tests.
 //   stop  (a turn ends)       flight recorder, verify gate, docs gate.
 //   start (a session starts)  session note (startup, clear, compact), flight recorder, auto-update (startup only).
+//   subagent (one starts)     tells starter-kit subagents where the kit's scripts are.
 // Every hook stays a normal script that is tested alone and through here. A hook that crashes is reported, not skipped silently.
 import { pathToFileURL } from "node:url";
 import { dirname, join, resolve } from "node:path";
@@ -18,12 +19,14 @@ const url = (name) => pathToFileURL(join(HERE, `${name}.mjs`)).href;
 export function pipeline(mode, input) {
   const ti = input?.tool_input ?? {};
   const tool = input?.tool_name;
-  const isBash = tool === "Bash" || (!tool && typeof ti.command === "string");
+  // Every shell tool gets every guard: Bash, and PowerShell on Windows (until 2.12.1 PowerShell skipped them all).
+  const isShell = tool === "Bash" || tool === "PowerShell" || (!tool && typeof ti.command === "string");
   const isEdit = ["Edit", "Write", "MultiEdit"].includes(tool) || (!tool && typeof ti.file_path === "string" && typeof ti.command !== "string");
-  if (mode === "pre") return ["flight-recorder", ...(isBash ? ["safety-guard", "db-guard", "secret-guard", "push-gate", "package-guard"] : isEdit ? ["file-guard"] : [])];
+  if (mode === "pre") return ["flight-recorder", ...(isShell ? ["safety-guard", "db-guard", "secret-guard", "push-gate", "package-guard"] : isEdit ? ["file-guard"] : [])];
   if (mode === "post") return ["flight-recorder", ...(isEdit ? ["test-related"] : [])];
   if (mode === "stop") return ["flight-recorder", "verify-gate", "docs-gate"];
   if (mode === "start") return [...(["startup", "clear", "compact", undefined].includes(input?.source) ? ["session-start"] : []), "flight-recorder", ...(input?.source === "startup" ? ["auto-update"] : [])];
+  if (mode === "subagent") return ["subagent-start"];
   return [];
 }
 
@@ -37,14 +40,28 @@ export async function main(mode, only = null) {
     /* each hook handles unparseable input itself */
   }
   const names = only ?? pipeline(mode, input); // `only` is for tests: run exactly these hooks, whatever the input looks like
+  // A shell command that could not be checked is refused (exit 2 blocks it). Everywhere else a broken hook only warns, so a bug
+  // can never lock a session; the refusal says how to find out what is wrong.
+  const failClosed = mode === "pre" && (input?.tool_name === "Bash" || input?.tool_name === "PowerShell" || (!input?.tool_name && typeof input?.tool_input?.command === "string"));
   const results = [];
-  for (const name of names) {
-    const r = await runHook(url(name), raw);
-    results.push(r);
-    // A block or a refusal settles it: skip the rest (saves time, and never runs a network check for a command that is refused).
-    if (r.code === 2 || /"permissionDecision":\s*"deny"/.test(r.out)) break;
+  let broken = null;
+  try {
+    for (const name of names) {
+      const r = await runHook(url(name), raw);
+      results.push(r);
+      if (r.crashed && !broken) broken = `${name}: ${String(r.crashed?.message ?? r.crashed).split("\n")[0]}`;
+      // A block or a refusal settles it: skip the rest (saves time, and never runs a network check for a command that is refused).
+      if (r.code === 2 || /"permissionDecision":\s*"deny"/.test(r.out)) break;
+    }
+  } catch (e) {
+    broken = `the hook runner: ${String(e?.message ?? e).split("\n")[0]}`;
   }
   const c = combine(results);
+  if (broken && failClosed && c.code !== 2 && !/"permissionDecision":\s*"deny"/.test(c.stdout)) {
+    process.stderr.write(`A starter-kit guard crashed, so this command was not checked and was not run (${broken}). Tell the user, and run the kit's doctor: node "${join(HERE, "..", "scripts", "doctor.mjs")}" --project .\n`);
+    process.exitCode = 2;
+    return;
+  }
   if (c.stdout) process.stdout.write(c.stdout);
   if (c.stderr) process.stderr.write(c.stderr);
   process.exitCode = c.code;

@@ -14,12 +14,12 @@ the running code still uses the old column. Work slowly and prove each step on a
    expand, migrate, contract: (1) add the new thing alongside the old, (2) ship code that writes both and reads the new, (3) backfill
    old rows, (4) only in a later release remove the old one. Required columns start optional (or with a default) and become required
    after the backfill. Big-table indexes are built without blocking writes (Postgres: `CONCURRENTLY`).
-3. **Check every migration:** `node "<SCRIPTS>/migration-check.mjs" --project .`. Fix every HIGH finding by following its "Safer" line.
+3. **Check every migration:** `node "${CLAUDE_PLUGIN_ROOT}/scripts/migration-check.mjs" --project .`. Fix every HIGH finding by following its "Safer" line.
    Only the owner may accept a risk: explain it in plain words (what could go wrong, for how long, how it would be undone) and, if they
    accept, add the comment `kit: accepted-risk — owner said "<their words>"` on that line.
 4. **Rehearse at real size.** Ask (or estimate from the plan) how many rows the main tables will have after a year; use at least
    100,000 for anything users create, 1,000,000 for logs and events. SQLite:
-   `node "<SCRIPTS>/db-rehearse.mjs" --sqlite <db file> --seed <parent>=<rows> --seed <child>=<rows> --migrate <file.sql> --explain "<each new query>"`.
+   `node "${CLAUDE_PLUGIN_ROOT}/scripts/db-rehearse.mjs" --sqlite <db file> --seed <parent>=<rows> --seed <child>=<rows> --migrate <file.sql> --explain "<each new query>"`.
    Postgres or MySQL: fill a local Docker copy (`generate_series`), run `EXPLAIN (FORMAT JSON)` for each new query, save it and pass it with
    `--pg-plan <file>`. Fix every full scan of a big table (usually a missing index) and say how long the migration took.
 5. **Data changes are backfills, not migrations.** Write them as a separate script that:
@@ -30,7 +30,7 @@ the running code still uses the old column. Work slowly and prove each step on a
 6. **Hand over the live change.** Write a section in `RUNBOOK.md` (or `PROJECT.md` if there is no runbook): the exact commands in order
    (backup first, then deploy, migrate, backfill, contract), how long each took in the rehearsal, what to watch, and how to undo each step.
    Tell the owner in plain words that they run it, and that you will check the result with them. Never run it yourself.
-7. Regenerate the one-page picture of the database: `node "<SCRIPTS>/schema-map.mjs" --project . --write` (from the migrations; for
+7. Regenerate the one-page picture of the database: `node "${CLAUDE_PLUGIN_ROOT}/scripts/schema-map.mjs" --project . --write` (from the migrations; for
    code-based migrations such as Django or Alembic, point `--sqlite` at the rehearsal copy or `--sql` at a schema dump of a local copy).
    Read `SCHEMA.md` before writing queries instead of guessing column names.
 8. Record the design in `DECISIONS.md` (with a `{#D-nnn}` id and `[[T-table]]` links to the tables it touches), and add tests for the

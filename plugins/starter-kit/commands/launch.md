@@ -10,9 +10,9 @@ accounts, adding a payment method, pasting keys into a hosting dashboard). Never
 put a secret value in any file, and ask before anything that costs money or creates an account.
 
 ## 0. Before you start
-- `node "<SCRIPTS>/roadmap-check.mjs" --project . --acceptance` must show nothing waiting (the owner has tried every finished
+- `node "${CLAUDE_PLUGIN_ROOT}/scripts/roadmap-check.mjs" --project . --acceptance` must show nothing waiting (the owner has tried every finished
   milestone), and `/starter-kit:full-scan` must have passed. If the app has sign-in, payments, personal data or uploads, the
-  red team (`/starter-kit:redteam`) must have run, and `node "<SCRIPTS>/legal-check.mjs" --project .` must pass (privacy policy, terms and
+  red team (`/starter-kit:redteam`) must have run, and `node "${CLAUDE_PLUGIN_ROOT}/scripts/legal-check.mjs" --project .` must pass (privacy policy, terms and
   the data inventory; `/starter-kit:legal` builds them). If not, do those first.
 - Read `PROJECT.md` for the stack and `CLAUDE.md` for the commands. Pick the hosting that fits the stack and the owner's budget;
   if undecided, have the `researcher` agent compare current options and prices (cheap and simple wins) and give the user a recommendation.
@@ -28,7 +28,7 @@ second step (a promote button, or a tagged release). Use the host's own git inte
 in `.github/workflows/` (read-only permissions, secrets only from the host's secret store). Write the steps into "How to deploy".
 
 ## 3. Know when it breaks
-- **Errors:** add an error-tracking service with a free tier. Vet the package first (`node "<SCRIPTS>/pkg-check.mjs"`), scrub personal data
+- **Errors:** add an error-tracking service with a free tier. Vet the package first (`node "${CLAUDE_PLUGIN_ROOT}/scripts/pkg-check.mjs"`), scrub personal data
   from what it records, and make sure a test error shows up.
 - **Uptime:** set a check that visits the home page and one important page every minute or two, and emails the owner on failure.
 - **Where to look:** put the dashboard links and what "normal" looks like in "Monitoring and alerts".
@@ -83,7 +83,7 @@ Restore last tested: YYYY-MM-DD
 ## Accounts
 <which services have accounts and who owns each; never passwords or keys>
 ```
-Run `node "<SCRIPTS>/runbook-check.mjs" --project .` and fix every problem it prints.
+Run `node "${CLAUDE_PLUGIN_ROOT}/scripts/runbook-check.mjs" --project .` and fix every problem it prints.
 
 ## 9. The go-ahead
 Do a final smoke check against the live-like staging address (the home page loads, sign-up works, the error alert fires on a test

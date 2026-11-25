@@ -48,8 +48,8 @@ plain sentence that it is public history risk, and that the key must be rotated.
 - The related-tests hook auto-detects Vitest, Jest, pytest and Go. For another runner add
   `"relatedTests": "<command with {file}>", "extensions": [".ext"]`, or `"relatedTests": false` if there is no
   fast way to run a subset.
-- Off switches exist (`"auto"`, `"guard"`, `"secretGuard"`, `"packageGuard"`, `"autoGate"`, `"verifyGate"`, `"lean"`,
-  `"plainLanguage"`, `"autoUpdate"`, and `"guardAllow": [rule ids]`). Never set one on your own. Only if the user
+- Off switches exist (`"auto"`, `"guard"`, `"secretGuard"`, `"packageGuard"`, `"dbGuard"`, `"autoGate"`, `"verifyGate"`,
+  `"docsGate"`, `"flightLog"`, `"lean"`, `"plainLanguage"`, `"autoUpdate"`, and `"guardAllow": [rule ids]`). Never set one on your own. Only if the user
   asks in chat to turn something off may you set it, and it then does nothing until the user approves it in a
   permission prompt (step 6). A project file alone can never switch a protection off.
 
@@ -57,13 +57,13 @@ plain sentence that it is public history risk, and that the key must be rotated.
 The checks, the related-tests runner and any switch above come from a file inside the project, so they run only
 after the user approves them on this computer. Ask the user ONE plain yes/no question that covers this and the
 permission question in step 4 together: "May I run this project's own tests and checks without asking each time
-(<the commands>)?" If they say yes, run `node "<SCRIPTS>/trust.mjs" --project .` (Claude Code
+(<the commands>)?" If they say yes, run `node "${CLAUDE_PLUGIN_ROOT}/scripts/trust.mjs" --project .` (Claude Code
 then shows them a permission prompt listing the exact commands, which is their real approval). If they say no, skip
 it: the project works, only the automatic checks stay off, and you don't ask again this session.
 
 
 ## 7. Guard every commit (any tool, not only Claude)
-Run `node "<SCRIPTS>/install-git-hooks.mjs" --project .`. It copies the secret scanner into
+Run `node "${CLAUDE_PLUGIN_ROOT}/scripts/install-git-hooks.mjs" --project .`. It copies the secret scanner into
 `.claude/tools/` and installs a git pre-commit hook, so a key, env file or private detail is refused by git itself
 whoever commits. It never changes a pre-commit hook it didn't write. Skip it if the folder is not a git repository.
 Tell the user, once, that they can list their name, email and client names (one per line) in
@@ -98,7 +98,7 @@ Create `.claude/launch.json` with the real dev command and port, so the app can 
 
 Then set up end-to-end tests that open the real app in a browser and click through it, at phone and desktop sizes. Unit
 tests can all pass while the page is broken; this is what catches that.
-- First check there is room: `node "<SCRIPTS>/disk-free.mjs" --path . --need-mb 800`. The browser download is several hundred
+- First check there is room: `node "${CLAUDE_PLUGIN_ROOT}/scripts/disk-free.mjs" --path . --need-mb 800`. The browser download is several hundred
   megabytes. If it says NOT ENOUGH or TIGHT, tell the user in plain words and put the browsers on a drive with space
   (set `PLAYWRIGHT_BROWSERS_PATH` to a folder there) instead of letting the install fail halfway.
 - Use Playwright (JavaScript or TypeScript projects: add `@playwright/test` as a dev dependency, then `npx playwright install chromium`; the package guard vets
@@ -108,12 +108,12 @@ tests can all pass while the page is broken; this is what catches that.
 - Record the command in CLAUDE.md as `End-to-end (browser) tests: <command>` and put the build folder and limits in
   `Speed budget:` (see the template). Add the e2e command to the GitHub checks workflow.
 - Write ONE smoke test now: the home page loads at both sizes and shows no console errors. `/starter-kit:feature` adds more per feature.
-- Copy `<plugin>/templates/speed.spec.js` to `e2e/speed.spec.js` unchanged (it measures how fast pages load and taps respond on a throttled
-  phone profile and writes `.claude/speed-results.json`), run `node "<SCRIPTS>/speed-check.mjs" --project . --init` to create the budget
+- Copy `${CLAUDE_PLUGIN_ROOT}/templates/speed.spec.js` to `e2e/speed.spec.js` unchanged (it measures how fast pages load and taps respond on a throttled
+  phone profile and writes `.claude/speed-results.json`), run `node "${CLAUDE_PLUGIN_ROOT}/scripts/speed-check.mjs" --project . --init` to create the budget
   `.claude/speed.json`, and record `Speed test: <command that runs e2e/speed.spec.js>` in CLAUDE.md. Add `.claude/speed-results.json` to `.gitignore`.
 Skip all of this, and write `none` in CLAUDE.md, for projects with no browser UI (a command-line tool, a library, an API only).
 
-## 10. The project's memory: three short documents
+## 10. The project's memory: short documents any session can pick up from
 Create these if missing (never overwrite ones that exist), fill what you know and leave `TODO` for the rest. Any
 session, by any bot or person, must be able to read them and carry on with full context. Hooks keep them honest:
 the handoff must cover the newest code commit, and roadmap ticks must be backed by merges and tests.
@@ -145,7 +145,7 @@ the handoff must cover the newest code commit, and roadmap ticks must be backed 
 <in order>
 ```
 
-`HANDOFF.md` — what the previous session leaves for the next. Rewritten, never appended. Under 25 lines:
+`HANDOFF.md` — what the previous session leaves for the next. Rewritten, never appended. Under 40 lines (the drift check warns above 60):
 ```markdown
 # Handoff
 Covers-through: none
@@ -173,6 +173,10 @@ Commit the new files locally. Then carry on with whatever the user originally as
 ## CLAUDE.md template
 ```markdown
 <!-- starter-kit:managed — this marker tells the starter-kit hooks the project is set up. Keep it. -->
+# Starter kit check
+If no "STARTER KIT WORKFLOWS" note appeared at the start of this session, the starter kit's hooks are not running, so its
+safety checks are off: tell the user that before doing anything else.
+
 # Project
 <name> — <what it does, one line>. Stack: <language, framework, test runner, data store, hosting>.
 
@@ -185,6 +189,10 @@ Commit the new files locally. Then carry on with whatever the user originally as
 - Build: <command or "none">
 - End-to-end (browser) tests: <command, or "none" if there is no browser UI>
 - Speed budget: <build folder and limits for `perf-budget.mjs`, e.g. dist (JS 300 KB, CSS 100 KB, images 500 KB each), or "none">
+- Speed test: <command that runs e2e/speed.spec.js, or "none" if there is no browser UI>
+- Size: <"normal", or "large" for thousands of files: building and reviewing then use scoped tests and impact checks>
+- Database: <kind and where local development's copy runs, e.g. "Postgres in Docker (docker compose up db)", or "none">
+  Never point local development, tests or the kit at a database on another computer.
 
 # Workflow — TDD mode: strict
 <!-- Change "strict" to "relaxed" for prototypes: tests are then written alongside the code, not first. -->

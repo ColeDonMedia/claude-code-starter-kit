@@ -26,7 +26,7 @@ function dir(files = {}) {
 
 // ---- guard ----
 const DENY = [
-  `psql "postgres://app:s3cretpw@db.prod.example.com:5432/app" -c "select 1"`,
+  `psql "postgres://app:dummypw9@db.prod.example.com:5432/app" -c "select 1"`,
   `psql -h prod-db.internal -U app app`,
   `PGHOST=10.0.0.5 psql -U app`,
   `pg_dump postgresql://u:p@aws-0-us-east-1.pooler.supabase.com:6543/postgres > dump.sql`,
@@ -107,7 +107,7 @@ test("the hook denies with a message that never repeats credentials, and its off
     const r = run(DENY[0]);
     const out = JSON.parse(r.stdout).hookSpecificOutput;
     assert.equal(out.permissionDecision, "deny", "an unapproved off switch must not count");
-    assert.ok(!out.permissionDecisionReason.includes("s3cretpw"));
+    assert.ok(!out.permissionDecisionReason.includes("dummypw9"));
     assert.match(out.permissionDecisionReason, /give the owner the exact command/);
     assert.equal(run("npm test").stdout, "");
     assert.equal(spawnSync(process.execPath, [GUARD], { input: "garbage", encoding: "utf8" }).status, 0);

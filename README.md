@@ -67,7 +67,15 @@ mentions a dangerous command, such as a commit message, is fine). It *blocks* ca
 force-push to other branches, `curl | sh`, `DROP TABLE`, database resets, printing `.env`/SSH keys. Normal
 cleanups like `rm -rf node_modules` pass. Allow a specific rule per project with
 `{ "guardAllow": ["reset-hard"] }` (rule ids are listed at the top of `hooks/safety-guard.mjs`), or turn the
-guard off with `{ "guard": false }`.
+guard off with `{ "guard": false }`. Every guard watches both shell tools: Bash and, on Windows, PowerShell, which it reads the
+PowerShell way (backtick escapes, script blocks, `$( )` inside strings, here-strings, `-EncodedCommand`). Until 2.12.1 PowerShell
+commands were not checked at all.
+
+**Proof that the guards are running.** A silently broken hook looks exactly like a working one, so the kit checks itself: the
+command `starter-kit-canary` does nothing and is always refused ("canary ok"); the first session after each update asks Claude
+to run it with every shell tool and to tell you plainly if it was not refused; if a guard crashes on a shell command, the command
+is refused rather than run unchecked; every project's CLAUDE.md carries a line that notices when the kit's session note is
+missing; and `scripts/doctor.mjs` checks Node, git, the hooks, both canaries and the data folder in plain words.
 
 **Built for people who don't code.** Claude is told the owner is not a programmer: it explains results in plain
 words (what works now, how to see it, what isn't done), makes routine technical choices itself, and asks only
@@ -299,7 +307,9 @@ Tests: `node --test plugins/starter-kit/scripts/vet-scan.test.mjs`.
 ## Requirements
 - A current Claude Code. Very old versions of the `claude` command (2.1.0, for example) fail on any tool use
   with "tool_use ids must be unique"; update with `npm install -g @anthropic-ai/claude-code@latest`.
-- Node.js on the PATH (the hooks are small Node scripts) and git.
+- Node.js 18 or newer on the PATH (the hooks are small Node scripts) and git. Database rehearsals and reading a SQLite
+  schema need Node's built-in SQLite (Node 22.5 or newer); everything else works without it. `scripts/doctor.mjs` checks both.
+- Windows, macOS and Linux are intended; so far the tests have only been run on Windows.
 
 ## What a plugin can't carry
 Plugins don't ship `CLAUDE.md` or permission rules, which is why `/starter-kit:init` writes those

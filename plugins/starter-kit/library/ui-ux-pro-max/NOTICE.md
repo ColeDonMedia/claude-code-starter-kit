@@ -4,7 +4,9 @@ These five tables are copied unchanged from the open-source project **ui-ux-pro-
 MIT license (see `LICENSE` in this folder, which must stay with the files).
 
 - Source: https://github.com/nextlevelbuilder/ui-ux-pro-max-skill, folder `.claude/skills/ui-ux-pro-max/data/`
-- Commit: `8db36338810d0942567b97ce439affd1619fcf31` (2026-11-25)
+- Commit: `8db36338810d0942567b97ce439affd1619fcf31` (2026-11-25). Re-checked 2026-11-27 against `11ca2b3bdd555649f278ee348c32a9302b24dcf1`:
+  the five tables are byte-for-byte identical there (the changes were the project's scripts, tests, instructions and one new
+  per-stack file), scanner 0 HIGH, so the files here stay as they are.
 - Files: `styles.csv` (89 UI styles), `colors.csv` (194 palettes by product type), `typography.csv` (74 font pairings),
   `products.csv` (194 product types with recommended styles), `ux-guidelines.csv` (141 UX rules with sources).
 

@@ -4,6 +4,33 @@ What changed in each release of the starter-kit plugin, newest first, in plain w
 repository's history. Every release bumps `version` in `plugins/starter-kit/.claude-plugin/plugin.json`; a test
 fails if this file has no entry for the current version.
 
+## [2.20.0] — 2026-11-27
+- **Stack recipes (plan item OC-7).** Four tested starting points in `presets/`: a website (Astro 7), a web app with sign-in and a
+  database (SvelteKit 3, SQLite with Drizzle, Better Auth), an API (Fastify 5, SQLite) and a desktop app (Electron 45 with Forge 8).
+  Each is data: the official setup tool at a pinned version, exact extra packages, follow-up steps, the project's commands, the host,
+  the accounts and settings the owner will need, and the stack's known mistakes. `scripts/presets.mjs` matches a recipe to the scale
+  profile, prints the steps (it never runs them, so the builder runs them through the guards), gives a fresh empty folder to set up
+  in and merges the result into the project without touching its own files, fills `.env` secrets without printing them, writes
+  `.claude/rules/stack.md`, and lists pins with newer releases. Building them showed why they're needed: three of the four official
+  setup tools differed from what a model would guess (Forge 8 renamed its template, the API starter's TypeScript settings fail on
+  TypeScript 6, the web app's example test fails its own lint, and Astro silently picks another folder when the target isn't empty).
+  The real setup of all four, with their tests, type checks, lint and build, runs with `KIT_PRESET_SCAFFOLD=1`. Deploying is not
+  part of that test, and D9 (which host to prefer) is still open.
+- **The plan offers the stack choice** (the owner asked for this): the recommended stack (a recipe when one fits) plus one or two
+  alternatives with plain pros and cons. Approving the plan keeps the recommendation; the owner can pick another or name their own.
+- **Installed docs first.** The builder looks up an API it isn't sure of in the installed package (exact version, no cost), then a
+  docs tool, then the official docs, and reads `.claude/rules/stack.md` first.
+- **One source for each number and rule** (the owner asked for this after a SaaS showed six different monthly incomes on six pages).
+  The plan defines every number and rule once, in plain words, and `PROJECT.md` gets a `## One source` list naming the one function
+  for each. Before writing anything new, the builder asks "does this already exist, and does it do what this feature needs?": reuse it,
+  extend that one function, or give a genuinely different meaning its own name on the list. New `scripts/dup-check.mjs` finds copied
+  code even with renamed variables (only what the change added, with `--base`), and checks every list entry still exists. The reviewer
+  runs it: a second version of a calculation, query, validation, permission check or listed rule blocks the merge.
+- **Market check in the research** (the owner asked for this): for apps meant to sell, demand, buyers and what they pay today, how
+  crowded it is, gaps and what would be hard to copy. The plan gets a "Worth building?" verdict (build it, build it narrower, pivot, or
+  think again), the gap features worth building, and up to three less crowded directions, all with sources. The owner decides.
+- **GitHub page:** new sections on the stack recipes and on how the kit saves tokens without cutting checks.
+
 ## [2.19.1] — 2026-11-27
 Fixes from trial 3's first finished milestone, which ran on 2.17.2 (see [docs/trials.md](docs/trials.md)):
 - **A true "merged" report is no longer sent back for a sentence in front of it.** A tool refused, the builder said so in one line,

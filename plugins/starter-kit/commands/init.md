@@ -244,6 +244,7 @@ The starter-kit plugin decides which workflow to run for each request; nothing t
 - Layout: <where source, tests and config live>
 - Patterns: <data access, error handling, naming — only what can't be seen from the code>
 - Design: follow `DESIGN.md` when it exists.
+- One source: every number or rule used in more than one place lives in one function listed under `## One source` in PROJECT.md; reuse or extend it, never write a second version.
 - Never read or commit `.env*` files, keys or other secrets.
 
 # Records (read first, keep true)

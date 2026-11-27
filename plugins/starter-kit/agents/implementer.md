@@ -20,15 +20,31 @@ brief and in the project's files.
 3. A new worktree contains only committed files — no `node_modules`, virtual environment, build output or
    `.env`. Run the project's install command from CLAUDE.md ("Install"). Do not copy secrets or `.env`
    files from the main checkout. If the tests need configuration that isn't in git, stop and report that.
+   If the brief says "set up from the `<id>` recipe": run `node "${CLAUDE_PLUGIN_ROOT}/scripts/presets.mjs" --show <id>` and run
+   its setup steps in order, exactly as printed (pinned versions; never swap in `@latest`), then check its test and build commands
+   pass before writing any feature code, and fill CLAUDE.md's Commands from its "Commands for CLAUDE.md". If a step fails, stop and
+   report the step and its error: don't improvise another setup.
 
 ## Work
 4. Follow the workflow in CLAUDE.md (strict TDD unless it says otherwise): failing test first and confirm
    it fails for the right reason, minimum code to pass, then refactor. Never delete or weaken a test to
    make it pass.
 5. Match the existing code style, structure and test patterns.
+   Before writing any new function, query, calculation, check or format, ask two questions. **Does it already exist?** Look at
+   the shared numbers and rules (`node "${CLAUDE_PLUGIN_ROOT}/scripts/dup-check.mjs" --project . --list`), then
+   `code-index.mjs --project . --find <likely name>` and a search for the key words. **Does it do what this feature needs?** Yes:
+   call it. Almost: extend that one function, keeping tests for its old callers and adding one for the new use; never write a
+   second version beside it. No, because it means something different (income before refunds, say): give the new one its own
+   clear name and add it to PROJECT.md's `## One source` list (`- What it is: path::name — its definition in plain words`).
+   Any number or rule shown or used in more than one place lives in one function, listed there, and every screen showing it
+   calls that function; a test checks each screen shows the function's value for the same data. Before reporting, run
+   `dup-check.mjs --project . --base <MAIN>` and fix every DUPLICATE it reports in your own change.
    Never guess a library or framework API from memory: if you are not certain of a function, option or
-   version behavior, look up the current documentation first (a docs tool such as context7 if available,
-   otherwise web search or the package's own docs/types in `node_modules` or site-packages).
+   version behavior, look it up first, in this order: (1) the installed package itself, which matches the
+   pinned version exactly and costs nothing (its type definitions, README, CHANGELOG and docs folder in
+   `node_modules/<name>/`, site-packages or the vendored source); (2) a docs tool such as context7 if one is
+   installed; (3) the official docs on the web, for the version in the lockfile. Read `.claude/rules/stack.md`
+   first if the project has one: it lists the stack's known mistakes and where its docs are.
    For anything with a screen: follow `DESIGN.md` if the project has one (colors, type, spacing, components);
    build every state, not just the happy one (empty, loading, error, success); make it work at phone width
    (about 375px) and desktop. Accessible by default (WCAG 2.2 AA): real elements for what they are (button, link, label,

@@ -15,6 +15,7 @@
   <a href="#how-you-use-it">How you use it</a> ·
   <a href="#every-step-from-idea-to-launch">Every step</a> ·
   <a href="docs/example.md">See an example</a> ·
+  <a href="#how-it-saves-tokens-without-cutting-corners">Saving tokens</a> ·
   <a href="#whats-inside">What's inside</a> ·
   <a href="#protection-built-in">Protection</a> ·
   <a href="docs/README.md">Full documentation</a>
@@ -95,7 +96,14 @@ update proves the guards are running. Updates install themselves once a day, onl
 
 **3. The plan** (new apps; a hook refuses app code until it exists):
 - one message of questions, each with a suggested answer, always including how many people will use it
-- researchers look at 4 to 6 similar products; the technology is chosen and checked against what your computer can run
+- researchers look at 4 to 6 similar products and, for an app meant to sell, **the market**: demand, who would buy it, how crowded
+  it is, and a gap competitors would find hard to copy. The plan gives a verdict (build it, build it narrower, pivot, or think again),
+  recommends gap features and, if it is crowded, less crowded directions, with sources
+- the stack: a **recommended stack plus one or two alternatives, each with plain pros and cons**. Approving the plan keeps the
+  recommendation; you can pick another or name your own (any language). For common kinds of app the recommendation is a **tested
+  recipe** (see [Stack recipes](#stack-recipes) below)
+- **numbers and rules, defined once**: every number the app shows or decides by (monthly income, totals, "active customer") gets one
+  plain definition you approve, so it means the same on every page
 - a gap check (empty and error screens, password reset, deleting data, phones, keyboard use) and a threat check (who could misuse it,
   and a test for each defence)
 - a plan with testable criteria, a roadmap in milestones of about three features, a speed budget and a screen list
@@ -108,6 +116,9 @@ you to pick. The choice becomes `DESIGN.md`, which every screen follows.
 - a **conductor** agent runs the whole build away from your chat; the build's progress is recorded so a cut-off resumes where it stopped
 - a **builder** works in its own copy of the project, on its own branch, **test first**: one failing test per agreed criterion, then
   the code, committing after every passing test
+- before writing anything new it asks **"does this already exist, and does it do what this feature needs?"** It reuses it, or
+  extends that one function, and never writes a second version beside it. A copy-check finds code it wrote twice before review does
+- when it isn't sure how a library works, it reads **the installed copy first** (exact version, free), then the official docs, never memory
 - for screens it builds every state, measures each one in a real browser at phone and desktop size, and re-runs with extreme data (the
   longest name, 300 items, a missing picture)
 - a **reviewer**, a **challenger** (who assumes it's not done), a **UI reviewer** and, for risky features, a **security reviewer** and a
@@ -138,6 +149,60 @@ speed work that's measured before and after.
 **All the way through, guards watch every command and edit:** dangerous commands, leaked secrets, invented packages, remote databases,
 unchecked pushes, code before a plan, and roadmap ticks without proof. When Claude finishes a turn with changed code, the project's own
 checks run, and the turn can't end while one fails.
+
+## Stack recipes
+
+Opus already knows HTML, CSS, JavaScript, SQL and the big frameworks well, so loading their general docs into every session would cost
+tokens and add little. What a model gets wrong is **what changed since it was trained**. When the recipes were built, three of the
+four official setup tools behaved differently from what a model would guess: a renamed template, a TypeScript upgrade that rejected the
+starter's settings, and example code that failed its own lint check. The kit handles that in three ways:
+
+| | What it is | When it's used |
+|---|---|---|
+| **Recipes** | Four tested starting points: a website (Astro), a web app with sign-in and a database (SvelteKit, SQLite, Better Auth), an API (Fastify, SQLite) and a desktop app (Electron Forge). Each has the official setup command at a pinned version, exact package versions, the commands, the host, the accounts and settings you'll need, and the stack's known mistakes. | Recommended in the plan when one fits the app's kind and size; you can always choose something else. |
+| **Stack notes** | The recipe's known mistakes and where its docs are, written to `.claude/rules/stack.md`, which Claude Code reads in every session. | From the first feature on; updated when a major version changes. |
+| **Installed docs first** | The library's own types, README and changelog in the project, which match the exact version and cost nothing to read. | Whenever the builder isn't sure of an API, in every project, recipe or not. |
+
+Every recipe is set up from scratch and must pass its own tests, type checks, lint and build in the kit's own test, run whenever a recipe
+changes; each recipe records the date it last passed.
+Deploying to a host is set up at launch and is not part of that test.
+
+## How it saves tokens without cutting corners
+
+Getting it right once costs less than fixing it again and again, so most of the saving comes from **not redoing work**. The checks
+themselves are never skipped to save tokens.
+
+**It doesn't redo work:**
+- **One approved plan first.** Questions, research, gap and threat checks happen once, before any code, and every criterion becomes
+  a test. Most rework comes from building the wrong thing, and this is where that's caught.
+- **Tested recipes** mean setup isn't worked out (and debugged) again for every project.
+- **One source for each number and rule.** A number computed once can't drift apart on six pages and need six fixes.
+- **Only real problems cause a fix round.** Reviewers mark each finding BLOCKS (breaks what you agreed, or lets a stranger in) or LATER.
+  Only BLOCKS go back to the builder; LATER items wait in a "before launch" list instead of starting new rounds.
+- **A stop rule.** From review round 3, a script (which costs no tokens) checks whether another round is still making progress;
+  round 6 always comes to you.
+
+**It reads less:**
+- **Each feature runs in its own fresh context.** Your chat gets a twelve-line result, not the whole build, so it stays small and
+  cheap for the whole project.
+- **Records instead of re-reading.** `PROJECT.md`, `HANDOFF.md` and the roadmap tell each new session where things stand. The
+  session note stays under 520 words.
+- **A code index** finds where something lives and what a change could break, without reading the whole codebase.
+- **Long output is shortened.** A test run or install that prints thousands of lines reaches Claude as the start, every failure and
+  the summary. The full log is saved, and the command and its result are unchanged.
+- **Installed docs before web searches**, and only the related tests while a big codebase is being built (the full suite still runs
+  before anything ships).
+
+**It uses the right model for each job:**
+- Haiku only finds files and searches the web, and its findings are checked by a stronger model.
+- Sonnet builds small, contained features and re-checks a fix (it looks only at its own earlier findings and the changed lines).
+- Opus builds medium, large and risky features and runs every security review. Its share is recorded per feature.
+
+**What is never cut:** test-first building, the reviewer and challenger on every feature, the security reviewer and red team on risky
+ones, your try-out at every milestone, and all seventeen pre-ship checks. Every merge report says what the feature used.
+
+**What isn't proven yet:** the savings from 2.18 onward haven't been measured in a live build. The last live trial (on 2.17.2) spent
+84% of its agent tokens on Opus, mostly on review re-checks. That is why re-checks now run on Sonnet.
 
 ## What's inside
 

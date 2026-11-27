@@ -1,0 +1,82 @@
+{
+  "id": "web-app",
+  "title": "Web app with sign-in and a database",
+  "kinds": ["web", "saas"],
+  "fits": "A web app people sign in to, with its own data: client portals, booking tools, dashboards, small business software, internal tools.",
+  "notFor": [
+    "more than one server at once (the database is one file on one server)",
+    "a site with no sign-in and no stored data (use the website recipe)",
+    "a team that already knows and wants another framework"
+  ],
+  "maxUsersPeak": 500,
+  "stack": [
+    { "part": "Language", "choice": "TypeScript on Node.js 22 or newer", "why": "One language for screens and server; types catch mistakes before tests do." },
+    { "part": "Framework", "choice": "SvelteKit 3 with Svelte 5 and the Node adapter", "why": "Pages render on the server and forms work without JavaScript; built-in cross-site form protection." },
+    { "part": "Database", "choice": "SQLite through better-sqlite3, with Drizzle for queries and migrations", "why": "One file, no database server to run or pay for; typed queries that can't be injected." },
+    { "part": "Sign-in", "choice": "Better Auth (email and password), set up by the official SvelteKit add-on", "why": "Sessions, password hashing and the database tables come ready and tested." },
+    { "part": "Tests", "choice": "Vitest (server tests and component tests in a real browser) and Playwright", "why": "Both come wired in by the official setup tool." }
+  ],
+  "tools": { "sv": "1.7.1" },
+  "scaffold": [
+    "npx --yes sv@1.7.1 create app --template minimal --types ts --add eslint vitest=\"usages:unit,component\" playwright=\"demo:no\" sveltekit-adapter=\"adapter:node\" drizzle=\"database:sqlite+sqlite:better-sqlite3\" better-auth=\"demo:password\" --no-install --package-manager npm"
+  ],
+  "skip": ["src/lib/vitest-examples"],
+  "add": {},
+  "envDefaults": { "DATABASE_URL": "local.db", "ORIGIN": "http://localhost:5173" },
+  "after": [
+    { "run": "npm pkg set \"scripts.test:e2e=playwright test\" \"scripts.test:unit=vitest --passWithNoTests\"" },
+    { "run": "node \"{kit}/presets.mjs\" --fill-env web-app --project ." },
+    { "run": "npm run auth:schema" },
+    { "run": "npm run db:push" },
+    { "run": "npx playwright install chromium" },
+    { "do": "The setup adds a sign-in demo under src/routes/demo/. Keep it only until the first sign-in feature replaces it, then delete it." }
+  ],
+  "verify": ["npm run lint", "npm run check", "npm run test:unit -- --run", "npm run build", "npm run test:e2e"],
+  "commands": {
+    "install": "npm ci",
+    "dev": "npm run dev (http://localhost:5173)",
+    "test": "npm run test:unit -- --run",
+    "typecheck": "npm run check",
+    "lint": "npm run lint",
+    "build": "npm run build",
+    "e2e": "npm run test:e2e"
+  },
+  "host": {
+    "name": "Any Node.js host with a lasting disk, running one copy of the app",
+    "deploy": "npm ci, npm run build, then node build with ORIGIN set to the public address and DATABASE_URL pointing at a file on the lasting disk. Set up by /starter-kit:launch; not part of the recipe test.",
+    "preview": "a second copy with its own database file and test keys only."
+  },
+  "accounts": [
+    { "name": "GitHub", "when": "before the first push", "why": "Holds the code and runs the checks on every push." },
+    { "name": "A hosting account (one server with a lasting disk)", "when": "at launch", "why": "Runs the app and keeps the database file." },
+    { "name": "An email-sending service", "when": "when password reset or emails are built", "why": "Sign-in emails need a sender that isn't marked as spam." },
+    { "name": "A domain name", "when": "at launch, optional", "why": "A real address instead of the host's." }
+  ],
+  "settings": [
+    { "name": "DATABASE_URL", "why": "Where the database file lives. Locally local.db; live, a file on the lasting disk." },
+    { "name": "ORIGIN", "why": "The app's public address. If it is wrong, every form post is refused as cross-site." },
+    { "name": "BETTER_AUTH_SECRET", "why": "Signs sign-in sessions. 32 or more random characters, different for each copy, never committed." }
+  ],
+  "notes": [
+    "This is SvelteKit 3, not 2: settings and the adapter live in vite.config.ts (there is no svelte.config.js); environment variables are declared in src/env.ts with defineEnvVars and read from '$app/env/private' (server) or '$app/env' (not '$env/static/...').",
+    "Imports use the '#lib/...' alias from package.json \"imports\" (with the .ts extension), not '$lib'.",
+    "Svelte 5 runes only: $state, $derived, $props, $effect. No 'export let', no '$:' and no stores for local state (the config forces runes mode).",
+    "Code that touches the database or secrets lives in src/lib/server/ or in +page.server.ts / +server.ts files. Never import it from a component.",
+    "Every load function and form action that reads or changes data checks event.locals.user itself, and filters by that user's id in the query. Hiding a link is not protection.",
+    "Database changes: edit src/lib/server/db/schema.ts, then npm run db:generate and commit the migration. db:push is only for a throwaway local database.",
+    "After changing Better Auth's settings or plugins, run npm run auth:schema again; sveltekitCookies must stay the last plugin.",
+    "Component tests are files named *.svelte.spec.ts and run in a real browser; plain logic tests are *.spec.ts and run in Node. Vitest requires every test to make at least one assertion.",
+    "Playwright browsers are installed once per computer (npx playwright install chromium); the test command never downloads them.",
+    "SQLite means one running copy of the app. Back up the database file, never run two servers on it, and move to a database server before planning a second copy.",
+    "The setup tool installs with ^ ranges; the committed package-lock.json is what pins the versions. Always commit it and install with npm ci."
+  ],
+  "docs": [
+    { "name": "SvelteKit", "local": "node_modules/@sveltejs/kit/types/ and README.md", "url": "https://svelte.dev/docs/kit" },
+    { "name": "Svelte", "local": "node_modules/svelte/types/", "url": "https://svelte.dev/docs/svelte" },
+    { "name": "Drizzle", "local": "node_modules/drizzle-orm/ (the .d.ts files)", "url": "https://orm.drizzle.team/docs/overview" },
+    { "name": "Better Auth", "local": "node_modules/better-auth/README.md and dist/*.d.ts", "url": "https://www.better-auth.com/docs" },
+    { "name": "Vitest", "local": "node_modules/vitest/dist/*.d.ts", "url": "https://vitest.dev/guide/" },
+    { "name": "Playwright", "local": "node_modules/@playwright/test/", "url": "https://playwright.dev/docs/intro" }
+  ],
+  "tested": "2026-11-27"
+}

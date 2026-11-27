@@ -102,14 +102,21 @@ correct.
 1. **Looks before asking.** It reads what is already there so it doesn't ask what it can see.
 2. **Asks once, at most six questions, each with a default:** who it's for, the one thing it must do well, must-haves versus later,
    phone or computer, whether people sign in, what it must connect to, budget or deadline, apps whose look you like. Always one question
-   about size. It never asks you to choose technology. A small app gets at most four questions and a one-screen plan.
+   about size. It doesn't ask technology questions here; the plan offers that choice. A small app gets at most four questions and a one-screen plan.
 3. **Sizes it.** Your answers become numbers: requests per second at the busiest moment, table sizes after a year. It then knows what to
    build and what to leave out (a one-person desktop app gets no servers; a busy online service gets them from the start).
 4. **Researches** (new apps): two or three researcher agents, on the cheap fast model, look at 4 to 6 similar products in parallel: what
-   they all have, and what their users complain about. Claude checks their claims and re-checks prices, legal rules and security advice on
+   they all have, and what their users complain about. For an app meant to sell or win users it also checks **the market**: is there
+   demand (people asking for it, money spent on the problem), who would buy it and what they pay today, how crowded it is, and what gap or
+   niche would be hard for competitors to copy. Claude then gives a verdict in the plan (build it, build it narrower, pivot, or think again),
+   recommends the feature gaps worth building and, if it is crowded, one to three less crowded directions, all with sources. It's a recommendation; you decide. Claude checks their claims and re-checks prices, legal rules and security advice on
    a stronger model.
-5. **Chooses the technology:** widely used, well documented, cheap to host. Current versions are checked from official sources, never from
-   memory. It also checks what this computer can actually run, so every promise can be proven here; anything only GitHub can prove (such as
+5. **Chooses the technology.** First it checks whether one of the kit's **tested recipes** fits the kind and size of app: a website,
+   a web app with sign-in and a database, an API, or a desktop app. A recipe brings the official setup at pinned versions, the
+   commands, the host, the accounts and settings you'll need, and the stack's known mistakes. Otherwise it picks something widely used,
+   well documented and cheap to host. Either way, the plan shows **the recommended stack plus one or two alternatives, each with plain
+   pros and cons**. Approving the plan keeps the recommendation; you can pick another or name your own (any language), and the plan then
+   says that set-up isn't pre-tested. Current versions are checked from official sources, never from memory. It also checks what this computer can actually run, so every promise can be proven here; anything only GitHub can prove (such as
    a container build) is named as such.
 6. **Compares with existing code** (if any): what already works, what's partly there, what's missing.
 7. **Checks for gaps:** empty, loading, error and offline screens; sign-up and password reset; deleting and exporting data; small screens and
@@ -118,14 +125,17 @@ correct.
    becomes a test ("user A asking for user B's record is refused"). Risky features (sign-in, payments, uploads, other people's data) are
    marked for extra review.
 9. **Picks a look** with you (stage 4).
-10. **Writes the plan:** the goal, how it works for the user, the technology, acceptance criteria (each one a test), security, how you'll
+10. **Writes the plan:** the goal, how it works for the user, the technology and its alternatives, **numbers and rules** (every number the
+    app shows or decides by, such as monthly income or "active customer", with one plain definition, so it means the same on every page), acceptance criteria (each one a test), security, how you'll
     know it worked, the roadmap (3 to 10 features in milestones of about three, each sized S, M or L), size, the speed budget, every screen
     and how many items its lists will hold after a year, how success will be measured, which rules apply (personal data, children,
     payments, AI), the top five risks, what is left for later, and every default it picked.
 11. **Has the plan challenged** by a second agent that looks for holes before you see it. You only get the choices that are really yours.
 12. **Waits for your approval.** Nothing is built until you approve.
 13. **Saves it** as `ROADMAP.md` (milestones with `Accepted: pending`, features with their criteria as checkboxes), `PROJECT.md`,
-    `DECISIONS.md` (one numbered line per decision, with the reason and what was rejected), and `.claude/ui.json` (the screen list).
+    `DECISIONS.md` (one numbered line per decision, with the reason and what was rejected), `.claude/ui.json` (the screen list), the
+    `## One source` list in `PROJECT.md` (each number and rule, and later the one function that computes it), and, with a recipe,
+    `.claude/rules/stack.md` (the stack's known mistakes and where its docs are, read by Claude Code in every session).
 14. **Starts building**, one feature at a time, without being asked again.
 
 **Changing your mind later** is normal. Before building anything that wasn't in the plan, Claude says what it adds or delays and what it
@@ -189,7 +199,14 @@ Details: [Which model does what](how-it-works.md#which-model-does-what).
 - The **implementer** gets its own **worktree** (a second folder) on its own **branch**, so your main copy is never touched while it works.
 - It installs dependencies there, then builds **test first**: a failing test for each acceptance criterion, confirmed to fail for the right
   reason, then the least code that passes, then a tidy-up. It never weakens or deletes a test to make it pass.
-- It never guesses a library's API from memory; it looks up the current documentation.
+- If the feature is "set up from a recipe", it runs the recipe's steps exactly as written, in a fresh empty folder, copies the result in
+  without touching the project's own files, and checks the tests and build pass before any feature code.
+- It never guesses a library's API from memory. It reads **the installed copy first** (its types, README and changelog match the exact
+  version and cost nothing), then a docs tool if one is installed, then the official docs for the version in the lockfile.
+- Before writing anything new, it asks **"does this already exist, and does it do what this feature needs?"** It checks the One-source
+  list, the code index and a search. Yes: it reuses it. Almost: it extends that one function, with tests for the old use and the new one.
+  No, because it means something different: it gets its own clear name on the list. Every screen showing a shared number calls the
+  same function, and a test checks they agree. Before reporting, a **copy-check** (`dup-check.mjs`) lists anything it wrote twice, and it fixes it.
 - **Secure by default:** every action checks who is asking and whether they may touch this record; input is validated on the server;
   queries are parameterised; secrets come only from environment variables; passwords are hashed with a vetted library; sign-in is
   rate-limited; uploads are limited and stored privately; payment prices are computed on the server and webhooks are verified.
@@ -208,7 +225,8 @@ Details: [Which model does what](how-it-works.md#which-model-does-what).
 
 ### 5d. The review
 All of these read the change in parallel, each in its own fresh context, running every command inside the builder's folder:
-- **Reviewer** (always): correctness, edge cases, regressions. Runs the tests.
+- **Reviewer** (always): correctness, edge cases, regressions. Runs the tests and the copy-check: a second version of a calculation,
+  query, validation, permission check or anything on the One-source list goes back for a fix.
 - **Challenger** (always): assumes the work is NOT done and tries to prove it: claims without evidence, tests that couldn't fail, missing
   cases, collateral damage. It must show what it tried.
 - **UI reviewer** (when screens changed): opens the running app at phone and desktop size, scores it against `DESIGN.md`, reads the measured

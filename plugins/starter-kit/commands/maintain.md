@@ -15,6 +15,8 @@ Keep the user's attention for decisions only; do the rest yourself and report in
   the browser tests, review and the proof checks. Patch and minor updates go together. A major version that changes behavior is a
   decision: list it for the user with what it changes and the risk, and don't apply it unasked. Never loosen or delete a test to get an update through.
 - New or changed packages go through the package guard as usual.
+- After a major update of a part listed in `.claude/rules/stack.md`, read that part's installed CHANGELOG and correct any note there
+  the new version makes wrong, in the same maintenance feature.
 - GitHub workflow steps: for each `uses: <owner>/<action>@<commit> # v<N>`, look up the newest release tag of that action with
   `git ls-remote --tags --sort=-v:refname https://github.com/<owner>/<action>` and move the pin to its commit, in the same
   maintenance feature. A new major version is listed like any other.

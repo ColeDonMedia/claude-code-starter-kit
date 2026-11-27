@@ -1,0 +1,70 @@
+{
+  "id": "desktop-app",
+  "title": "Desktop app with an installer",
+  "kinds": ["desktop"],
+  "fits": "A program people download and run on their own Windows, Mac or Linux computer, updated from GitHub releases.",
+  "notFor": [
+    "a very small download or very low memory use (each app carries its own browser engine)",
+    "phones or tablets"
+  ],
+  "maxUsersPeak": 1000000,
+  "stack": [
+    { "part": "Framework", "choice": "Electron 45 with Electron Forge 8 and Vite", "why": "The official way to build, package and publish an Electron app; one code base for all three systems." },
+    { "part": "Language", "choice": "TypeScript", "why": "Types catch mistakes between the window and the main process." },
+    { "part": "Tests", "choice": "Vitest for logic, Playwright for driving the real app", "why": "Playwright can start and click through an Electron app." },
+    { "part": "Releases", "choice": "Forge makers (Windows installer, zip, Linux packages) and GitHub releases", "why": "No server to pay for." }
+  ],
+  "tools": { "create-electron-app": "8.0.1" },
+  "scaffold": ["npx --yes create-electron-app@8.0.1 app --template vite --typescript"],
+  "skip": [],
+  "add": {
+    "devDependencies": {
+      "electron": "45.5.0",
+      "vitest": "5.1.2",
+      "@playwright/test": "1.65.1"
+    }
+  },
+  "after": [
+    { "run": "npm pkg set \"scripts.test=vitest --run --passWithNoTests\"" },
+    { "run": "npm pkg delete author" },
+    { "do": "Set productName, description and author in package.json to the app's real details (the setup tool fills in this computer's user name, which would ship inside the app)." }
+  ],
+  "verify": ["npm run typecheck", "npm run lint", "npm test", "npm run package"],
+  "commands": {
+    "install": "npm ci",
+    "dev": "npm start",
+    "test": "npm test",
+    "typecheck": "npm run typecheck",
+    "lint": "npm run lint",
+    "build": "npm run make"
+  },
+  "host": {
+    "name": "GitHub releases",
+    "deploy": "npm run make builds the installers; npm run publish with @electron-forge/publisher-github uploads them to a draft release. Set up by /starter-kit:launch; not part of the recipe test."
+  },
+  "accounts": [
+    { "name": "GitHub", "when": "before the first push", "why": "Holds the code, runs the checks and hosts the downloads." },
+    { "name": "A Windows code-signing certificate", "when": "before public release, optional", "why": "Without it Windows shows an 'unknown publisher' warning on install." },
+    { "name": "An Apple Developer account", "when": "only if it ships for Mac", "why": "Mac apps must be signed and notarized to open without a warning." }
+  ],
+  "settings": [
+    { "name": "GITHUB_TOKEN", "why": "Only on the machine or GitHub job that publishes releases; never in the app." }
+  ],
+  "notes": [
+    "Three parts with different powers: src/main.ts (full computer access), src/preload.ts (the only bridge), src/renderer.ts (the window, a web page with no Node access). Keep it that way.",
+    "Expose to the window only named functions through contextBridge in the preload, each doing one checked thing. Never expose ipcRenderer itself, fs, or a 'run any command' function.",
+    "Never turn on nodeIntegration or turn off contextIsolation or sandbox, and never load remote web pages into a window that has the preload.",
+    "Open outside links in the user's browser (shell.openExternal on an allow-listed address), never inside the app window.",
+    "The fuses in forge.config.mts are security settings (RunAsNode off, asar integrity on): don't loosen them.",
+    "This is Forge 8: config is forge.config.mts and the build output is .vite/build/main.cjs. Check node_modules/@electron-forge/cli/README.md before using an option you remember from older Forge.",
+    "Save the user's data under app.getPath('userData'), never next to the program (that folder is read-only once installed).",
+    "Lint and formatting are oxlint and oxfmt, not ESLint and Prettier: npm run lint:fix fixes most findings."
+  ],
+  "docs": [
+    { "name": "Electron", "local": "node_modules/electron/electron.d.ts", "url": "https://www.electronjs.org/docs/latest/" },
+    { "name": "Electron Forge", "local": "node_modules/@electron-forge/cli/README.md", "url": "https://www.electronforge.io/" },
+    { "name": "Vitest", "local": "node_modules/vitest/dist/*.d.ts", "url": "https://vitest.dev/guide/" },
+    { "name": "Playwright and Electron", "local": "node_modules/@playwright/test/", "url": "https://playwright.dev/docs/api/class-electron" }
+  ],
+  "tested": "2026-11-27"
+}

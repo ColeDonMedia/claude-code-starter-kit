@@ -1,0 +1,64 @@
+{
+  "id": "website",
+  "title": "Website or landing page",
+  "kinds": ["web"],
+  "fits": "Pages people read: a business site, landing page, portfolio, docs or blog. No sign-in and no stored user data.",
+  "notFor": [
+    "accounts, sign-in or anything people save (use the web app recipe)",
+    "pages that must change per visitor on the server"
+  ],
+  "maxUsersPeak": 100000,
+  "stack": [
+    { "part": "Framework", "choice": "Astro 7, building plain HTML pages", "why": "Fast pages with no JavaScript unless a part needs it; hosts for free as static files." },
+    { "part": "Language", "choice": "HTML, CSS and TypeScript where needed", "why": "Nothing to run on a server." },
+    { "part": "Checks", "choice": "astro check, plus Playwright with axe for browser and accessibility tests", "why": "Catches broken pages and accessibility problems before anyone sees them." }
+  ],
+  "tools": { "create-astro": "5.3.2" },
+  "scaffold": ["npm create astro@5.3.2 -- app --template minimal --no-install --no-git --skip-houston --yes"],
+  "skip": [],
+  "add": {
+    "devDependencies": {
+      "@astrojs/check": "0.9.12",
+      "typescript": "6.0.3",
+      "@playwright/test": "1.65.1",
+      "@axe-core/playwright": "4.14.1"
+    }
+  },
+  "after": [
+    { "run": "npm pkg set \"scripts.check=astro check\"" },
+    { "run": "npx playwright install chromium" },
+    { "do": "Browser and accessibility tests are added by the kit's set-up (the speed and accessibility test files and a Playwright config that starts npm run preview)." }
+  ],
+  "verify": ["npm run check", "npm run build"],
+  "commands": {
+    "install": "npm ci",
+    "dev": "npm run dev (http://localhost:4321)",
+    "test": "npm run check",
+    "typecheck": "npm run check",
+    "build": "npm run build",
+    "e2e": "npx playwright test"
+  },
+  "host": {
+    "name": "GitHub Pages (free), or any static host",
+    "deploy": "A GitHub Actions workflow builds the site and publishes the dist folder on every push to main. Set up by /starter-kit:launch; not part of the recipe test."
+  },
+  "accounts": [
+    { "name": "GitHub", "when": "before the first push", "why": "Holds the code, runs the checks and hosts the site." },
+    { "name": "A domain name", "when": "at launch, optional", "why": "A real address instead of the github.io one." }
+  ],
+  "settings": [],
+  "notes": [
+    "Pages are files in src/pages/ (.astro or .md); the file path is the address. Shared layout goes in src/layouts/, pieces in src/components/.",
+    "Astro components run at build time only: code in the --- block never reaches the browser. Anything interactive needs a <script> tag or a framework component with a client: directive.",
+    "Put images that should be optimised in src/assets/ and use Astro's <Image />; files in public/ are copied as they are.",
+    "If the site lives at a sub-path (github.io/<repo>/), set site and base in astro.config.mjs, or every link and image breaks after deploy.",
+    "No secrets: everything in this project ends up public in the built pages. A form that sends email needs a form service or a small server, which makes it a different recipe.",
+    "This is Astro 7: check node_modules/astro/CHANGELOG.md before using any config option or API you remember from an older version."
+  ],
+  "docs": [
+    { "name": "Astro", "local": "node_modules/astro/README.md, CHANGELOG.md and the .d.ts files", "url": "https://docs.astro.build" },
+    { "name": "Playwright", "local": "node_modules/@playwright/test/", "url": "https://playwright.dev/docs/intro" },
+    { "name": "axe for Playwright", "local": "node_modules/@axe-core/playwright/README.md", "url": "https://github.com/dequelabs/axe-core-npm" }
+  ],
+  "tested": "2026-11-27"
+}

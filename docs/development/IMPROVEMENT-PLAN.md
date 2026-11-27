@@ -908,7 +908,12 @@ previews, one go-live, tidier projects). Do the verifications V9, V10 and V11 fi
   keep reading the old line); the scale profile keeps "large" for users.
 - **Test:** docs test that no instruction uses `Size: large`; the old line still switches on scoped tests.
 
-### OC-7. Golden paths — Opus, L (OWNER DECISION D9)
+### OC-7. Golden paths — Opus, L (OWNER DECISION D9) — PART DONE in 2.20.0
+- **Done (2.20.0):** four recipes in `presets/` with setup, packages, commands, accounts, settings and known mistakes; `presets.mjs`;
+  the real setup test (`KIT_PRESET_SCAFFOLD`); the plan offers the recommended stack plus alternatives (the owner asked for a choice,
+  replacing "the owner never chooses technology"); `/maintain` corrects `.claude/rules/stack.md` after major updates.
+  **Still to do:** the GitHub checks workflow, the host's deploy settings and a runbook skeleton per recipe (needs D9), and feeding
+  the accounts list into OC-2.
 - **Why:** F5. Every project re-decides its stack and host, and setup and deploy are improvised each time.
 - **Change:** `presets/` with three or four tested recipes, one per common kind of app: a website or landing page; a web app with
   sign-in and a database; a desktop app with an installer and GitHub releases; an API. Each preset is: the official scaffolding

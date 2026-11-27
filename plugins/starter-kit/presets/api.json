@@ -1,0 +1,66 @@
+{
+  "id": "api",
+  "title": "API (a server other programs talk to)",
+  "kinds": ["api"],
+  "fits": "A JSON API for an app, a webhook receiver, or a backend for a phone or desktop app, with its own data.",
+  "notFor": [
+    "more than one server at once (the database is one file on one server)",
+    "pages people look at (use the web app or website recipe)"
+  ],
+  "maxUsersPeak": 500,
+  "stack": [
+    { "part": "Language", "choice": "JavaScript (ES modules) on Node.js 22 or newer", "why": "Nothing to compile; tests run with Node's own test runner." },
+    { "part": "Framework", "choice": "Fastify 5, set up by the official fastify-cli", "why": "Fast, widely used, with request validation built in." },
+    { "part": "Security", "choice": "@fastify/helmet and @fastify/rate-limit", "why": "Safe headers and a cap on requests from one caller, from the first route." },
+    { "part": "Database", "choice": "SQLite through better-sqlite3, with Drizzle for queries and migrations", "why": "One file, no database server; queries that can't be injected." }
+  ],
+  "tools": { "fastify-cli": "8.0.4" },
+  "scaffold": ["npx --yes fastify-cli@8.0.4 generate app --esm"],
+  "skip": [],
+  "add": {
+    "dependencies": {
+      "@fastify/helmet": "13.2.0",
+      "@fastify/rate-limit": "11.3.0",
+      "drizzle-orm": "0.45.4",
+      "better-sqlite3": "13.2.0"
+    },
+    "devDependencies": { "drizzle-kit": "0.31.11" }
+  },
+  "after": [
+    { "do": "Register @fastify/helmet and @fastify/rate-limit as plugins in plugins/ (one file each, like plugins/sensible.js), with a test that a response carries the headers and that the limit answers 429." }
+  ],
+  "verify": ["npm test"],
+  "commands": {
+    "install": "npm ci",
+    "dev": "npm run dev (http://localhost:3000)",
+    "test": "npm test",
+    "start": "npm start"
+  },
+  "host": {
+    "name": "Any Node.js host with a lasting disk, running one copy",
+    "deploy": "npm ci --omit=dev, then npm start with the database file on the lasting disk. Set up by /starter-kit:launch; not part of the recipe test."
+  },
+  "accounts": [
+    { "name": "GitHub", "when": "before the first push", "why": "Holds the code and runs the checks on every push." },
+    { "name": "A hosting account (one server with a lasting disk)", "when": "at launch", "why": "Runs the API and keeps the database file." }
+  ],
+  "settings": [
+    { "name": "DATABASE_URL", "why": "Where the database file lives." },
+    { "name": "PORT", "why": "The port the host expects; fastify-cli reads FASTIFY_PORT or PORT." }
+  ],
+  "notes": [
+    "Files in plugins/ and routes/ are loaded automatically by @fastify/autoload; a folder under routes/ becomes a path prefix. Shared things (database, auth) are plugins wrapped in fastify-plugin so every route sees them.",
+    "Give every route a JSON schema for its body, query and params: Fastify then rejects bad input before your code runs and responses only include the fields in the response schema.",
+    "Tests build the app with test/helper.js and call app.inject(), so no port is opened. Every route gets a test for good input, bad input and a caller who isn't allowed.",
+    "This is plain JavaScript with ES modules: import/export, file extensions in relative imports, no require.",
+    "Database changes: edit the Drizzle schema, generate a migration with drizzle-kit generate and commit it; never change the live database by hand.",
+    "SQLite means one running copy. Back up the database file and move to a database server before planning a second copy.",
+    "Never log request bodies or headers whole: they carry passwords and tokens."
+  ],
+  "docs": [
+    { "name": "Fastify", "local": "node_modules/fastify/docs/ and fastify.d.ts", "url": "https://fastify.dev/docs/latest/" },
+    { "name": "Drizzle", "local": "node_modules/drizzle-orm/ (the .d.ts files)", "url": "https://orm.drizzle.team/docs/overview" },
+    { "name": "Node test runner", "local": "node --help (the test section)", "url": "https://nodejs.org/api/test.html" }
+  ],
+  "tested": "2026-11-27"
+}

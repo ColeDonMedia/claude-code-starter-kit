@@ -25,7 +25,7 @@ Always include ONE question about size, because it decides how the app is built:
 or online for everyone? About how many people in a year, and how many using it at the same moment at the busiest time? What
 does it cost you if it is down for an hour?" Offer your guess as the default (for example "a free download, a few thousand
 people, one at a time each" or "a business tool: 2,000 accounts, 200 at once, an hour down costs money").
-Never ask them to choose technology. Then wait. If they say "you decide", use your defaults and say so.
+Don't ask technology questions here: the plan offers the stack choice (step 4). Then wait. If they say "you decide", use your defaults and say so.
 
 ## 2b. Size it
 Write the answers into the scale profile: `node "${CLAUDE_PLUGIN_ROOT}/scripts/scale-profile.mjs" --project . --set kind=<web|saas|api|desktop|cli|mobile|library|game> usersTotal=<n> usersPeak=<n> downtime=<minutes|hour-costs-money|never>`
@@ -39,11 +39,31 @@ Launch two or three starter-kit `researcher` agents (they run on cheap, fast Hai
 your own reading of the code. Check their claims yourself before using them, and re-check prices, legal or privacy
 rules and security advice with a stronger model (the same agent with `model` set to `sonnet`). They find: 4–6
 competing or similar products, what every one of them has (table stakes), and what users complain about. Use the
-result in the gap check. If there are no web tools, say so and continue.
+result in the gap check.
+For an app meant to be sold or to win users (not a private tool), add a market angle, one researcher each: **demand** (people
+asking for it on forums and review sites, searches, paid ads and job posts around the problem, competitors' growth); **buyers** (who
+pays, what they pay today for the current fix, and a few named kinds of first customers the owner could reach); **gaps** (what no
+competitor does well, the complaints nobody answers, a group of users everyone ignores). From that, you (not the researcher) judge:
+how crowded it is (a few leaders with loyal users and free plans is crowded; scattered, old or disliked tools is open), what would be
+hard to copy (a niche served better, data or connections others lack, a workflow built for one trade), and give a verdict: **build
+it**, **build it narrower** (name the niche and why), **pivot** or **think again** (say what evidence would change that). Always
+recommend: the feature gaps worth building (each tied to the complaint or missing feature it answers, marked for the first version
+or later), and, when it is crowded, one to three **pivots**: nearby, less crowded directions the same idea could take (another group
+of users, one trade or niche, a neglected workflow), each with its evidence. Every claim cites its
+source; say what you couldn't find. The verdict is a recommendation: the owner decides. If there are no web tools, say so and continue.
 
 ## 4. Choose the stack (new projects only)
-Pick boring, widely used, well-documented technology that suits the product and can be hosted cheaply. One line
-per choice with the reason. Check the current stable versions from the official docs or package registry — never
+First run `node "${CLAUDE_PLUGIN_ROOT}/scripts/presets.mjs" --match --project .`: the kit has tested recipes for common kinds of
+app. If one FITS and the plan needs nothing it lists under "Not for", use it (`--show <id>` prints it): its stack, versions,
+commands, host, accounts and settings go into the plan as they are, and the first roadmap feature is "set up from the
+`<id>` recipe". Say in the plan that a recipe was used and which. Otherwise (NO RECIPE, or the plan needs what a recipe is not
+for), choose freely: pick boring, widely used, well-documented technology that suits the product and can be hosted cheaply. One
+line per choice with the reason.
+Offer the owner the choice inside the plan, never as a separate question: your recommended stack first (a fitting recipe when there
+is one, since it is tested), then one or two real alternatives, each with two or three plain pros and cons (cost to host, speed,
+how common it is so help is easy to find, what it is good and bad at, whether a kit recipe covers it). Approving the plan accepts the
+recommendation. If the owner picks an alternative or names their own (any language, C++ included), use it: no recipe applies,
+the free-choice rules below do, and the plan says that set-up is not pre-tested. Check the current stable versions from the official docs or package registry — never
 from memory. Prefer what the project already uses.
 Check what this computer has before relying on it (`docker --version`, `git --version`, the browsers Playwright needs): every
 criterion must be provable here. Don't choose Docker for local development or proof unless it is installed or the host requires it.
@@ -94,7 +114,13 @@ this file, and the ui-reviewer scores each screen against it. The accessibility 
 ## 8. Present the plan — short, plain words
 - **Goal** — one sentence
 - **How it works for the user** — numbered steps
-- **Built with** — the stack, one line each
+- **Worth building?** (apps meant to sell or win users) — the verdict, the demand and buyers found, how crowded it is, the gap and
+  what would be hard to copy, the recommended gap features and any pivots, each with its source
+- **Built with** — the recommended stack, one line each, marked "kit recipe: <id>" when it is one; then the alternatives
+  with their pros and cons, and "approving the plan keeps the recommendation; name another stack if you want it"
+- **Numbers and rules** — every number shown to users or used to decide something (monthly income, totals, counts, prices,
+  tax, "active customer", "overdue"), each with one plain definition ("monthly income: paid invoices this calendar month,
+  refunds subtracted"). Approving the plan approves the definitions; the same number must mean the same thing everywhere.
 - **Acceptance criteria** — observable, testable statements ("a visitor can reset their password by email
   and sign in with the new one"). Each becomes a test.
 - **Security** — what's protected, the main threats and the defence for each, as testable criteria, and which
@@ -141,7 +167,8 @@ On approval, write the project's memory so any later session can pick up with fu
   criterion, `→ test: <file>::<test name>` or `→ manual: <how it was checked>`, or `→ ci: <workflow file>::<job>` for what only GitHub can prove. A hook rejects ticks without proof.
 - `PROJECT.md` (the master document): what it is, the stack and why, how to run it, the architecture map, the
   decisions made in this planning (with the reasons and what was rejected), current state, known problems, next steps,
-  plus `## Success measures` and `## Risks` (one line each, as agreed in the plan).
+  plus `## Success measures` and `## Risks` (one line each, as agreed in the plan), and `## One source`: one line per number and
+  rule from the plan (`- Monthly income: <file>::<function> — the definition`), the file filled in when it is built.
 - `DECISIONS.md`: append-only, one line per decision with an id (`- <date> — <decision> {#D-001}, because <reason>; rejected: <alternative>`;
   next number from `node "${CLAUDE_PLUGIN_ROOT}/scripts/notes-graph.mjs" --project . --next-id D`); record the planning decisions in it now. Give each roadmap
   feature an id (`{#F-001}`) and have it point at the decisions it follows (`[[D-001]]`). A decision that is replaced later gets
@@ -150,6 +177,8 @@ On approval, write the project's memory so any later session can pick up with fu
   ["list", "dialog", "messages"], "items": 500 }], "exceptions": [] }`. Parts come from `node "${CLAUDE_PLUGIN_ROOT}/scripts/ui-check.mjs" --parts`;
   `/invoices/:id` matches any one invoice. Every builder and reviewer works from it.
 - `HANDOFF.md` and `CHANGELOG.md`: start them as described in `/starter-kit:init` if they don't exist.
+- `.claude/rules/stack.md` when a recipe was used: `node "${CLAUDE_PLUGIN_ROOT}/scripts/presets.mjs" --write <id> --project .` (the
+  stack's known mistakes and where its docs are; Claude Code reads it in every session).
 Commit them. Then build the items in order with `/starter-kit:feature`, one at a time: after each merge the records
 are updated (see that command), tell the user in a line or two what now works and how to see it, and carry on to
 the next without being asked. When the last feature of a milestone is merged, run `/starter-kit:accept` before building

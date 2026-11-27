@@ -12,7 +12,8 @@ Rewrite this file at the end of every session; keep it under 55 lines and true.
 - LIVE TRIALS (`docs/trials.md`): runs 1-2 (quote builder) gave 2.17.1 and 2.17.2. SessionStart carries NO model field. OWNER RULE: never spend API tokens (no `claude -p`, no npx claude-code runs, no `claude plugin eval`). `CLAUDE.md` says so.
 - Done: Phase 0, Phase M (all but M-14), Phase S (all but S-12). Choices: D1 merged hook runner; D11 Opus for medium, large and
   risky features and D12 never Fable are Claude's choices, NOT the owner's (still open); D13 compact project chats at 300K; D14 Phase S part B built before a trial, old flow as fallback.
-- 2.19.0 pushed and `stable`; 2.19.1 committed, NOT pushed. Trial 3 (2.17.2) finished milestone 1 ("Works, accept it"; `docs/trials.md`), now on F-004.
+- 2.19.1 pushed. Trial 3 (2.17.2) finished milestone 1 ("Works, accept it"; `docs/trials.md`), now on F-004. GitHub page: owner wants it
+  detailed, no word limit; `docs/every-step.md` is the walkthrough; `<!-- INFOGRAPHIC n -->` marks where five owner-made images go.
 
 ## Recent work, and how far it is verified
 - 2.19.1 (trial 3 fixes, see CHANGELOG). 2.19.0: UI checklist (`ui-checklist.mjs`, `ui-check.mjs`, `templates/ui-checkpoint.js`,
@@ -31,8 +32,8 @@ Rewrite this file at the end of every session; keep it under 55 lines and true.
   fresh context and returns a twelve-line result; `build-state.mjs` records each stage outside the project and resumes from git;
   `agent-route.mjs` lets only the conductor start agents; `conductor-check.mjs` verifies a MERGED commit; `compact-notes.mjs`
   steers compaction summaries; `init` sets `autoCompactWindow` 300000. Trial 3 showed live that the conductor starts nested
-  agents on the routed models and keeps their worktrees. NOT verified: PreCompact shaping, the session note after a compaction.
-- 2.16.0: quiet output via `updatedToolOutput` (NOT verified live that Claude Code accepts it), fix-only re-review.
+  agents on the routed models and keeps their worktrees. NOT verified: PreCompact shaping, the session note after a compaction,
+  2.16.0's quiet output via `updatedToolOutput` (that Claude Code accepts it live).
 
 ## Not verified (be honest about this)
 - Hooks run live (trials 1-3); trial 3 finished milestone 1 on 2.17.2 (rounds 6, 2, 2; 84% of agent tokens on Opus). 2.18+ untried live, so
@@ -41,11 +42,11 @@ Rewrite this file at the end of every session; keep it under 55 lines and true.
   quiet-lib's lists, and the 2.18.0 fetch guard, code warning and injection warning (miss reworded or novel attacks).
 
 ## Known risks
-- The repo is code that auto-runs on every computer: keep two-factor on. Until `stable` exists, `main` is it. Conductor trouble: `{ "freshContext": false }`.
-- Fake keys in tests are built from pieces: GitHub push protection refuses full key-shaped text.
+- The repo is code that auto-runs on every computer: keep two-factor on. Conductor trouble: `{ "freshContext": false }`. Fake keys in
+  tests are built from pieces: GitHub push protection refuses full key-shaped text.
 
 ## Do this first next session
-1. D7 (push policy) is still open; D2 is yes (2026-11-26).
+1. D7 (push policy) open; D2 yes (2026-11-26). Add the infographics (`docs/assets/infographic-*.png`) when the owner sends them.
 2. Trial 3 must start a NEW session to get 2.19.1 (one long session never updates). Then compare rounds and Opus share with milestone 1.
 3. Confirm on a computer that `marketplace add ...@stable` installs and keeps following `stable` (not verified yet).
 

@@ -52,9 +52,17 @@ test("the README lists every command and every agent, so nothing is undocumented
   }
 });
 
-test("the README stays a short front page, and every docs page links back to it", () => {
-  const words = read("README.md").split(/\s+/).filter(Boolean).length;
-  assert.ok(words <= 1500, `README is ${words} words; move detail into a docs/ page`);
+// The owner wants the GitHub page detailed (no word limit): the README walks through every stage and links the full walkthrough,
+// and that walkthrough names every workflow, so a new command can't go unexplained.
+test("the README walks through every step, the full walkthrough covers every workflow, and every docs page links back", () => {
+  const readme = read("README.md");
+  assert.ok(readme.includes("## Every step, from idea to launch"), "the README has no step-by-step section");
+  assert.ok(readme.includes("docs/every-step.md"), "the README does not link the full walkthrough");
+  const walk = read("docs/every-step.md");
+  for (const f of readdirSync(join(PLUGIN, "commands"))) {
+    const name = f.replace(/\.md$/, "");
+    assert.ok(walk.includes(`\`${name}\``), `docs/every-step.md does not explain the "${name}" workflow`);
+  }
   assert.ok(existsSync(join(REPO, "docs", "assets", "logo.png")), "the README logo is missing");
   for (const p of docPages().filter((x) => !x.includes(`${join("docs", "development")}`))) {
     assert.ok(readFileSync(p, "utf8").includes("../README.md"), `${p.replace(REPO, "")} has no link back to the README`);

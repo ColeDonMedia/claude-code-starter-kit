@@ -4,6 +4,7 @@
 
 | Page | What's in it |
 |---|---|
+| [Every step, from idea to launch](every-step.md) | Everything the kit does, in order: what you see, what Claude does, which files change, what can stop it |
 | [What using it looks like](example.md) | A short example build, the files it adds to your project, usage, and how to switch it off |
 | [How it works](how-it-works.md) | Automatic workflows, plain language, lean mode, branches and worktrees, checks before a turn ends, self-updating |
 | [Safety and security](safety.md) | The guards (commands, secrets, packages, pushes, databases), proof they run, approvals, security at every stage |

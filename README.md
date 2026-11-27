@@ -13,6 +13,7 @@
 <p align="center">
   <a href="#install">Install</a> ·
   <a href="#how-you-use-it">How you use it</a> ·
+  <a href="#every-step-from-idea-to-launch">Every step</a> ·
   <a href="docs/example.md">See an example</a> ·
   <a href="#whats-inside">What's inside</a> ·
   <a href="#protection-built-in">Protection</a> ·
@@ -72,6 +73,79 @@ Open a project folder in Claude Code and talk normally.
 
 See [a whole example build](docs/example.md), with the files it adds, usage and switching it off. More in
 [How it works](docs/how-it-works.md).
+
+## Every step, from idea to launch
+
+<!-- INFOGRAPHIC 1 (the whole journey): docs/assets/infographic-journey.png -->
+
+This is the whole path a new app takes. Each stage runs by itself; you're only asked where your answer changes the result.
+[Every step in full detail](docs/every-step.md) covers what you see, what Claude does, which files change and what can stop it.
+
+**1. Every session starts with a briefing.** Before you type, a short note tells Claude which workflow fits which request, that
+you're not a programmer, how far the roadmap is, what's waiting for you, and whether a build was cut off. The first session after an
+update proves the guards are running. Updates install themselves once a day, only versions that passed their tests.
+
+**2. Setup** (first time in a folder, even an empty one):
+- works out how to install, run, test and build the project, and makes it a git project if it isn't one (nothing is uploaded)
+- writes `CLAUDE.md` (the project's rulebook for Claude), locks your keys and login files away from Claude, and adds a git hook that
+  refuses secrets in any commit
+- for anything with a screen, sets up real-browser tests at phone and desktop size, plus speed, accessibility and screen checks
+- starts the project's memory: `PROJECT.md`, `HANDOFF.md`, `CHANGELOG.md`
+- asks you **one question**: may it run the project's own checks automatically?
+
+**3. The plan** (new apps; a hook refuses app code until it exists):
+- one message of questions, each with a suggested answer, always including how many people will use it
+- researchers look at 4 to 6 similar products; the technology is chosen and checked against what your computer can run
+- a gap check (empty and error screens, password reset, deleting data, phones, keyboard use) and a threat check (who could misuse it,
+  and a test for each defence)
+- a plan with testable criteria, a roadmap in milestones of about three features, a speed budget and a screen list
+- a second agent attacks the plan before you see it; **you approve once**
+
+**4. The look.** Two or three directions from the style library (89 styles, 194 palettes, 74 font pairings), shown side by side for
+you to pick. The choice becomes `DESIGN.md`, which every screen follows.
+
+<!-- INFOGRAPHIC 2 (one feature's build loop): docs/assets/infographic-feature.png -->
+
+**5. Each feature, in its own fresh context:**
+- a **conductor** agent runs the whole build away from your chat; the build's progress is recorded so a cut-off resumes where it stopped
+- a **builder** works in its own copy of the project, on its own branch, **test first**: one failing test per agreed criterion, then
+  the code, committing after every passing test
+- for screens it builds every state, measures each one in a real browser at phone and desktop size, and re-runs with extreme data (the
+  longest name, 300 items, a missing picture)
+- a **reviewer**, a **challenger** (who assumes it's not done), a **UI reviewer** and, for risky features, a **security reviewer** and a
+  **red team** check it in parallel
+- only problems that break what you agreed or let a stranger in go back for a fix; the rest is listed to fix before launch
+- from round 3 a script decides if more rounds are worth it; round 6 always comes to you
+- it's merged only when everything passes, the roadmap is ticked **only with the test that proves each criterion**, the records are
+  updated, and you get a short report: what works, how to see it, and what it used
+
+**6. A checkpoint every three features.** All tests, every roadmap tick, the records and the approved plan are checked against what
+was really built.
+
+<!-- INFOGRAPHIC 3 (milestone acceptance): docs/assets/infographic-accept.png -->
+
+**7. You try each milestone before more is built.** A first-time-user agent walks it in a browser first, every screen is compared with
+every other, and accessibility is checked by hand. Then you get five to eight things to try. Your verdict is recorded in your own words,
+and changes you ask for become roadmap items.
+
+<!-- INFOGRAPHIC 4 (the pre-ship scan): docs/assets/infographic-ship.png -->
+
+**8. Nothing leaves without the pre-ship scan.** Seventeen checks: tests, types, lint, build, dependency and configuration scanners, a
+security review, browser tests, your acceptance, database changes, records, speed, design, load and accessibility. A hook blocks every
+push and deploy until that exact commit has passed.
+
+**9. The first launch.** Separate test and live copies, payments in test mode first, automatic deploys, error and uptime alerts,
+a backup that has actually been restored, a practised rollback, HTTPS and security headers, cost estimates, and a `RUNBOOK.md`.
+It asks for your go-ahead before going live.
+
+**10. After launch.** A monthly check-up (updates, security, backups, speed, costs), outage handling that restores service first, and
+speed work that's measured before and after.
+
+<!-- INFOGRAPHIC 5 (the guards): docs/assets/infographic-guards.png -->
+
+**All the way through, guards watch every command and edit:** dangerous commands, leaked secrets, invented packages, remote databases,
+unchecked pushes, code before a plan, and roadmap ticks without proof. When Claude finishes a turn with changed code, the project's own
+checks run, and the turn can't end while one fails.
 
 ## What's inside
 
@@ -146,8 +220,8 @@ Details: [Safety and security](docs/safety.md).
 ## What's proven and what isn't
 
 - **Proven:** over 570 automated tests over the hooks and scripts, including hundreds of disguised attacks thrown at the guards. Every push runs them on Windows, macOS and Linux.
-- **Not yet proven:** a full real-world build from idea to launch. A [trial](docs/trials.md) has built two features of a real app so far,
-  on Windows. Found a problem? [Open an issue](https://github.com/ColeDonMedia/claude-code-starter-kit/issues).
+- **Not yet proven:** a full real-world build from idea to launch. A [trial](docs/trials.md) has built a real app's first milestone
+  (three features, accepted by its owner) on Windows; what it found is fixed, but those fixes haven't run in a live build yet. Found a problem? [Open an issue](https://github.com/ColeDonMedia/claude-code-starter-kit/issues).
 
 ## Requirements
 
@@ -156,7 +230,7 @@ Details: [Safety and security](docs/safety.md).
 
 ## Documentation
 
-[What using it looks like](docs/example.md), [How it works](docs/how-it-works.md), [Safety and security](docs/safety.md),
+[Every step, in full](docs/every-step.md), [What using it looks like](docs/example.md), [How it works](docs/how-it-works.md), [Safety and security](docs/safety.md),
 [Quality and testing](docs/quality.md), [Planning, records and memory](docs/planning-and-records.md),
 [Design and accessibility](docs/design-and-accessibility.md), [Speed and scale](docs/speed-and-scale.md),
 [Databases](docs/databases.md), [Big codebases](docs/big-codebases.md), [Launch, operations and legal](docs/launch-and-operations.md),

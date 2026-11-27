@@ -29,8 +29,10 @@ the owner's trial runs in a normal session (`docs/trials.md`) and by the hook ca
 - `plugins/starter-kit/templates/` — files copied into projects (the speed and accessibility tests).
 - `plugins/starter-kit/library/` — vetted third-party DATA (no instructions, no code), each folder with its license and a NOTICE
   naming the source commit and what was left out. Read only by the kit's own scripts, as data.
-- `README.md` — the short front page (logo in `docs/assets/`). Keep it short and scannable: one table or a few bullets per
-  topic, with the detail in `docs/` (one page per topic, indexed in `docs/README.md`). A test checks every relative link.
+- `README.md` — the front page (logo and infographics in `docs/assets/`). The owner wants it detailed, explaining every step the
+  kit takes, with no word limit as long as it is relevant; keep it scannable (headings, bullets, tables, infographics). The full
+  walkthrough is `docs/every-step.md`; other detail lives in `docs/` (one page per topic, indexed in `docs/README.md`). Keep both
+  true when a workflow changes. A test checks every relative link.
 - `docs/vetted.md` — every third-party repo that was vetted, with pinned commits. Third-party skills, scripts and settings are
   never copied in; data may be, under a permissive license, after vetting, into `library/` with its license and notice.
 - `docs/trials.md` — the owner's trial runs. `docs/development/` — the handoff and the improvement plan for working on the kit.

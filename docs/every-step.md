@@ -8,7 +8,7 @@ it happens. Each stage says what you see, what Claude does, what runs automatica
 You never type a command. Claude picks each workflow from what you say and tells you in one line what it ran. The command names
 (`/starter-kit:spec` and so on) are shown here so you can find the files behind each step.
 
-<!-- INFOGRAPHIC 1 (the whole journey): docs/assets/infographic-journey.png -->
+<p align="center"><img src="assets/from-idea-to-launch.png" alt="Starter Kit from idea to launch: setup, plan, look, build each feature with up to five reviewers, proof, you try it, 17 checks behind a push gate, launch; guards on every action" width="720"></p>
 
 **The stages:**
 
@@ -154,8 +154,6 @@ Every later screen follows `DESIGN.md`, and the UI reviewer scores each screen a
 
 ## 5. Building one feature (`feature`)
 
-<!-- INFOGRAPHIC 2 (one feature's build loop): docs/assets/infographic-feature.png -->
-
 **When:** after the plan is approved, for each roadmap item in order; or when you ask for a feature or a real bug fix.
 
 **What you see:** nothing until it's done, then a short report: what now works, how to see it, anything left as is, and a progress line
@@ -270,8 +268,6 @@ What it can fix, it fixes. The rest is reported to you in plain words.
 
 ## 7. Trying a finished milestone (`accept`)
 
-<!-- INFOGRAPHIC 3 (milestone acceptance): docs/assets/infographic-accept.png -->
-
 **When:** the last feature of a milestone is merged. Nothing in the next milestone is built until you've tried this one.
 
 **What you see:** the app running, five to eight things to try in order, and two questions: does it work the way you wanted, and which
@@ -296,8 +292,6 @@ screen feels least like the apps you like.
 ---
 
 ## 8. Before anything leaves your computer (`full-scan`)
-
-<!-- INFOGRAPHIC 4 (the pre-ship scan): docs/assets/infographic-ship.png -->
 
 **When:** you say "ship it", "push", "release" or "deploy". **A hook blocks every push, pull request, publish and deploy until this has
 passed for that exact commit.**
@@ -371,8 +365,6 @@ paste a secret into the chat, never writes one into a file, and asks before anyt
 ---
 
 ## 11. What runs on every action, at every stage
-
-<!-- INFOGRAPHIC 5 (the guards): docs/assets/infographic-guards.png -->
 
 These hooks run automatically around every command and file change, in every workflow:
 

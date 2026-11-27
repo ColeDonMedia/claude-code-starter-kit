@@ -76,7 +76,7 @@ See [a whole example build](docs/example.md), with the files it adds, usage and 
 
 ## Every step, from idea to launch
 
-<!-- INFOGRAPHIC 1 (the whole journey): docs/assets/infographic-journey.png -->
+<p align="center"><img src="docs/assets/from-idea-to-launch.png" alt="Starter Kit from idea to launch: setup, plan, look, build each feature with up to five reviewers, proof, you try it, 17 checks behind a push gate, launch; guards on every action" width="720"></p>
 
 This is the whole path a new app takes. Each stage runs by itself; you're only asked where your answer changes the result.
 [Every step in full detail](docs/every-step.md) covers what you see, what Claude does, which files change and what can stop it.
@@ -104,8 +104,6 @@ update proves the guards are running. Updates install themselves once a day, onl
 **4. The look.** Two or three directions from the style library (89 styles, 194 palettes, 74 font pairings), shown side by side for
 you to pick. The choice becomes `DESIGN.md`, which every screen follows.
 
-<!-- INFOGRAPHIC 2 (one feature's build loop): docs/assets/infographic-feature.png -->
-
 **5. Each feature, in its own fresh context:**
 - a **conductor** agent runs the whole build away from your chat; the build's progress is recorded so a cut-off resumes where it stopped
 - a **builder** works in its own copy of the project, on its own branch, **test first**: one failing test per agreed criterion, then
@@ -122,13 +120,9 @@ you to pick. The choice becomes `DESIGN.md`, which every screen follows.
 **6. A checkpoint every three features.** All tests, every roadmap tick, the records and the approved plan are checked against what
 was really built.
 
-<!-- INFOGRAPHIC 3 (milestone acceptance): docs/assets/infographic-accept.png -->
-
 **7. You try each milestone before more is built.** A first-time-user agent walks it in a browser first, every screen is compared with
 every other, and accessibility is checked by hand. Then you get five to eight things to try. Your verdict is recorded in your own words,
 and changes you ask for become roadmap items.
-
-<!-- INFOGRAPHIC 4 (the pre-ship scan): docs/assets/infographic-ship.png -->
 
 **8. Nothing leaves without the pre-ship scan.** Seventeen checks: tests, types, lint, build, dependency and configuration scanners, a
 security review, browser tests, your acceptance, database changes, records, speed, design, load and accessibility. A hook blocks every
@@ -140,8 +134,6 @@ It asks for your go-ahead before going live.
 
 **10. After launch.** A monthly check-up (updates, security, backups, speed, costs), outage handling that restores service first, and
 speed work that's measured before and after.
-
-<!-- INFOGRAPHIC 5 (the guards): docs/assets/infographic-guards.png -->
 
 **All the way through, guards watch every command and edit:** dangerous commands, leaked secrets, invented packages, remote databases,
 unchecked pushes, code before a plan, and roadmap ticks without proof. When Claude finishes a turn with changed code, the project's own

@@ -13,7 +13,7 @@ Rewrite this file at the end of every session; keep it under 55 lines and true.
 - Done: Phase 0, Phase M (all but M-14), Phase S (all but S-12). Choices: D1 merged hook runner; D11 Opus for medium, large and
   risky features and D12 never Fable are Claude's choices, NOT the owner's (still open); D13 compact project chats at 300K; D14 Phase S part B built before a trial, old flow as fallback.
 - 2.19.1 pushed. Trial 3 (2.17.2) finished milestone 1 ("Works, accept it"; `docs/trials.md`), now on F-004. GitHub page: owner wants it
-  detailed, no word limit; `docs/every-step.md` is the walkthrough; `<!-- INFOGRAPHIC n -->` marks where five owner-made images go.
+  detailed, no word limit; `docs/every-step.md` is the walkthrough; owner-made infographic `docs/assets/from-idea-to-launch.png` on both.
 
 ## Recent work, and how far it is verified
 - 2.19.1 (trial 3 fixes, see CHANGELOG). 2.19.0: UI checklist (`ui-checklist.mjs`, `ui-check.mjs`, `templates/ui-checkpoint.js`,
@@ -46,8 +46,7 @@ Rewrite this file at the end of every session; keep it under 55 lines and true.
   tests are built from pieces: GitHub push protection refuses full key-shaped text.
 
 ## Do this first next session
-1. D7 (push policy) open; D2 yes (2026-11-26). Add the infographics (`docs/assets/infographic-*.png`) when the owner sends them.
-2. Trial 3 needs a NEW session to get 2.19.1; then compare rounds and Opus share with milestone 1. 3. Confirm `...@stable` installs and follows `stable`.
+1. D7 (push policy) open; D2 yes (2026-11-26).2. Trial 3 needs a NEW session to get 2.19.1; then compare rounds and Opus share with milestone 1. 3. Confirm `...@stable` installs and follows `stable`.
 
 ## Rules that must not regress
 - Nothing from a project's own files may run or take effect without the user's approval on this computer (see `CLAUDE.md`).

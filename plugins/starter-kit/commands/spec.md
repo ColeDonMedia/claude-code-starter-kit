@@ -4,6 +4,14 @@ description: Use BEFORE building a new app or a large or vague feature. Turns th
 
 Turn this into a build-ready plan: $ARGUMENTS
 
+## Scope
+- **Job:** turn an idea, or an app already partly built, into one approved plan and roadmap.
+- **Starts when:** a new app, a large or vague feature, or code with no `ROADMAP.md`.
+- **May:** read the project, ask one round of questions with defaults, research, choose or offer the stack, write the plan and the records.
+- **Must not:** write app code, ask the owner technology questions outside the plan, re-plan what already works, or build before approval.
+- **Done when:** the owner approved the plan and `ROADMAP.md`, `PROJECT.md` and `DECISIONS.md` are written and committed.
+- **Hands back:** the plan in plain words, then the build starts with the first roadmap item.
+
 Goal: get it right BEFORE any code, because fixing a wrong assumption later costs far more than asking now.
 The user is not a programmer: you make the technical choices and explain them in a line each.
 
@@ -12,6 +20,22 @@ none: one message of at most four questions with defaults (include the size ques
 or "you pick"), no research agents unless the owner asks, a plan that fits on one screen (what it does, the defaults you chose,
 what it will not do), and a roadmap of one milestone. A detailed request is not a reason to skip this: the owner must see and
 correct your defaults before any code. In a new project a hook refuses app code until `ROADMAP.md` exists.
+
+**Taking over an app that is already partly built** (code but no `ROADMAP.md`, or "finish / continue / pick up this app"): never
+start over and never re-plan what exists. Before the steps below:
+- **Map it.** Big or unfamiliar: run `/starter-kit:onboard` first. Then list what the app does today from its screens, routes, data
+  tables and commits, and run its tests, type checks and build. Run `node "${CLAUDE_PLUGIN_ROOT}/scripts/dup-check.mjs" --project .`
+  over the whole project: every number or rule worked out in more than one place becomes a "make it one" roadmap item.
+- **Check each existing feature** by its tests, or by opening it in the running app. Write it into `ROADMAP.md` under
+  `## Milestone 0 — what already works` (`Accepted: pending`) as `- [x] Name — goal (existing <current commit>)`, with one criterion
+  per thing it does and `→ test:` or `→ manual:` proof for each, exactly as for new work. A feature that is there but broken or
+  unproven stays unticked with what is wrong, and becomes the first work.
+- **Ask only about what is left**, in one message, with defaults taken from the code ("it has invoices and clients; next: payments
+  and reminders?"). Don't ask what the code already answers (stack, look, who signs in). Keep the existing stack and `DESIGN.md` (if
+  there is none, write one from the screens that exist); no recipe applies.
+- **Research only the new parts.** Run the market check only if the app is meant to sell and hasn't launched, or the owner asks.
+- Then continue from step 5 (compare with the code). The plan says what was found working, what is broken or untested, and what is
+  left. `/starter-kit:accept` on milestone 0 lets the owner confirm the starting point.
 
 ## 1. Look first, ask second
 Read CLAUDE.md and skim the project (manifest, folders, existing screens or routes). Don't ask what you can see.
@@ -36,7 +60,8 @@ start. Don't build for a size the owner did not ask for, in either direction.
 
 ## 3. Research (new apps and unfamiliar territory; skip for a small feature)
 Launch two or three starter-kit `researcher` agents (they run on cheap, fast Haiku), one per angle, in parallel with
-your own reading of the code. Check their claims yourself before using them, and re-check prices, legal or privacy
+your own reading of the code. Run every report through `node "${CLAUDE_PLUGIN_ROOT}/scripts/cite-check.mjs" --file <the report,
+saved in your scratchpad>` and drop or re-source each NOT FOUND claim before using it. Check their claims yourself, and re-check prices, legal or privacy
 rules and security advice with a stronger model (the same agent with `model` set to `sonnet`). They find: 4–6
 competing or similar products, what every one of them has (table stakes), and what users complain about. Use the
 result in the gap check.

@@ -4,6 +4,14 @@ description: Use before a public launch, when the app collects any personal data
 
 Get the legal basics right for this project: $ARGUMENTS
 
+## Scope
+- **Job:** the legal basics from how the app really works: privacy policy, terms, cookies, children's data, licenses.
+- **Starts when:** before a public launch, when the app collects personal data, or the owner asks a legal question.
+- **May:** build the data inventory from the code, work out which rules apply, draft documents, check library licenses.
+- **Must not:** claim to be a lawyer, use boilerplate the app doesn't match, or promise compliance.
+- **Done when:** the documents match the data inventory and every rule that applies has a decision.
+- **Hands back:** the drafts, what still needs a real lawyer, and the decisions for the owner.
+
 You are not a lawyer and say so, but most launch failures here are not exotic: no privacy policy, a policy that says something the app
 doesn't do, collecting children's data carelessly, or a library whose license forbids commercial use. Work from FACTS about the app,
 never from boilerplate.

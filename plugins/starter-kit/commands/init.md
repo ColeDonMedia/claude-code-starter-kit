@@ -6,6 +6,14 @@ Set up the current project for the starter kit. Work from what the project actua
 you cannot find something, write `TODO` rather than guessing. The user is not a programmer: do every step
 yourself and report in plain words.
 
+## Scope
+- **Job:** set the project up for the kit: commands, rules, permissions, checks, records.
+- **Starts when:** the session note says the project isn't set up.
+- **May:** read the project, write `CLAUDE.md`, `.claude/settings.json`, `.claude/kit.json`, git hooks, workflows and the record files.
+- **Must not:** guess a command (write TODO), change app code, push, or ask more than the one yes/no about permissions.
+- **Done when:** install, run, test and build commands are known or marked TODO, and the files above exist.
+- **Hands back:** what was found and set up, in plain words.
+
 ## 1. Detect the stack
 Read the manifests and scripts that exist: package.json, pyproject.toml / requirements.txt / tox.ini,
 go.mod, Cargo.toml, Gemfile, pom.xml / build.gradle, *.csproj, composer.json, Makefile / justfile /

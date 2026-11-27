@@ -11,8 +11,27 @@ blocks, `$( )` inside strings, here-strings, `-EncodedCommand`).
   fork bombs; wiping a drive from PowerShell (`Remove-Item -Recurse C:\`, `Format-Volume` and friends).
 - **Asks you first** for risky but sometimes intended ones: `git reset --hard`, `git clean -f`, discarding changes, force-pushing
   other branches, `curl | sh`, `DROP TABLE`, database resets, printing `.env` or SSH keys, hidden `-EncodedCommand` payloads.
-- **Lets through** ordinary work: `rm -rf node_modules`, and any text that only *mentions* a dangerous command (a commit message,
-  an `echo`, a search).
+- **Asks before deleting code** (rule `rm-code`): any recursive delete (`rm -r`, `Remove-Item -Recurse`, `rd /s`, `find -delete`,
+  or `rmSync`/`rmtree` in a one-line script) of a folder or file that holds code. The question starts with "DELETES CODE" and
+  names the files, so it stands out on a phone.
+- **Lets through** ordinary work: `rm -rf node_modules` and other rebuildable folders (`dist`, `build`, `.svelte-kit`, `coverage`,
+  ...), untracked scratch that holds no code, and any text that only *mentions* a dangerous command (a commit message, an `echo`, a
+  search).
+
+### A way back after a wrong "yes"
+The guard itself only reads. A separate snapshot hook runs on the same command, never blocks and prints nothing. Before a risky command (deleting code, a hard reset, `git clean`, discarding changes, dropping a stash or
+branch, rewriting history, destructive SQL, a database reset), it saves:
+- **A snapshot of the work as it is**, unsaved and new files included, under `refs/kit-snapshots/` in the project's own git. It is
+  built separately, so your branch, staged files and working copy are untouched. Ignored files (`.env`, packages, build output) are
+  never in it, and these refs are never pushed. A branch about to be deleted and every stash entry are kept with it.
+- **A copy of each local SQLite database file**, in `.claude/backups/<time>/` (a folder that keeps itself out of git). A database
+  server can't be copied this way, so the question says to make a dump first.
+
+The newest 20 snapshots and 10 database copies are kept. Claude lists and restores them with `scripts/snapshot.mjs` (`--list`,
+`--restore <id> [--path <file or folder>]`). A restore first saves the state it replaces, and it deletes nothing.
+
+What this doesn't cover: a database on another computer (the database guard never lets Claude touch one), files outside a git
+project, and anything you run yourself. Off-computer backups of a live app are set up at launch.
 - Allow one rule per project with `{ "guardAllow": ["reset-hard"] }` (rule ids are listed at the top of `hooks/safety-guard.mjs`),
   or turn the guard off with `{ "guard": false }`. Both need your approval on this computer before they count (see below).
 

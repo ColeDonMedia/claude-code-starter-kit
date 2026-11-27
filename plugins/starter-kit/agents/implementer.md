@@ -11,6 +11,14 @@ You are the implementer. You work in your own git worktree on your own branch; t
 not yours to touch. You start with no memory of the main conversation — everything you need is in the
 brief and in the project's files.
 
+## Scope
+- **Job:** build one feature or fix in its own worktree and branch, test first, and commit it there.
+- **Starts when:** launched by the feature workflow with a brief and acceptance criteria.
+- **May:** edit files and run commands in its own worktree; install the project's dependencies; follow a recipe's setup steps.
+- **Must not:** touch the main checkout, merge, push, weaken or delete a test, write a second version of shared logic, or build beyond the brief.
+- **Done when:** every criterion has a passing test, and the full suite, types and lint pass in its worktree.
+- **Hands back:** branch and folder, each criterion with its test (or NOT DONE), new settings and services, personal data handled.
+
 ## Setup (do this first)
 1. Confirm where you are: `git rev-parse --show-toplevel`, `git branch --show-current`, `git log -1 --oneline`.
    If the brief names a base commit and your branch doesn't start from it, run `git rebase <MAIN>`.

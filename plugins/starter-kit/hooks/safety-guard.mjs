@@ -12,10 +12,14 @@
 //                                    { "auto": false }                        turns off everything automatic
 // Rule ids: rm-root, rm-wide, force-push-protected, force-push, push-delete, reset-hard,
 //           clean, discard-changes, branch-D, stash-drop, rewrite-history, disk-write, chmod-root, fork-bomb,
-//           sql-drop, db-reset, pipe-to-shell, secret-read
+//           sql-drop, db-reset, pipe-to-shell, secret-read, rm-code
+// rm-code: a recursive delete (rm -r, Remove-Item -Recurse, rd /s, find -delete, rmSync/rmtree in inline code) of a folder or
+// file that holds code asks first. Rebuildable folders (node_modules, dist, build ...), folders with no code and paths that
+// don't exist pass. This guard only reads; the snapshot hook (snapshot-guard.mjs) saves the way back before risky commands.
 // Any parse problem or unknown input allows the command: this hook must never get in the way by accident.
 import { existsSync, readFileSync } from "node:fs";
 import { basename, join, posix, resolve } from "node:path";
+import { codeFilesAt, REBUILDABLE } from "../scripts/delete-lib.mjs";
 import { entriesOf, switchedOff, approvedAllows } from "../scripts/trust-lib.mjs";
 
 let raw = "";
@@ -42,6 +46,7 @@ const inMode = (mode, fn) => {
 };
 
 const root = resolve(process.env.CLAUDE_PROJECT_DIR || input.cwd || process.cwd());
+const cwd = resolve(input.cwd || root);
 let cfg = {};
 try {
   const p = join(root, ".claude", "kit.json");
@@ -195,6 +200,7 @@ function checkRm(cmd, args) {
     const t = normTarget(raw);
     if (ROOTY.some((re) => re.test(t))) add("deny", "rm-root", `\`${cmd} -r\` on "${raw}" would wipe a system, home or drive folder`);
     else if (WIDE.test(t)) add("ask", "rm-wide", `\`${cmd} -r\` on "${raw}" deletes everything in the current folder`);
+    else checkCodeDelete(raw);
   }
 }
 
@@ -207,7 +213,23 @@ function checkFind(args) {
   }
   const destructive = args.includes("-delete") || args.some((a, i) => /^-(exec|execdir)$/.test(a) && /^(rm|shred|unlink)$/.test(basename(String(args[i + 1] ?? "").replace(/\\/g, "/"))));
   if (!destructive) return;
-  for (const r of roots) if (ROOTY.some((re) => re.test(normTarget(r)))) add("deny", "rm-root", `\`find ${r} ... delete\` would wipe a system, home or drive folder`);
+  const ni = args.findIndex((a) => a === "-name" || a === "-iname");
+  const pattern = ni >= 0 ? String(args[ni + 1] ?? "").replace(/^["']|["']$/g, "") : undefined;
+  for (const r of roots) {
+    if (ROOTY.some((re) => re.test(normTarget(r)))) add("deny", "rm-root", `\`find ${r} ... delete\` would wipe a system, home or drive folder`);
+    else checkCodeDelete(r === "." || r === "./" ? "." : r, pattern);
+  }
+}
+
+// ---------- deleting code ----------
+// Asks before a delete takes code with it. namePattern: find's -name glob, when one is given.
+function checkCodeDelete(raw, namePattern) {
+  if (/[$`%]|^~/.test(raw)) return; // variables and home paths can't be resolved here (home and system folders are handled above)
+  const t = raw.replace(/^["']|["']$/g, "").replace(/[\\/]+\*?$/, "");
+  if (!t || /[*?]/.test(t) || REBUILDABLE.has(basename(t.replace(/\\/g, "/")))) return;
+  const glob = namePattern ? new RegExp(`^${namePattern.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*").replace(/\?/g, ".")}$`, "i") : null;
+  const files = codeFilesAt(resolve(cwd, t.replace(/\\/g, "/"))).filter((f) => !glob || glob.test(basename(f)));
+  if (files.length) add("ask", "rm-code", `DELETES CODE: "${raw}" holds ${files.length >= 50 ? "50 or more" : files.length} code file${files.length === 1 ? "" : "s"} (${files.slice(0, 3).join(", ")}${files.length > 3 ? ", ..." : ""})`);
 }
 
 const ATTACK_TOOLS = new Set(["nmap", "masscan", "zmap", "sqlmap", "hydra", "medusa", "nikto", "gobuster", "dirb", "dirbuster", "ffuf", "wfuzz", "feroxbuster", "nuclei", "wpscan", "msfconsole", "msfvenom", "zap-cli", "zap.sh", "zaproxy", "arachni", "w3af", "commix", "xsstrike", "dalfox", "amass", "subfinder", "enum4linux", "responder", "ettercap", "aircrack-ng", "john", "hashcat"]);
@@ -309,6 +331,7 @@ function inspectCode(code, depth) {
   for (const m of code.matchAll(/(?:rmtree|rmSync|rmdirSync|removeSync|remove_all|unlinkSync)\(\s*(["'])((?:(?!\1).)*)\1/g)) {
     const t = normTarget(m[2]);
     if (ROOTY.some((re) => re.test(t))) add("deny", "rm-root", `inline code deletes "${m[2]}", a system, home or drive folder`);
+    else checkCodeDelete(m[2]);
   }
   for (const m of code.matchAll(/(?:system|popen|exec\w*|spawn\w*|run|call|check_output|check_call|Popen|shell_exec|passthru)\(\s*(["'])((?:(?!\1).)*)\1/g)) analyze(m[2], depth + 1);
 }
@@ -542,9 +565,14 @@ const deny = findings.filter((f) => f.level === "deny");
 const chosen = deny.length ? deny : findings;
 const level = deny.length ? "deny" : "ask";
 const why = chosen.map((f) => `${f.reason} [${f.id}]`).join("; ");
+// The snapshot hook runs on the same command and keeps the way back; say so, so the person knows a wrong "yes" can be undone.
+const SNAP = new Set(["rm-code", "rm-wide", "reset-hard", "clean", "discard-changes", "stash-drop", "branch-D", "sql-drop", "db-reset", "rewrite-history"]);
+const saved = level === "ask" && chosen.some((f) => SNAP.has(f.id))
+  ? " In a git project the work as it is now (and any local database file) is saved first, so it can be brought back (the kit's snapshot.mjs --list)."
+  : "";
 const reason =
   level === "deny"
     ? `Blocked by the starter-kit safety guard: ${why}. Choose a safer way. If the user truly wants this exact command, they must run it themselves or allow the rule id in .claude/kit.json ("guardAllow") — never edit that file on your own.`
-    : `Starter-kit safety guard: ${why}. Approve only if you meant this.`;
+    : `Starter-kit safety guard: ${why}. Approve only if you meant this.${saved}`;
 process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: "PreToolUse", permissionDecision: level, permissionDecisionReason: reason } }));
 process.exit(0);

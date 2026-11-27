@@ -1,7 +1,7 @@
 // The single entry point for the starter kit's hooks: `gate.mjs pre|post|stop|start`. Claude Code runs a hook as a separate
 // program for every matching hook, and starting Node costs about 0.3 s each, so the old set-up made every shell command wait
 // roughly 0.7 s. This runs the same individual hook scripts inside one process (see scripts/inprocess.mjs), in order:
-//   pre   (before any tool)   flight recorder; for shell commands: safety, database, secret, push, package guards;
+//   pre   (before any tool)   flight recorder; for shell commands: safety guard, snapshots, database, secret, push, package guards;
 //                             for file edits: file guard, plan check; for agent launches: the model check; for web fetches: the
 //                             fetch guard (no secret leaves in an address). The first block ends the run.
 //   post  (after any tool)    flight recorder; after file edits: dangerous-code warning, related tests; after shell commands: quiet
@@ -29,7 +29,7 @@ export function pipeline(mode, input) {
   const isEdit = ["Edit", "Write", "MultiEdit"].includes(tool) || (!tool && typeof ti.file_path === "string" && typeof ti.command !== "string");
   const isAgent = tool === "Agent" || tool === "Task";
   const isOutside = tool === "WebFetch" || tool === "WebSearch" || /^mcp__/.test(String(tool ?? "")); // content written by strangers
-  if (mode === "pre") return ["flight-recorder", ...(isShell ? ["safety-guard", "db-guard", "secret-guard", "push-gate", "package-guard"] : isEdit ? ["file-guard", "plan-gate"] : isAgent ? ["agent-route"] : tool === "WebFetch" ? ["fetch-guard"] : [])];
+  if (mode === "pre") return ["flight-recorder", ...(isShell ? ["safety-guard", "snapshot-guard", "db-guard", "secret-guard", "push-gate", "package-guard"] : isEdit ? ["file-guard", "plan-gate"] : isAgent ? ["agent-route"] : tool === "WebFetch" ? ["fetch-guard"] : [])];
   if (mode === "post") return ["flight-recorder", ...(isEdit ? ["code-warn", "test-related"] : isShell ? ["quiet-output"] : isOutside ? ["inject-warn"] : [])];
   if (mode === "stop") return ["flight-recorder", "verify-gate", "docs-gate"];
   // A resumed or forked chat already holds the note; session-start then only says what resuming costs, when it is worth saying.

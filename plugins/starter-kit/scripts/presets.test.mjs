@@ -190,6 +190,17 @@ test("the plan, the builder and maintenance use the recipes, and the builder rea
   assert.match(readFileSync(join(PLUGIN, "commands", "maintain.md"), "utf8"), /\.claude\/rules\/stack\.md/);
 });
 
+test("an app that is already partly built is taken over, not re-planned", () => {
+  const spec = readFileSync(join(PLUGIN, "commands", "spec.md"), "utf8");
+  assert.match(spec, /\*\*Taking over an app that is already partly built\*\*/);
+  assert.match(spec, /never\s+start over and never re-plan what exists/);
+  assert.match(spec, /## Milestone 0 — what already works/);
+  assert.match(spec, /\(existing <current commit>\)/);
+  assert.match(spec, /dup-check\.mjs" --project \.`\s+over the whole project/);
+  assert.match(spec, /\*\*Ask only about what is left\*\*/);
+  assert.match(readFileSync(join(PLUGIN, "hooks", "session-start.mjs"), "utf8"), /code with no ROADMAP\.md -> \/starter-kit:spec \(existing code: its take-over part\)/);
+});
+
 // The real thing: every recipe's setup, step by step, into a project that already has the kit's records, then its checks.
 test("every recipe sets up for real and passes its own checks (KIT_PRESET_SCAFFOLD=1)", { skip: !process.env.KIT_PRESET_SCAFFOLD, timeout: 3_600_000 }, () => {
   const only = process.env.KIT_PRESET_SCAFFOLD === "1" ? null : process.env.KIT_PRESET_SCAFFOLD.split(",");

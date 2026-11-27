@@ -2,6 +2,14 @@
 description: "Use when the user asks where things stand (status, progress, how far along, what's next, a report). Gives a plain-words status built from the project's own records and git history."
 ---
 
+## Scope
+- **Job:** a plain-words status report from the project's own records and git history.
+- **Starts when:** the owner asks where things stand.
+- **May:** run `status.mjs` and read the records.
+- **Must not:** add anything the records don't say, hide a warning, or change files.
+- **Done when:** the owner has progress against the approved scope, what's next, the risks, and what is needed from them.
+- **Hands back:** the report, with what is needed from the owner last.
+
 Report the project's status to the user in plain words: $ARGUMENTS
 
 1. Run `node "${CLAUDE_PLUGIN_ROOT}/scripts/status.mjs" --project .` and read what it prints. Every line comes from the project's files and git

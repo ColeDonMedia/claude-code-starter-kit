@@ -4,6 +4,14 @@ description: Use when the user asks to build a new feature, add functionality, o
 
 Build this in isolation and merge it when it's proven: $ARGUMENTS
 
+## Scope
+- **Job:** build one roadmap item or non-trivial fix in isolation and merge it only when proven.
+- **Starts when:** the owner asks for a feature or fix bigger than a few lines, or the roadmap's next item is due.
+- **May:** check the preconditions here, then hand the whole build to the conductor (or run the workflow here as the fallback).
+- **Must not:** build in the main checkout, start without acceptance criteria, merge anything unproven, or take on a second item in the same run.
+- **Done when:** the conductor reports MERGED and the merge commit checks out, or it reports why it stopped.
+- **Hands back:** what now works and how to see it, in a line or two, then the next item.
+
 1. **Check first, here.** A git repository with a commit (else `git init`, a `.gitignore`, a first commit, and say so). A clean main
    checkout (commit your own finished, tested work; anything else: ask the user). A new app, or a large or vague request without
    acceptance criteria: `/starter-kit:spec` first. A big codebase not yet mapped: `/starter-kit:onboard` first. No "Commands" in

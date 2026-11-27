@@ -9,6 +9,7 @@
 //   "ci:" is for what this computer cannot prove (Docker absent, another operating system): the job must exist in that workflow
 //   file. It counts as done for the build, and the launch waits until that job has passed on GitHub.
 //   - [ ] Save recipes — logged-in users can save a recipe
+//   - [x] Invoices — built before the kit took the app over (existing a1b2c3d): the commit it was found in, same proof rules
 //
 // A ticked feature must name a merge commit that exists and is part of the current history, must have at least one
 // acceptance criterion, every criterion must be ticked, and each one must point to a test file that exists and
@@ -31,8 +32,8 @@ export function checkRoadmap(root) {
   const finish = () => {
     if (!current || !current.done) return;
     ticked++;
-    const name = current.title.replace(/\s*\(merged [0-9a-f]+\)\s*$/i, "").slice(0, 60);
-    const m = /\(merged ([0-9a-f]{7,40})\)/i.exec(current.title);
+    const name = current.title.replace(/\s*\((?:merged|existing) [0-9a-f]+\)\s*$/i, "").slice(0, 60);
+    const m = /\((?:merged|existing) ([0-9a-f]{7,40})\)/i.exec(current.title);
     if (!m) problems.push(`"${name}" is ticked but has no "(merged <commit>)" proof`);
     else if (git("cat-file", "-e", `${m[1]}^{commit}`).status !== 0) problems.push(`"${name}" names merge commit ${m[1]}, which does not exist`);
     else if (git("merge-base", "--is-ancestor", m[1], "HEAD").status !== 0) problems.push(`"${name}" names commit ${m[1]}, which is not part of the current history`);

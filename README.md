@@ -98,7 +98,8 @@ update proves the guards are running. Updates install themselves once a day, onl
 - one message of questions, each with a suggested answer, always including how many people will use it
 - researchers look at 4 to 6 similar products and, for an app meant to sell, **the market**: demand, who would buy it, how crowded
   it is, and a gap competitors would find hard to copy. The plan gives a verdict (build it, build it narrower, pivot, or think again),
-  recommends gap features and, if it is crowded, less crowded directions, with sources
+  recommends gap features and, if it is crowded, less crowded directions, with sources. **Every citation is checked by a script**:
+  it opens the page and confirms the quoted words are really there, so an invented source or a wrong price is dropped
 - the stack: a **recommended stack plus one or two alternatives, each with plain pros and cons**. Approving the plan keeps the
   recommendation; you can pick another or name your own (any language). For common kinds of app the recommendation is a **tested
   recipe** (see [Stack recipes](#stack-recipes) below)
@@ -108,6 +109,8 @@ update proves the guards are running. Updates install themselves once a day, onl
   and a test for each defence)
 - a plan with testable criteria, a roadmap in milestones of about three features, a speed budget and a screen list
 - a second agent attacks the plan before you see it; **you approve once**
+- **already half-built?** It doesn't start over: it maps what's there, proves what works (that becomes milestone 0, which you
+  confirm), lists what's broken or untested, and plans only what's left
 
 **4. The look.** Two or three directions from the style library (89 styles, 194 palettes, 74 font pairings), shown side by side for
 you to pick. The choice becomes `DESIGN.md`, which every screen follows.
@@ -206,6 +209,9 @@ ones, your try-out at every milestone, and all seventeen pre-ship checks. Every 
 
 ## What's inside
 
+Every workflow and agent opens with the same strict **Scope**: its job, when it starts, what it may do, what it must not do, when
+it's done, and what it hands back. A test makes sure none is missing or vague, so no stage can drift into another's work.
+
 ### 21 workflows
 
 Claude starts these itself; you can also type them.
@@ -256,7 +262,8 @@ How models are picked: [which model does what](docs/how-it-works.md#which-model-
 
 | Guard | Stops |
 |---|---|
-| Safety guard | Commands that wipe drives or history, in Bash and PowerShell; asks before risky ones |
+| Safety guard | Commands that wipe drives or history, in Bash and PowerShell; asks before risky ones, and before any delete that takes code with it |
+| Snapshots | Before every risky question, the work as it is (unsaved files included) and the local database file are saved on your computer, so a wrong "yes" can be undone |
 | Secret guard | Keys, `.env` files and your private terms leaving in a commit, push or deploy |
 | Package guard | Installing packages that don't exist (invented names attackers register) |
 | Push gate | Pushes and deploys before the pre-ship scan passes for that exact commit |

@@ -110,7 +110,8 @@ correct.
    demand (people asking for it, money spent on the problem), who would buy it and what they pay today, how crowded it is, and what gap or
    niche would be hard for competitors to copy. Claude then gives a verdict in the plan (build it, build it narrower, pivot, or think again),
    recommends the feature gaps worth building and, if it is crowded, one to three less crowded directions, all with sources. It's a recommendation; you decide. Claude checks their claims and re-checks prices, legal rules and security advice on
-   a stronger model.
+   a stronger model. A **citation check** then opens every cited page and confirms the quoted words are really on it; a claim whose
+   quote isn't there is dropped or re-sourced, and a page that won't load is marked unchecked.
 5. **Chooses the technology.** First it checks whether one of the kit's **tested recipes** fits the kind and size of app: a website,
    a web app with sign-in and a database, an API, or a desktop app. A recipe brings the official setup at pinned versions, the
    commands, the host, the accounts and settings you'll need, and the stack's known mistakes. Otherwise it picks something widely used,
@@ -137,6 +138,13 @@ correct.
     `## One source` list in `PROJECT.md` (each number and rule, and later the one function that computes it), and, with a recipe,
     `.claude/rules/stack.md` (the stack's known mistakes and where its docs are, read by Claude Code in every session).
 14. **Starts building**, one feature at a time, without being asked again.
+
+**Taking over an app that's already partly built** (code but no roadmap, or "finish this app"): it doesn't start over or re-plan
+what exists. It maps the app (screens, routes, data, commits; a big one is mapped area by area first), runs its tests and build,
+and checks each existing feature by its tests or by opening it. Working features go into the roadmap as **milestone 0, "what
+already works"**, each ticked with the commit it was found in and the same proof as new work. Broken or unproven ones stay unticked
+and become the first work, and any number worked out in several places becomes a "make it one" item. Then it asks only about what's
+left, keeps the stack and look it found, researches only the new parts, and you confirm the starting point by trying milestone 0.
 
 **Changing your mind later** is normal. Before building anything that wasn't in the plan, Claude says what it adds or delays and what it
 recommends, then updates the roadmap and records the decision. It never quietly adds scope or drops an agreed feature.
@@ -387,7 +395,9 @@ paste a secret into the chat, never writes one into a file, and asks before anyt
 These hooks run automatically around every command and file change, in every workflow:
 
 **Before a command or edit runs:**
-- **Safety guard:** blocks commands that wipe drives, home folders or history (in both Bash and PowerShell); asks you first for risky ones
+- **Safety guard:** blocks commands that wipe drives, home folders or history (in both Bash and PowerShell); asks you first for risky ones,
+  including any delete that takes committed or unsaved code with it ("DELETES CODE ..."). Before each of those questions it saves a
+  snapshot of the work and copies the local database file, so a wrong "yes" can be undone (`snapshot.mjs`)
   (`git reset --hard`, database resets, `curl | sh`).
 - **Secret guard:** scans what's about to leave in a commit, push, pull request, publish or deploy for keys, `.env` files and your private
   terms.

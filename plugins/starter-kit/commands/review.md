@@ -4,6 +4,14 @@ description: Use after finishing code changes made directly in this conversation
 
 Review the current changes with fresh subagents, launched in parallel.
 
+## Scope
+- **Job:** a fresh-context review of changes made directly in this conversation.
+- **Starts when:** after code changes made here (not after a feature build, which reviews itself).
+- **May:** pick the diff to review and launch the reviewer, challenger and, for screens, the UI reviewer.
+- **Must not:** review its own work itself, edit files during the review, or call it approved without their verdicts.
+- **Done when:** every reviewer returned a verdict and every blocking finding is fixed or put to the owner.
+- **Hands back:** the verdicts and what was fixed.
+
 First decide what to review ($ARGUMENTS can name a commit range or branch to use instead):
 1. Uncommitted changes: `git diff HEAD`.
 2. If that is empty, the last commit: `git show HEAD`.

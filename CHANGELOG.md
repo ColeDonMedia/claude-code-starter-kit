@@ -4,6 +4,44 @@ What changed in each release of the starter-kit plugin, newest first, in plain w
 repository's history. Every release bumps `version` in `plugins/starter-kit/.claude-plugin/plugin.json`; a test
 fails if this file has no entry for the current version.
 
+## [2.21.0] — 2026-11-27
+Protection against deleting code or data by mistake, taking over half-built apps, and a strict scope for every stage (all asked for by the owner):
+- **Deleting code now asks first** (new safety-guard rule `rm-code`). Before, `rm -rf src` or `Remove-Item -Recurse src` ran without
+  a question: only system, home and drive folders and "everything here" were caught. Now any recursive delete (`rm -r`,
+  `Remove-Item -Recurse`, `rd /s`, `find -delete`, `rmSync`/`rmtree` in a one-line script, nested in `bash -c` or `cmd /c`) of a
+  folder or file holding code asks, and the question starts "DELETES CODE" and names the files.
+  Rebuildable folders (`node_modules`, `dist`, `build`, ...), untracked scratch with no code and paths that don't exist still pass.
+  With no git history, deleting a folder of code asks, since nothing could be brought back.
+- **A way back after a wrong "yes".** Before any risky command (deleting code, hard reset, `git clean`, discarding changes,
+  dropping a stash or branch, rewriting history, destructive SQL, database resets), the new snapshot hook (`scripts/snapshot-lib.mjs`)
+  saves the work as it is, unsaved files included, under `refs/kit-snapshots/` in the project's own git (built in a separate index, so
+  the branch and working copy are untouched; ignored files like `.env` are never in it; never pushed), keeps a branch or stash about
+  to be dropped, and copies local SQLite database files to `.claude/backups/`. The newest 20 snapshots and 10 database copies are
+  kept. New `scripts/snapshot.mjs` lists and restores them (a restore saves the current state first and deletes nothing); the debug
+  workflow uses it when something was deleted by mistake.
+- **Taking over an app that is already partly built** (the owner asked whether the kit can pick up mid-project): planning now has
+  a take-over part for code with no `ROADMAP.md`, or "finish this app". It maps the app, runs its checks, proves each existing
+  feature, and records it under "Milestone 0 — what already works" as `(existing <commit>)`, which `roadmap-check.mjs` accepts with
+  the same proof rules as a merge. Broken or unproven features become the first work, `dup-check.mjs` over the whole project turns
+  numbers worked out in several places into "make it one" items, and it asks and researches only what is left. The session note
+  routes code with no roadmap there.
+- **The safety guard stays read-only.** It decides "does this delete take code with it?" by reading folders (`scripts/delete-lib.mjs`,
+  a read-only check enforced by test). Saving snapshots is a separate hook, `hooks/snapshot-guard.mjs`, which runs on every shell
+  command after the guard, saves only before commands that could destroy work, never blocks and prints nothing. Off only with the
+  owner's approval: `{ "snapshots": false }`.
+- **A strict scope for every stage** (the owner asked for clearly defined scopes): all 21 commands, 11 agents and the feature
+  workflow now open with a six-line `## Scope` block: Job, Starts when, May, Must not, Done when, Hands back. It says exactly
+  where each stage's work ends, for example that the builder never touches the main checkout or writes a second version of shared
+  logic, and that reviewers never edit. `scripts/scope.test.mjs` fails if one is missing, out of order, vague or over 130 words.
+- **Citation check** (the owner asked for it): new `scripts/cite-check.mjs` fetches every page a research report cites and checks
+  the quoted words are really on it, so a misquote or an invented source is caught by a machine, not trusted. The researcher now
+  writes each sourced claim as `[source: <url> | "<exact words>"]`; research and planning drop or re-source every NOT FOUND claim.
+  A number or price must match exactly (a changed figure is never a "close" quote), quotes match whole words ("$1" is not "$12"),
+  script and style text doesn't count as page text, and only public pages are fetched (never this computer, a private network or a
+  cloud metadata address). Checked against a real page: the true quote was VERIFIED, an invented price NOT FOUND.
+- Not covered: databases on other computers (the database guard already refuses them), files outside a git project, and commands
+  the owner runs themselves.
+
 ## [2.20.0] — 2026-11-27
 - **Stack recipes (plan item OC-7).** Four tested starting points in `presets/`: a website (Astro 7), a web app with sign-in and a
   database (SvelteKit 3, SQLite with Drizzle, Better Auth), an API (Fastify 5, SQLite) and a desktop app (Electron 45 with Forge 8).

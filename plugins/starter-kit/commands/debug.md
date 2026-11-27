@@ -4,6 +4,14 @@ description: Use for a bug, error message, crash or failing test whose cause isn
 
 Find and fix the root cause of: $ARGUMENTS
 
+## Scope
+- **Job:** find the root cause of one bug with evidence, then fix it with a regression test.
+- **Starts when:** there is an error, a crash, a failing test or wrong behaviour whose cause isn't obvious, or a live app is down.
+- **May:** reproduce locally, use the investigator, change the code that causes it, restore a snapshot of lost work.
+- **Must not:** patch a symptom without a proven cause, weaken a test, touch the live system without the owner's yes, or fix unrelated things.
+- **Done when:** a test that failed for the right reason now passes and the full suite passes.
+- **Hands back:** the cause in plain words, the fix, and how it was proven.
+
 The rule: no fix until you can explain WHY it fails, with evidence. Guessing and patching symptoms is how
 bugs come back.
 
@@ -18,6 +26,11 @@ for steps 3 and 4, with the `model` and `effort` that `node "${CLAUDE_PLUGIN_ROO
 prints (add `--attempt 2` after a failed hypothesis). Give it the failure, what was tried, and, when `--role scout` prints SCOUT USE,
 the `scout` agent's pointers: where the error is raised, who calls it, which tests cover it (save a log over 300 lines under
 `.claude/logs/` and have the scout point at its first error). Then do steps 5 and 6 here from its report.
+
+## Something was deleted or overwritten by mistake
+Before every risky command the safety guard saved a snapshot. Run `node "${CLAUDE_PLUGIN_ROOT}/scripts/snapshot.mjs" --list --project .`,
+pick the one from just before it happened, restore it (`--restore <id>`, or `--path <file or folder>` for part of it), and check
+the tests pass. Database copies are listed with `--databases`. Tell the owner in plain words what came back.
 
 ## 1. Reproduce
 Get the exact failure: the full error and stack trace, the command or steps that trigger it, and whether it

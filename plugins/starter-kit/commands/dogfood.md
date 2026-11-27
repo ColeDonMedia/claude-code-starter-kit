@@ -4,6 +4,14 @@ description: "Use after a trial build, or when the kit seemed to skip a step, do
 
 Review how the kit behaved in a session and turn the gaps into fixes: $ARGUMENTS
 
+## Scope
+- **Job:** review how the kit itself behaved in a session and turn every gap into a fix or a written note.
+- **Starts when:** after a trial build, or when the kit skipped a step, did something odd or stalled.
+- **May:** run doctor, the canary and the flight report; read the kit's files; in the kit's own repository, fix bugs test-first.
+- **Must not:** change the kit from any other project (write `KIT-FEEDBACK.md` instead), or judge output quality the log cannot show.
+- **Done when:** every gap is explained as a kit bug, a too-strict guard, an unclear instruction or correct behaviour, and fixed or written down.
+- **Hands back:** what went right, what went wrong, what was fixed or noted, and what the log could not tell.
+
 The flight recorder keeps a private log of names only (which workflows and agents ran, which actions were blocked or never
 finished). It holds no code, prompts or secrets and lives outside the project. Nothing here sends anything anywhere.
 

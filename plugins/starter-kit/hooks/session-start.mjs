@@ -115,10 +115,10 @@ if (!managed) {
 const parts = [
   "STARTER KIT WORKFLOWS — pick and run the right one yourself (Skill tool); never ask the user to type a command; say in one line what you ran.\n" +
     "- Question, explanation, docs, config -> just do it. Unsure which workflow -> take the lighter path.\n" +
-    "- New app or big/vague feature -> /starter-kit:spec (user approves), then build the roadmap; changed requirements: say what it adds or delays first.\n" +
-    "- Existing big or unfamiliar codebase, or an area with no rules file -> /starter-kit:onboard before changing it.\n" +
+    "- New app, big/vague feature, or code with no ROADMAP.md -> /starter-kit:spec (existing code: its take-over part), then build it; changed requirements: say what it adds or delays first.\n" +
+    "- Big or unfamiliar codebase, or an area with no rules file -> /starter-kit:onboard before changing it.\n" +
     "- Schema change, migration, bulk data change, slow query, big table -> /starter-kit:db (local copies only).\n" +
-    "- Slow, laggy, heavy, \"make it faster\", \"can it handle N users\", or before launch -> /starter-kit:speed (measure first).\n" +
+    "- Slow, laggy, \"make it faster\", \"can it handle N users\", or before launch -> /starter-kit:speed (measure first).\n" +
     "- Look, style, redesign, \"looks generic\", accessibility, WCAG -> /starter-kit:design.\n" +
     "- Feature or non-trivial bug fix -> /starter-kit:feature. One-file tweak -> /starter-kit:tdd, then /starter-kit:review.\n" +
     "- Unclear bug, error, failing test, live site down -> /starter-kit:debug. Competitors, market -> /starter-kit:research.\n" +

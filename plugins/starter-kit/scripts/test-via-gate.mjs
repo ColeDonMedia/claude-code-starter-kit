@@ -10,7 +10,7 @@ const MODE = {
   "safety-guard": "pre", "db-guard": "pre", "secret-guard": "pre", "push-gate": "pre", "package-guard": "pre", "file-guard": "pre",
   "verify-gate": "stop", "docs-gate": "stop", "test-related": "post", "session-start": "start", "auto-update": "start", "flight-recorder": "pre", "subagent-start": "subagent",
   "agent-route": "pre", "scout-check": "substop", "quiet-output": "post", "conductor-check": "substop", "compact-notes": "precompact", "plan-gate": "pre",
-  "fetch-guard": "pre", "code-warn": "post", "inject-warn": "post",
+  "fetch-guard": "pre", "code-warn": "post", "inject-warn": "post", "snapshot-guard": "pre",
 };
 
 export function hookPath(hooksDir, file) {

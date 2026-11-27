@@ -1,5 +1,13 @@
 # The feature workflow
 
+## Scope
+- **Job:** the steps of one feature build: brief, builder, reviews, fixes, merge, proof, records.
+- **Starts when:** the conductor (or the main conversation on RUN HERE) is given one item, MAIN, BASE and START or RESUME.
+- **May:** launch the kit's agents, merge into MAIN when every gate passes, update the roadmap and records.
+- **Must not:** read or edit the implementation itself unless something fails, take on another item, merge unproven work, or skip a reviewer.
+- **Done when:** the item is merged with every criterion ticked with proof and the records updated, or stopped with the reason.
+- **Hands back:** the result block.
+
 Run by the `conductor` agent in its own fresh context, or by the main conversation when `/starter-kit:feature` says RUN HERE.
 You are given the roadmap item or request, MAIN (the branch it merges into), BASE (MAIN's tip commit) and START or RESUME.
 `/starter-kit:feature` has already checked the preconditions (a git repository, a clean main checkout, a plan and the project's

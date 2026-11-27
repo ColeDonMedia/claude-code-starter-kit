@@ -42,6 +42,9 @@ the owner's trial runs in a normal session (`docs/trials.md`) and by the hook ca
 - `.claude/kit.json` — turns the automatic hooks off for this repo itself (it is not a managed project).
 
 # Rules
+- SCOPE RULE: every command, agent and workflow opens with a `## Scope` block of six lines (Job, Starts when, May, Must not,
+  Done when, Hands back), under 130 words: the boundaries, not the steps. Change it whenever the file's job changes.
+  `scripts/scope.test.mjs` enforces it; the files' own word limits don't count it.
 - No project names, frameworks or package managers hard-coded in agents or commands; they read the project's CLAUDE.md.
 - The CLAUDE.md template for projects lives inside `commands/init.md` — edit it there.
 - Commands, agents and the session note refer to the kit's scripts as `${CLAUDE_PLUGIN_ROOT}/scripts/…`; never a personal path.

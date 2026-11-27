@@ -4,6 +4,14 @@ description: Use when a roadmap milestone is finished and waiting for the owner'
 
 Get the owner's acceptance of a finished milestone: $ARGUMENTS
 
+## Scope
+- **Job:** get the owner's verdict on one finished milestone, in their own words.
+- **Starts when:** every feature of a milestone is merged and ticked with proof, and its `Accepted:` line is still pending.
+- **May:** run the app locally, run the milestone checks and the user-tester, record the verdict, add the owner's changes to the roadmap.
+- **Must not:** accept on the owner's behalf, count passing tests as acceptance, build anything new, or start the next milestone first.
+- **Done when:** the `Accepted:` line holds the owner's words and date, or their requested changes are roadmap items.
+- **Hands back:** what to try (5 to 8 steps), then the verdict as recorded.
+
 Nothing counts as accepted because the tests pass. The owner has to see it and say so. A milestone is a group of roadmap features
 (`## Milestone N — name` in ROADMAP.md) with an `Accepted:` line.
 

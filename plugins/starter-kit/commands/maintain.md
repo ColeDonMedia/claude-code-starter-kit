@@ -4,6 +4,14 @@ description: Use when a launched app is due for routine care (30+ days since the
 
 Do the routine maintenance for this launched project: $ARGUMENTS
 
+## Scope
+- **Job:** the routine care of a launched app: updates, security, backups, errors, speed, costs.
+- **Starts when:** 30 or more days since the last maintenance, or the owner says keep it up to date.
+- **May:** update dependencies as one feature, re-run security, backup, speed and size checks, append to `MAINTENANCE.md`.
+- **Must not:** apply a breaking major update unasked, loosen a test to get an update through, or touch the live system unasked.
+- **Done when:** every section has a result in `MAINTENANCE.md` and the next visit date is set.
+- **Hands back:** what was done, what needs the owner, and when the next visit is due.
+
 Software goes stale: libraries get security fixes, certificates and keys expire, backups silently stop. This is the monthly visit a
 good agency's maintenance plan covers. Check first: `node "${CLAUDE_PLUGIN_ROOT}/scripts/maintenance-due.mjs" --project .` (not launched means there is nothing to do yet).
 Keep the user's attention for decisions only; do the rest yourself and report in plain words.

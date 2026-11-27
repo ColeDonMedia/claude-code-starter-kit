@@ -4,6 +4,14 @@ description: "Use when anything feels slow, laggy or heavy, when the user says m
 
 Make this fast, and prove it: $ARGUMENTS
 
+## Scope
+- **Job:** make the app fast enough, measured before and after.
+- **Starts when:** something feels slow, the owner asks for faster, or before a launch.
+- **May:** measure at every level, fix the biggest cost first, and add budgets and timing tests.
+- **Must not:** optimise without a before-and-after number, tune past the budget, or change behaviour.
+- **Done when:** the budget is met, or the remaining cost is explained, with the numbers recorded in `PROJECT.md`.
+- **Hands back:** before and after numbers in plain words.
+
 Speed is measured, never guessed: a change that was not timed before and after is not an optimisation. Work from the biggest cost down
 and stop when the budget is met. Over-tuning costs more than it saves.
 

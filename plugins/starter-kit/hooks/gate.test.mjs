@@ -100,7 +100,7 @@ test("no hook calls process.exit or done() inside a try that has a catch (the me
 
 // ---- which hooks run when ----
 test("pipeline: which hooks run for which events", () => {
-  assert.deepEqual(pipeline("pre", { tool_name: "Bash", tool_input: { command: "ls" } }), ["flight-recorder", "safety-guard", "db-guard", "secret-guard", "push-gate", "package-guard"]);
+  assert.deepEqual(pipeline("pre", { tool_name: "Bash", tool_input: { command: "ls" } }), ["flight-recorder", "safety-guard", "snapshot-guard", "db-guard", "secret-guard", "push-gate", "package-guard"]);
   assert.deepEqual(pipeline("pre", { tool_name: "Edit", tool_input: { file_path: "a" } }), ["flight-recorder", "file-guard", "plan-gate"]);
   assert.deepEqual(pipeline("pre", { tool_name: "Read", tool_input: { file_path: "a" } }), ["flight-recorder"]);
   assert.deepEqual(pipeline("post", { tool_name: "Write", tool_input: { file_path: "a" } }), ["flight-recorder", "code-warn", "test-related"]);
@@ -231,7 +231,7 @@ test("speed: one merged process answers a shell command faster than the hooks st
   try {
     const input = JSON.stringify({ ...bash("git status"), cwd: s.dir, session_id: "s" });
     const env = { CLAUDE_PROJECT_DIR: s.dir, STARTER_KIT_FLIGHT_DIR: s.logs };
-    const names = ["flight-recorder", "safety-guard", "db-guard", "secret-guard", "push-gate", "package-guard"];
+    const names = ["flight-recorder", "safety-guard", "snapshot-guard", "db-guard", "secret-guard", "push-gate", "package-guard"];
     const median = (a) => [...a].sort((x, y) => x - y)[Math.floor(a.length / 2)];
     const merged = [];
     const separate = [];

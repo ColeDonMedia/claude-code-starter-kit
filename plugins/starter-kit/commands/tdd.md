@@ -4,6 +4,14 @@ description: Use for small code changes made directly in this conversation (a fe
 
 Run ONE TDD cycle for: $ARGUMENTS
 
+## Scope
+- **Job:** one strict red, green, refactor cycle for a small change in this conversation.
+- **Starts when:** a change of a few lines in one file.
+- **May:** write one failing test, the least code to pass it, then tidy.
+- **Must not:** write code before a failing test, touch other features, weaken a test, or grow into a bigger change (use a feature build).
+- **Done when:** the new test failed for the right reason, now passes, and the full suite passes.
+- **Hands back:** the failing and passing output, and the change.
+
 Use the test command from CLAUDE.md ("Commands"). If CLAUDE.md is missing or has no test command,
 stop and suggest running `/starter-kit:init` first.
 

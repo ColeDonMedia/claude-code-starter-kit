@@ -16,7 +16,7 @@ import { basename, join, resolve } from "node:path";
 
 const PROOF = /\s*(?:→|->)\s*(?:test|manual):.*$/i;
 const norm = (s) =>
-  s.replace(PROOF, "").replace(/\(merged [0-9a-f]+\)/gi, "").replace(/\{#[A-Z]+-\d+\}/g, "").replace(/\[\[[^\]]*\]\]/g, "")
+  s.replace(PROOF, "").replace(/\((?:merged|existing) [0-9a-f]+\)/gi, "").replace(/\{#[A-Z]+-\d+\}/g, "").replace(/\[\[[^\]]*\]\]/g, "")
     .replace(/\[(S|M|L)\]/g, "").replace(/\bhigh-risk\b/gi, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
 const featureKey = (title) => {
   const id = /\{#(F-\d+)\}/.exec(title);
@@ -70,7 +70,7 @@ export function scopeChange(root) {
   dropped(was.flatMap((m) => m.features), now, gaps);
   return {
     approved: wasKeys.size,
-    added: now.flatMap((m) => m.features).filter((f) => !wasKeys.has(featureKey(f.title))).map((f) => f.title.replace(/\s*\(merged [0-9a-f]+\)\s*$/i, "")),
+    added: now.flatMap((m) => m.features).filter((f) => !wasKeys.has(featureKey(f.title))).map((f) => f.title.replace(/\s*\((?:merged|existing) [0-9a-f]+\)\s*$/i, "")),
     droppedFeatures: gaps.filter((g) => g.text.startsWith("Feature ")).length,
     droppedCriteria: gaps.filter((g) => g.text.startsWith("Criterion ")).length,
   };
@@ -114,7 +114,7 @@ export function featureGaps(root, which) {
     else dropped(wf, now, gaps);
   }
   proofGaps(root, [f], gaps);
-  return { feature: f.title.replace(/\s*\(merged [0-9a-f]+\)\s*$/i, "").slice(0, 80), gaps, notes };
+  return { feature: f.title.replace(/\s*\((?:merged|existing) [0-9a-f]+\)\s*$/i, "").slice(0, 80), gaps, notes };
 }
 
 export function milestoneGaps(root, wanted) {

@@ -7,6 +7,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const PLUGIN = join(dirname(fileURLToPath(import.meta.url)), "..");
+const withoutScope = (text) => text.replace(/^## Scope\n(?:- \*\*[^*]+:\*\* .+\n?)+/m, "");
 const REPO = join(PLUGIN, "..", "..");
 const read = (p) => readFileSync(join(REPO, p), "utf8");
 const version = JSON.parse(readFileSync(join(PLUGIN, ".claude-plugin", "plugin.json"), "utf8")).version;
@@ -243,7 +244,8 @@ test("every workflow that launches a routed agent asks model-route.mjs first, an
   }
   const feature = readFileSync(join(PLUGIN, "workflows", "feature.md"), "utf8");
   assert.match(feature, /--attempt 3/, "the feature workflow must escalate the builder after two failed rounds");
-  const words = readFileSync(join(PLUGIN, "agents", "challenger.md"), "utf8").split(/\s+/).length;
+  // the Scope block has its own limit (scope.test.mjs); these limits keep the steps short
+  const words = withoutScope(readFileSync(join(PLUGIN, "agents", "challenger.md"), "utf8")).split(/\s+/).length;
   assert.ok(words <= 650, `challenger.md is ${words} words`);
 });
 
@@ -251,11 +253,11 @@ test("every workflow that launches a routed agent asks model-route.mjs first, an
 // with the main conversation as the fallback, so the main conversation grows by a short report per feature.
 test("the feature command dispatches to a fresh conductor, keeps the old flow as a fallback, and stays short", () => {
   const cmd = readFileSync(join(PLUGIN, "commands", "feature.md"), "utf8");
-  const words = cmd.replace(/^---[\s\S]*?---/, "").split(/\s+/).filter(Boolean).length;
+  const words = withoutScope(cmd.replace(/^---[\s\S]*?---/, "")).split(/\s+/).filter(Boolean).length;
   assert.ok(words <= 260, `commands/feature.md is ${words} words; the procedure belongs in workflows/feature.md`);
   for (const must of [/build-state\.mjs" --project \. --plan/, /`conductor` agent/, /--role conductor/, /NEEDS OWNER/, /CANNOT DELEGATE/, /workflows\/feature\.md/, /RUN HERE/]) assert.match(cmd, must);
   const conductor = readFileSync(join(PLUGIN, "agents", "conductor.md"), "utf8");
-  assert.ok(conductor.split(/\s+/).length <= 330, "the conductor's instructions stay short");
+  assert.ok(withoutScope(conductor).split(/\s+/).length <= 330, "the conductor's instructions stay short");
   for (const must of [/workflows\/feature\.md/, /RESULT: MERGED/, /CANNOT DELEGATE/, /never start another conductor/i]) assert.match(conductor, must);
   const flow = readFileSync(join(PLUGIN, "workflows", "feature.md"), "utf8");
   assert.match(flow, /build-state\.mjs" --project \. --set/);

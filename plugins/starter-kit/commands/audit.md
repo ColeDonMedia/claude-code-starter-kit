@@ -4,6 +4,14 @@ description: Use when the user asks if the project is secure, wants a security a
 
 Audit the whole project's security and report in plain words: $ARGUMENTS
 
+## Scope
+- **Job:** a security audit of the WHOLE project, reported in plain words.
+- **Starts when:** the owner asks if it is secure, or work starts on an existing codebase with real users or data.
+- **May:** read everything, run the kit's scanners and installed scanners, launch the security reviewer in full-audit mode.
+- **Must not:** change any file before the owner approves fixes, touch anything live, or report what it did not check as safe.
+- **Done when:** every finding has a severity, a place and a fix, and what was not covered is listed.
+- **Hands back:** the findings, most serious first, and the fixes to approve.
+
 You are looking at the entire codebase, not a diff. Read-only: change nothing until the user approves fixes.
 
 ## 1. Run the tools first (cheap and objective)

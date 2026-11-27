@@ -18,6 +18,14 @@ Run the full pre-ship sweep using the commands listed under "Commands" in CLAUDE
    the last ship, with the `model` and `effort` that `node "${CLAUDE_PLUGIN_ROOT}/scripts/model-route.mjs" --project . --role security-reviewer --mode range`
    prints (if it says capped, put that at the top of the report).
 
+## Scope
+- **Job:** the pre-ship sweep: every check that must pass before anything leaves this computer.
+- **Starts when:** before any push, pull request, deploy or release (a hook blocks pushes until it passes).
+- **May:** run the full suite, types, lint, build, scanners, security review and the stage checks, and fix what fails.
+- **Must not:** skip or weaken a check, mark it passed by hand, or push.
+- **Done when:** every check passes on the exact commit and the pass is recorded for that commit.
+- **Hands back:** pass or fail per check, in plain words, and anything that needs the owner.
+
 7. Launch readiness, only for something that serves real users (a web app, an API, a hosted service) and only the
    first time it ships or when hosting, security settings or access rules changed: have the `security-reviewer`
    run its launch-readiness checklist (HTTPS, security headers, CORS, database access rules, key privileges,

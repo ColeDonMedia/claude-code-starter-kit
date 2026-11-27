@@ -4,6 +4,14 @@ description: "Use for any database change or problem: a new table or column, a m
 
 Make this database change safely: $ARGUMENTS
 
+## Scope
+- **Job:** one database change (schema, migration, data change, slow query, seed data), proven on a local copy.
+- **Starts when:** a feature or the owner needs the database changed or a query is slow.
+- **May:** work on a local database with generated data, write migrations and their tests, rehearse at real size.
+- **Must not:** connect to any database not on this computer, use real customer data unless the owner gives an anonymised copy, or run anything against the live database.
+- **Done when:** the migration is checked for locks and data loss, rehearsed, and reversible or marked as not.
+- **Hands back:** the change, the rehearsal numbers, and the exact plan for the live database for the owner.
+
 Database mistakes are the ones that can't be undone: lost data, a site frozen while a table is locked, a deploy that breaks because
 the running code still uses the old column. Work slowly and prove each step on a copy.
 

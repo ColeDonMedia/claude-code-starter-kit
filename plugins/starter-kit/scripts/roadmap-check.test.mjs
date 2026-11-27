@@ -208,3 +208,17 @@ test("a criterion this computer cannot prove may point at a GitHub job, which mu
     r.cleanup();
   }
 });
+
+test("work that existed before the kit is ticked with (existing <commit>), with the same proof rules", () => {
+  const r = repo();
+  try {
+    r.put("ROADMAP.md", `## Milestone 0 — what already works\n- [x] Sign in — accounts (existing ${r.sha})\n  - [x] A visitor can sign up → test: test/auth.test.js::signs up a visitor\n  - [x] The page loads on a phone → manual: opened at 375px, checked\n`);
+    assert.deepEqual(checkRoadmap(r.dir).problems, []);
+    r.put("ROADMAP.md", "- [x] Sign in — accounts (existing 0000000)\n  - [x] sign up → test: test/auth.test.js::signs up a visitor\n");
+    assert.match(checkRoadmap(r.dir).problems.join("\n"), /does not exist/);
+    r.put("ROADMAP.md", `- [x] Sign in — accounts (existing ${r.sha})\n  - [x] sign up, never checked\n`);
+    assert.ok(checkRoadmap(r.dir).problems.length > 0, "an existing feature still needs a test or a manual check per criterion");
+  } finally {
+    r.cleanup();
+  }
+});

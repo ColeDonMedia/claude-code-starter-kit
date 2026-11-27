@@ -4,6 +4,14 @@ description: Use when the user asks to try to break, hack, red-team or pen-test 
 
 Red-team this project and report in plain words: $ARGUMENTS
 
+## Scope
+- **Job:** attack a LOCAL copy like a hostile user and prove every break with a failing test.
+- **Starts when:** the owner asks to break, hack or pen-test the app, or before a first launch with sign-in, payments or personal data.
+- **May:** run the app locally, launch the red team in its own copy, run the tests and the mutation check.
+- **Must not:** point anything at a deployed site, a real service, real accounts or real data, or fix what it finds in the same run.
+- **Done when:** every attack tried is listed with its result, and every break has a failing test.
+- **Hands back:** the breaks, most serious first, and the fixes to schedule.
+
 Attacks only ever run against this computer: a guard hook denies attack tools aimed at anything else. Never point
 anything at a deployed site, a real service, real accounts or real data.
 

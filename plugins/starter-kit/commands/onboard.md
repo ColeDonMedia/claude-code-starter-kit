@@ -4,6 +4,14 @@ description: "Use the first time you work in an existing codebase that is big (t
 
 Map this codebase before changing it: $ARGUMENTS
 
+## Scope
+- **Job:** map a big or unfamiliar codebase area by area, writing each area's rules.
+- **Starts when:** first work in a codebase that is big or new to the kit, or before changing an area with no rules file.
+- **May:** index the code, read it, and write area rules files and the map in `PROJECT.md`.
+- **Must not:** change any code.
+- **Done when:** every area touched has a rules file and the map is recorded, or what is left is noted for the next session.
+- **Hands back:** the map, the risky areas, and what is left to map.
+
 A big codebase cannot be read in one go, and changing what you don't understand is how things break. This builds understanding in
 pieces that later sessions reuse. Change NO code while onboarding.
 

@@ -4,6 +4,14 @@ description: "Use for the FIRST launch of an app that real people will use (afte
 
 Take this project live properly: $ARGUMENTS
 
+## Scope
+- **Job:** the first launch of an app real people will use, set up the way an agency would.
+- **Starts when:** the pre-ship scan has passed and the owner wants it live for the first time.
+- **May:** set up test and live environments, deploys, error tracking, uptime alerts, backups, rollback and `RUNBOOK.md`; guide the owner through accounts.
+- **Must not:** put a secret in chat or a file, create accounts or spend money without asking, or go live without the owner's go-ahead.
+- **Done when:** every launch item is done or listed as waiting on the owner, and the owner said go.
+- **Hands back:** what is live, how to watch it, and how to roll back.
+
 A launch is where careless work becomes a public failure. This is the checklist a good agency runs before a client's first day
 live. The user is not a programmer: you do the technical work and guide them through only what needs their own hands (creating
 accounts, adding a payment method, pasting keys into a hosting dashboard). Never ask them to paste a secret into the chat, never

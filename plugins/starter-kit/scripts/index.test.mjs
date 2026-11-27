@@ -19,7 +19,7 @@ function project(files, { git = true } = {}) {
     writeFileSync(join(dir, p), s);
   }
   if (git) spawnSync("git", ["-C", dir, "init", "-q"]);
-  return { dir, store, put: (p, s) => { mkdirSync(dirname(join(dir, p)), { recursive: true }); writeFileSync(join(dir, p), s); }, done: () => { rmSync(dir, { recursive: true, force: true, maxRetries: 5 }); rmSync(store, { recursive: true, force: true, maxRetries: 5 }); } };
+  return { dir, store, put: (p, s) => { mkdirSync(dirname(join(dir, p)), { recursive: true }); writeFileSync(join(dir, p), s); }, done: () => { for (const d of [dir, store]) { try { rmSync(d, { recursive: true, force: true, maxRetries: 5 }); } catch { /* a temp folder git is still writing to (seen on GitHub Linux): the system clears it */ } } } };
 }
 
 test("symbols and imports are read for each language", () => {

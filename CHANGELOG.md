@@ -5,6 +5,11 @@ repository's history. Every release bumps `version` in `plugins/starter-kit/.cla
 fails if this file has no entry for the current version.
 
 ## [2.18.0] — 2026-11-26
+- **Fixes from the first test run on macOS and Linux.** On Ubuntu, a check command whose tool is missing was reported as failing
+  code (its shell words it "not found"). The add-on scan cut its own output at 64 KB on macOS and Linux. On Windows, a resumed
+  build could think its worktree was gone when the same folder had a short and a long name, and the desktop check gave up when the
+  first memory reading was slow; it now takes one direct reading first. The database tests skip on Node older than 22.5, as the
+  features do, and the two browser templates are checked as modules on Node 18.
 - **Reviews in proportion to the app (from trial 3).** The portal's first feature took six review rounds, mostly hardening a
   one-owner sign-in against floods. Now every reviewer marks each finding BLOCKS (it breaks an agreed criterion or a named threat,
   or lets an outsider reach someone else's data, account, code or secrets) or LATER. Only BLOCKS findings start another round; LATER

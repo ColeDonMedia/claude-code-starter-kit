@@ -8,7 +8,7 @@ Rewrite this file at the end of every session; keep it under 55 lines and true.
 - Public repo, MIT, installed from GitHub. Auto-update checks once per 24 hours at session start, in the background; a new
   version takes effect on the session AFTER that. This machine is updated by hand before each trial.
 - `plugins/starter-kit/`: 21 commands, 1 workflow file, 11 agents, 22 hook scripts (`gate.mjs` runs the rest), 51 helper scripts,
-  2 templates, vetted data in `library/`, 559 tests (unit tests only, one Windows machine so far). Hook tests also pass through the gate.
+  2 templates, vetted data in `library/`, 560 tests (unit tests; also on GitHub: Windows, macOS, Linux). Hook tests also pass through the gate.
 - LIVE TRIALS (`docs/trials.md`): runs 1-2 (quote builder) gave 2.17.1 and 2.17.2. SessionStart carries NO model field. OWNER RULE: never spend API tokens (no `claude -p`, no npx claude-code runs, no `claude plugin eval`). `CLAUDE.md` says so.
 - Done: Phase 0, Phase M (all but M-14), Phase S (all but S-12). Choices: D1 merged hook runner; D11 Opus for medium, large and
   risky features and D12 never Fable are Claude's choices, NOT the owner's (still open); D13 compact project chats at 300K; D14 Phase S part B built before a trial, old flow as fallback.

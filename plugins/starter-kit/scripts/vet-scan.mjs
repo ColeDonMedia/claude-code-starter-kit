@@ -180,4 +180,4 @@ if (asJson) {
   for (const f of findings) console.log(`${f.sev.padEnd(6)} ${f.file}${f.line ? ":" + f.line : ""}  [${f.rule}] ${f.message}${f.snippet ? "  | " + f.snippet : ""}`);
   console.log("\nThis scan finds known-bad patterns only. No findings does NOT mean safe: read the files too.");
 }
-process.exit(counts.HIGH ? 1 : 0);
+process.exitCode = counts.HIGH ? 1 : 0; // never process.exit(): it cuts piped output at 64 KB on macOS and Linux

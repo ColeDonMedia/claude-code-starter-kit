@@ -5,7 +5,7 @@
 // Run: node build-state.mjs --project <dir> --set key=value ...  |  --show  |  --clear  |  --plan [--feature "<text>"]  |  --resume
 import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { dataDir, projectKey } from "./trust-lib.mjs";
@@ -97,8 +97,16 @@ export function resumeBrief(root) {
       clearState(root);
       return `STALE: the branch "${s.branch}" for "${s.item}" no longer exists, so there is nothing to resume. The state was cleared; start the feature again.`;
     }
-    const listed = git(root, "worktree", "list", "--porcelain").stdout.split("\n").filter((l) => l.startsWith("worktree ")).map((l) => resolve(l.slice(9)).toLowerCase());
-    if (s.worktree && listed.includes(resolve(s.worktree).toLowerCase()) && existsSync(s.worktree)) {
+    // Compare real paths: Windows can name one folder two ways (C:\Users\RUNNER~1 and C:\Users\runneradmin).
+    const canon = (p) => {
+      try {
+        return realpathSync.native(p).toLowerCase();
+      } catch {
+        return resolve(p).toLowerCase();
+      }
+    };
+    const listed = git(root, "worktree", "list", "--porcelain").stdout.split("\n").filter((l) => l.startsWith("worktree ")).map((l) => canon(l.slice(9)));
+    if (s.worktree && listed.includes(canon(s.worktree)) && existsSync(s.worktree)) {
       out.push(`Last commit there: ${git(s.worktree, "log", "-1", "--format=%h %s").stdout.trim()}`);
       const dirty = git(s.worktree, "status", "--porcelain").stdout.split("\n").filter(Boolean);
       out.push(dirty.length ? `Uncommitted in the worktree (finish or discard them; the tests decide):\n${dirty.slice(0, 20).map((l) => `  ${l}`).join("\n")}` : "Nothing uncommitted in the worktree.");

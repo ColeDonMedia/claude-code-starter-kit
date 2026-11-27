@@ -176,6 +176,12 @@ export async function measure({ cmd, cwd, readyText, readyPort, readyFile, until
     const readyAt = performance.now();
     const until = readyAt + watchSeconds * 1000;
     while (performance.now() < until && exited === null) await new Promise((w) => setTimeout(w, 200));
+    // The background sampler can be slow to give its first table on a cold machine; take one direct reading before giving up.
+    if (!all.some((s) => s.t >= readyAt) && exited === null) {
+      const table = processTable();
+      const tree = table ? treeOf(table, child.pid) : [];
+      if (tree.length) all.push({ t: performance.now(), bytes: tree.reduce((s, p) => s + p.bytes, 0), cpuSec: tree.reduce((s, p) => s + p.cpuSec, 0) });
+    }
     const samples = all.filter((s) => s.t >= readyAt);
     result.samples = samples.length;
     if (samples.length) {

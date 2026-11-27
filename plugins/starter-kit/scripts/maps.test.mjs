@@ -12,6 +12,8 @@ import { archStatus, buildArch } from "./arch-map.mjs";
 import { buildIndex } from "./code-index.mjs";
 import { checkDrift } from "./drift-check.mjs";
 import { buildPack, lastDecisions } from "./context-pack.mjs";
+// node:sqlite arrived in Node 22.5; on older Node these features say so instead of running (README: Requirements).
+const NO_SQLITE = await import("node:sqlite").then(() => false, () => "needs Node 22.5 or newer (node:sqlite)");
 
 function proj(files = {}, { git = false } = {}) {
   const dir = mkdtempSync(join(tmpdir(), "maps-"));
@@ -161,7 +163,7 @@ test("schema map: the page shows tables, keys, relationships and links, and is r
   }
 });
 
-test("schema map: a local SQLite file is read read-only", async () => {
+test("schema map: a local SQLite file is read read-only", { skip: NO_SQLITE }, async () => {
   const p = proj({});
   const { DatabaseSync } = await import("node:sqlite");
   const file = join(p.dir, "app.db");

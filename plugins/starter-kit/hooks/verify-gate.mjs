@@ -110,7 +110,7 @@ for (const cmd of commands) {
   const r = spawnSync(cmd, { cwd: root, shell: true, encoding: "utf8", timeout: left, maxBuffer: 64 * 1024 * 1024 });
   if (r.error) done(); // timed out or could not start: not a verdict
   const out = `${r.stdout ?? ""}${r.stderr ?? ""}`;
-  if (/is not recognized as an internal or external command|: command not found|executable file not found/i.test(out)) continue;
+  if (/is not recognized as an internal or external command|: command not found|^\S*sh: \d+: .+: not found$|executable file not found/im.test(out)) continue;
   if (r.status !== 0) {
     failure = { cmd, tail: out.trimEnd().split("\n").slice(-40).join("\n") };
     break;

@@ -19,7 +19,7 @@ function project(files, { git = true } = {}) {
     writeFileSync(join(dir, p), s);
   }
   if (git) spawnSync("git", ["-C", dir, "init", "-q"]);
-  return { dir, store, put: (p, s) => { mkdirSync(dirname(join(dir, p)), { recursive: true }); writeFileSync(join(dir, p), s); }, done: () => { rmSync(dir, { recursive: true, force: true }); rmSync(store, { recursive: true, force: true }); } };
+  return { dir, store, put: (p, s) => { mkdirSync(dirname(join(dir, p)), { recursive: true }); writeFileSync(join(dir, p), s); }, done: () => { rmSync(dir, { recursive: true, force: true, maxRetries: 5 }); rmSync(store, { recursive: true, force: true, maxRetries: 5 }); } };
 }
 
 test("symbols and imports are read for each language", () => {

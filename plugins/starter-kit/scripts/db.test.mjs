@@ -9,6 +9,9 @@ import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { assessDbCommand, hostOf } from "./db-lib.mjs";
+// node:sqlite arrived in Node 22.5; on older Node these features say so instead of running (README: Requirements).
+const NO_SQLITE = await import("node:sqlite").then(() => false, () => "needs Node 22.5 or newer (node:sqlite)");
+
 import { checkMigration, checkProject } from "./migration-check.mjs";
 import { openCopy, seed, explain, timeMigration, pgSeqScans } from "./db-rehearse.mjs";
 
@@ -176,7 +179,7 @@ test("the project check finds migration folders, ignores other code, and wants a
 
 // ---- rehearsal ----
 const SCHEMA = "CREATE TABLE users (id INTEGER PRIMARY KEY, email TEXT NOT NULL UNIQUE, created_at TEXT, is_admin INTEGER);\nCREATE TABLE orders (id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id), total REAL, status TEXT);\n";
-test("a rehearsal seeds realistic volumes into a copy, finds the missing index, and proves the fix", { timeout: 180000 }, async () => {
+test("a rehearsal seeds realistic volumes into a copy, finds the missing index, and proves the fix", { timeout: 180000, skip: NO_SQLITE }, async () => {
   const p = dir({ "schema.sql": SCHEMA, "add_index.sql": "CREATE INDEX idx_orders_user ON orders(user_id);" });
   const c = await openCopy({ schema: join(p.d, "schema.sql") });
   try {
@@ -198,7 +201,7 @@ test("a rehearsal seeds realistic volumes into a copy, finds the missing index, 
     p.done();
   }
 });
-test("a rehearsal never writes to the original database file, and refuses server addresses", async () => {
+test("a rehearsal never writes to the original database file, and refuses server addresses", { skip: NO_SQLITE }, async () => {
   const p = dir({ "schema.sql": SCHEMA });
   const DatabaseSync = (await import("node:sqlite")).DatabaseSync;
   const orig = join(p.d, "app.db");

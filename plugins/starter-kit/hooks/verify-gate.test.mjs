@@ -192,6 +192,15 @@ test("a check that runs out of time is not treated as a failure", () => {
   }
 });
 
+test("a missing tool is skipped on Linux too, where sh says \"sh: 1: <tool>: not found\" (found by the first GitHub run)", () => {
+  const p = project({ verify: ["node -e \"process.stderr.write('sh: 1: definitely-not-a-tool: not found'); process.exit(127)\""] });
+  try {
+    assert.equal(stop(p).status, 0);
+  } finally {
+    p.cleanup();
+  }
+});
+
 test("a missing tool is skipped, not reported as failing code", () => {
   const p = project({ verify: ["definitely-not-a-real-command-xyz --check"] });
   try {

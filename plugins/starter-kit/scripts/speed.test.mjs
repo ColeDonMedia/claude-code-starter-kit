@@ -83,7 +83,7 @@ test("speed budget: no results says so, results from older code are flagged, the
 test("the Playwright speed template measures the metrics the judge reads, writes where the judge looks, and is valid JavaScript", () => {
   const f = join(HERE, "..", "templates", "speed.spec.js");
   const src = readFileSync(f, "utf8");
-  assert.equal(spawnSync(process.execPath, ["--check", f], { encoding: "utf8" }).status, 0, "the template must parse");
+  assert.equal(spawnSync(process.execPath, ["--input-type=module", "--check"], { input: readFileSync(f, "utf8"), encoding: "utf8" }).status, 0, "the template must parse");
   for (const needle of ["largest-contentful-paint", "layout-shift", "longtask", "first-contentful-paint", "emulateNetworkConditions", "setCPUThrottlingRate", ".claude/speed-results.json", ".claude/speed.json", "ttfbMs", "lcpMs", "fcpMs", "tbtMs", "transferKb", "feedbackMs", "doneMs", "requestAnimationFrame"]) assert.ok(src.includes(needle), `the template does not mention ${needle}`);
   // every field the judge reads is produced by the template
   for (const k of ["ttfbMs", "fcpMs", "lcpMs", "cls", "tbtMs", "transferKb", "requests"]) assert.match(src, new RegExp(`\\b${k}\\b`), k);

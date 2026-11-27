@@ -129,12 +129,14 @@ test("commands and agents name the kit's files only through ${CLAUDE_PLUGIN_ROOT
 test("hooks run only for the tools that need them (no hook process for every Read, Grep or Glob), and every shell tool is covered", () => {
   const cfg = JSON.parse(readFileSync(join(PLUGIN, "hooks", "hooks.json"), "utf8")).hooks;
   for (const ev of ["PreToolUse", "PostToolUse"]) {
-    for (const g of cfg[ev]) {
-      assert.ok(g.matcher && g.matcher !== "*", `${ev} must not match every tool`);
-      const tools = g.matcher.split("|");
-      for (const t of ["Bash", "PowerShell", "Edit", "Write", "MultiEdit", "Skill", "Agent"]) assert.ok(tools.includes(t), `${ev} does not match ${t}`);
-      for (const t of ["Read", "Grep", "Glob"]) assert.ok(!tools.includes(t), `${ev} should not start a hook for ${t}`);
-    }
+    // The main group covers every shell and edit tool; extra groups (web fetches, MCP tools) are narrow. None runs for reads.
+    const all = cfg[ev].flatMap((g) => {
+      assert.ok(g.matcher && g.matcher !== "*" && g.matcher !== ".*", `${ev} must not match every tool`);
+      return g.matcher.split("|");
+    });
+    for (const t of ["Bash", "PowerShell", "Edit", "Write", "MultiEdit", "Skill", "Agent"]) assert.ok(cfg[ev][0].matcher.split("|").includes(t), `${ev} does not match ${t}`);
+    for (const t of ["Read", "Grep", "Glob"]) assert.ok(!all.includes(t), `${ev} should not start a hook for ${t}`);
+    assert.equal(new Set(all).size, all.length, `${ev}: a tool matched by two groups would run the hooks twice`);
   }
   assert.ok(cfg.SubagentStart, "subagents must be told where the kit's scripts are");
 });
@@ -226,7 +228,7 @@ test("every agent file starts on the model and effort that model-route.mjs gives
 });
 
 test("every workflow that launches a routed agent asks model-route.mjs first, and the builder escalates once", () => {
-  const routed = /`(conductor|implementer|reviewer|challenger|ui-reviewer|investigator|red-team|security-reviewer|scout)` agent/;
+  const routed = /`(conductor|implementer|reviewer|challenger|ui-reviewer|investigator|red-team|user-tester|security-reviewer|scout)` agent/;
   for (const f of [...commandNames.map((n) => join(PLUGIN, "commands", `${n}.md`)), ...workflowFiles]) {
     const t = readFileSync(f, "utf8");
     if (routed.test(t)) assert.match(t, /scripts\/model-route\.mjs/, `${f.replace(PLUGIN, "")} launches a kit agent without asking model-route.mjs which model`);

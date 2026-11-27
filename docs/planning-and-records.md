@@ -22,7 +22,9 @@ you approve includes:
 - **Your acceptance:** when a milestone is finished, Claude starts the app (`/starter-kit:accept`), tells you exactly what to try in
   everyday words, and records your verdict in your own words with the date. Nothing ships while a milestone waits for your OK.
 - **Status:** ask "where are we?" (`/starter-kit:status`) for progress, what's next, a rough forecast, risks, and exactly what
-  Claude needs from you. Every line is built from the project's files and git history by a script.
+  Claude needs from you. Every line is built from the project's files and git history by a script. Progress is measured against
+  the roadmap you approved: weighted by feature size, criteria proven, what was added or dropped since, and the feature being
+  built right now with its stage. After every merged feature you also get one PROGRESS line with the same numbers.
 
 ## Records any session can pick up from
 

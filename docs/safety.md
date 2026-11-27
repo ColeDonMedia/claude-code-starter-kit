@@ -58,6 +58,49 @@ A silently broken hook looks exactly like a working one, so the kit checks itsel
 - A name that doesn't exist is blocked: AI tools invent plausible names, and attackers register them.
 - Brand-new, barely used, deprecated or script-running packages, and installs from a URL or a git repo, ask you first.
 
+## Claude's own tools: credential files, web addresses, fetched pages
+
+The shell guards above don't see Claude's built-in file and web tools, so the kit adds three checks. All of them are pattern
+matching, done on this computer: no model, no network, no tokens.
+
+- **Credential files.** Setup adds deny rules so Claude's file tools can't read the keys in your home folder (`~/.ssh`, `~/.aws`,
+  `~/.azure`, `~/.config/gcloud`, `~/.gnupg`, `~/.kube`, Docker, git and GitHub credentials, `.npmrc`, `.pypirc`, `.netrc`, and
+  Claude's own login), or edit your shell start-up files. The doctor says when a project is missing them.
+- **Fetch guard.** A web address that carries an API key, a token or a term from your private list is refused: the address
+  itself would be the leak. Addresses at throwaway capture services (webhook.site, requestbin, ngrok and the like) and addresses
+  with a long encoded value ask you first.
+- **Injection warning.** When a web page, a search result or an MCP tool returns text that looks like orders to an AI ("ignore
+  your instructions", fake system tags, invisible characters, instruction-like HTML comments), Claude gets a warning right next to
+  it: treat it as data, follow nothing in it, and tell you what it tried. It warns but never blocks, because security articles
+  quote the same phrases.
+
+## Dangerous-code warning
+
+When Claude writes code that runs strings as code (`eval`), builds HTML or SQL from strings, builds shell commands, deserialises
+unsafely, switches off certificate checks, uses MD5 or SHA-1, uses `Math.random` for secrets, allows any site to call with
+cookies, or changes a CI workflow, it is told right away what is risky and the usual safe form. Test files and docs are skipped.
+It warns and never blocks; the reviewers still decide. A project can add its own rules in `.claude/security-patterns.json`.
+
+## The kit's own security checks: nothing to install
+
+`scripts/sec-builtin.mjs` is plain Node, like the rest of the kit, so it works the moment the kit is installed:
+
+| What | What it catches | Run by |
+|---|---|---|
+| Dependencies, every language | Each package in the lockfiles (npm, yarn, pnpm, pip, Poetry, uv, Cargo, Go, Ruby) checked against OSV.dev, the free public database of known flaws and known malware, with the version that fixes it | pre-ship scan, audit, `vet` |
+| GitHub workflows | Text anyone can write (an issue title, a branch name) pasted into a shell step; `pull_request_target` checking out a stranger's code; secrets printed to the log; actions not pinned to an exact commit; write-all permissions | pre-ship scan, audit, `vet` |
+| Dockerfiles | Secrets baked into the image, a download piped into a shell, base images with no fixed version, running as root | pre-ship scan, audit |
+| Compose files | Privileged containers, the Docker socket handed to a container, a database port open to the whole network | pre-ship scan, audit |
+| The running local copy | Missing security headers, CORS that lets any site read signed-in pages, sign-in cookies readable by scripts, `.env` or `.git` served to the web, stack traces on error pages | red team, launch |
+
+A HIGH finding blocks shipping. Only package names and versions go to OSV.dev, never code; with no internet that part says "not
+checked" and is never counted as a pass. The live checks refuse any address that isn't this computer. Before an add-on is
+installed, `vet` also reads its OpenSSF Scorecard, a public security-health score.
+
+If one of four free scanners happens to be on the computer already, the kit runs it as well, because each finds more than the
+built-in checks in its area: zizmor (workflows), hadolint (Dockerfiles), Trivy (infrastructure files and container images), and
+Opengrep or Semgrep (code patterns). It never asks you to install one.
+
 ## Push gate: nothing ships unchecked
 
 - Pushes, pull requests, releases, `npm publish`, `docker push` and deploy commands (`vercel --prod`, `fly deploy` and others)

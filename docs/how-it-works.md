@@ -105,9 +105,13 @@ One script, `scripts/model-route.mjs`, decides before each agent starts, from fa
 |---|---|---|
 | Builder (`implementer`) | Sonnet | the roadmap item is medium or large, is risky (sign-in, payments, uploads, personal data and the like), touches code that 10 or more files depend on, or two review rounds have failed |
 | `reviewer` | Opus | already there, and never weaker than the builder |
-| `challenger` | Sonnet | it is checking the plan, the feature is large or risky, or two rounds have failed |
+| `challenger` | Sonnet | it is checking the plan, the feature is large, or two rounds have failed (a risky feature gets the security reviewer instead) |
 | `investigator` | Sonnet | a first guess about a bug was wrong, the area is risky, or the live site is down |
 | `security-reviewer`, `red-team` | Opus | already there; the security review is never lowered |
+
+A re-check after a fix (a reviewer confirming its own earlier findings on the changed lines) runs on Sonnet, except the security
+reviewer, which stays on Opus, and every agent in a `critical` project.
+| `user-tester` | Sonnet | only for a `critical` project: it follows the plan's steps, so size and risk don't change it |
 | `scout`, `researcher` | Haiku | never: if Haiku isn't enough, the job goes to a stronger agent instead |
 
 - **Enforced, not just advised:** a hook refuses to start a review on a weaker model than its job needs.
@@ -138,7 +142,15 @@ scripts, for free.
   any failure lines with a little context, and the summary. The full output is saved in `.claude/logs/` (a folder that ignores
   itself, so it is never committed) and the short version says where. Git output is never shortened, and the command itself is never
   changed. Off with `{ "quietOutput": false }`.
+- **Reviews in proportion.** Every finding is BLOCKS (it breaks an agreed criterion or a named threat, or lets an outsider reach
+  someone else's data or account) or LATER (everything else). Only BLOCKS findings start another round; LATER ones are written under
+  "Harden before launch" in `PROJECT.md` and checked by the launch review. The red team attacks once per feature, then only re-checks.
 - **A second review round reads only the fix,** and only the reviewers that objected re-check it.
+- **One stop rule.** From round 3 on, a script reads each round's size, files and tokens; unless the findings are shrinking, you
+  choose: keep going, accept the rest, split it, or start smaller. Round 6 always comes to you.
+- **Leftovers are cleaned up.** After each merge, `scripts/cleanup.mjs` removes the build folders and branches whose work is in
+  main, and keeps anything unsaved or unmerged.
+- **Cost on every merge.** The progress line after each merge says how many tokens that feature used, and how much on Opus.
 - **Builders edit instead of rewriting files,** and commit after every passing test.
 - **Agents use the right model** (see above), and the flight report shows tokens per model, shortened output and whole-file rewrites.
 
@@ -157,8 +169,10 @@ and anything costing real money or affecting security or legal choices is re-che
 
 ## Self-updating
 
-- At most once a day, at the start of a session, a background job updates the plugin from this GitHub repository. It never
-  delays the session; the new version takes effect the session after that.
+- At most once a day, at the start of a session, a background job updates the plugin from this GitHub repository's `stable`
+  branch. It never delays the session; the new version takes effect the session after that.
+- `stable` moves only when the kit's own tests have passed on Windows, macOS and Linux (`.github/workflows/tests.yml`), so a
+  bad commit on `main` never reaches anyone's computer.
 - It runs exactly two fixed commands, for this plugin only, and skips plugins loaded straight from a folder (development).
   The last result is in `~/.claude/plugins/data/starter-kit/auto-update.log`.
 - Trade-off: this repository is the source of code that runs on every computer, so keep that GitHub account secured

@@ -36,7 +36,7 @@ test("the state is kept outside the project, set field by field, and a new item 
     assert.ok(!existsSync(join(r.dir, ".claude")));
     assert.equal(r.git("status", "--porcelain").stdout, "", "the main checkout stays clean");
     setFields(r.dir, ["item=Card payments [L]"]);
-    assert.deepEqual(Object.keys(readState(r.dir)).sort(), ["item", "updated"]);
+    assert.deepEqual(Object.keys(readState(r.dir)).sort(), ["item", "started", "updated"]);
     assert.throws(() => setFields(r.dir, ["colour=blue"]), /unknown field/);
     assert.throws(() => setFields(r.dir, ["stage=shipping"]), /unknown stage/);
     assert.throws(() => setFields(r.dir, ["oops"]), /not key=value/);

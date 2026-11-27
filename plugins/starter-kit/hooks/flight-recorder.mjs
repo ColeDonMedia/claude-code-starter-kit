@@ -6,7 +6,7 @@
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { count, effortName, modelName, record } from "../scripts/flight-lib.mjs";
+import { count, effortName, modelName, record, transcriptUsage } from "../scripts/flight-lib.mjs";
 
 let raw = "";
 for await (const chunk of process.stdin) raw += chunk;
@@ -48,6 +48,13 @@ if (ev === "SessionStart") {
   }
 }
 else if (ev === "Stop") Object.assign(e, { ev: "stop", stop: input.stop_hook_active ? "again" : "first" });
+else if (ev === "SubagentStop") {
+  // Every agent's own token use, background and nested ones included, read from its transcript. A stop that a check sends back
+  // fires again later with bigger totals; the report keeps the last line per agent.
+  const u = typeof input.agent_transcript_path === "string" ? transcriptUsage(input.agent_transcript_path) : null;
+  if (!u) process.exit(0);
+  Object.assign(e, { ev: "use", agent: input.agent_type, aid: input.agent_id, ran: u.model, out: u.out, inp: u.inp, cw: u.cw, cr: u.cr });
+}
 else if (ev === "PostCompact") Object.assign(e, { ev: "compact", src: input.trigger === "manual" ? "manual" : "auto" });
 else if (ev === "PostToolUseFailure") {
   // The tool ran and failed (a failing test run, a missing file): not the same as being blocked by a guard. Names only.

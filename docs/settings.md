@@ -18,6 +18,7 @@ protection, you approve it in a permission prompt.
 | `{ "relatedTests": false }` | Stops running related tests after each edit (see [How it works](how-it-works.md)). |
 | `{ "scout": false }` | Never launches the Haiku scout, even in a big project. |
 | `{ "quietOutput": false }` | Lets long test, install and build output reach Claude in full. |
+| `{ "userTester": false }` | Skips the first-time-user walk-through before you're asked to try a milestone. |
 | `{ "freshContext": false }` | Runs each feature's build in your chat instead of a fresh conductor context (the old way). |
 | `{ "planGate": false }` | Lets a brand-new project get app code before you have approved a plan. Only set it if you really want to skip the plan. |
 | `{ "rigor": "critical" }` | Puts every builder and reviewer on the strongest model the kit uses (Opus). |

@@ -70,7 +70,8 @@ export function combine(results) {
     else plain.push(r.out);
   }
   const crashed = results.filter((r) => r.crashed);
-  if (blocked.length) return { code: 2, stdout: "", stderr: blocked.map((r) => r.err.trim()).filter(Boolean).join("\n") + "\n" };
+  // A block is fed back as text; warnings from other hooks in the same run go with it, so a failing test never hides one.
+  if (blocked.length) return { code: 2, stdout: "", stderr: [...blocked.map((r) => r.err.trim()), ...context.map((c) => c.additionalContext)].filter(Boolean).join("\n") + "\n" };
   if (decisions.length) {
     const level = decisions.some((d) => d.level === "deny") ? "deny" : decisions.some((d) => d.level === "ask") ? "ask" : decisions[0].level;
     const reason = [...new Set(decisions.filter((d) => d.level === level).map((d) => d.reason))].join("\n");

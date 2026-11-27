@@ -99,7 +99,7 @@ if (stale) {
 if (road.problems.length) {
   msg +=
     "ROADMAP.md: for each unproven claim either do the missing work or untick the box. Never tick a box without \"(merged <commit>)\" " +
-    "and, per criterion, \"→ test: <file>::<test name>\" (or \"→ manual: <how it was checked>\" for what a test cannot show). " +
+    "and, per criterion, \"→ test: <file>::<test name>\" (or \"→ manual: <how it was checked>\" for what a test cannot show, or \"→ ci: <workflow>::<job>\" for what only GitHub can run). " +
     `Run \`node "${fileURLToPath(new URL("../scripts/roadmap-check.mjs", import.meta.url))}" --project .\` to re-check.\n`;
 }
 process.stderr.write(msg);

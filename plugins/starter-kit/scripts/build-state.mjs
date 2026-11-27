@@ -41,11 +41,12 @@ export function sameItem(a, b) {
 // Set fields from "key=value" pairs. A new item starts a fresh state; `reviewed.<agent>=<commit>` records what each reviewer approved.
 export function setFields(root, pairs) {
   let s = readState(root) ?? {};
+  let newRound = 0;
   for (const pair of pairs) {
     const i = pair.indexOf("=");
     if (i < 1) throw new Error(`not key=value: "${pair}"`);
     const [k, v] = [pair.slice(0, i), pair.slice(i + 1)];
-    if (k === "item" && s.item !== v) s = {};
+    if (k === "item" && s.item !== v) s = { started: new Date().toISOString() }; // when this item began, for its token count
     if (k.startsWith("reviewed.")) {
       s.reviewed = { ...(s.reviewed ?? {}), [k.slice(9)]: v };
       continue;
@@ -53,6 +54,12 @@ export function setFields(root, pairs) {
     if (!FIELDS.includes(k)) throw new Error(`unknown field "${k}"; fields: ${FIELDS.join(", ")}, reviewed.<agent>`);
     if (k === "stage" && !STAGES.includes(v)) throw new Error(`unknown stage "${v}"; stages: ${STAGES.join(", ")}`);
     s[k] = k === "round" ? Number(v) || 0 : v;
+    if (k === "round") newRound = s.round;
+  }
+  // Each review round's start (the branch tip and the time), so worth-it.mjs can tell what each round cost and changed.
+  if (newRound && !(s.rounds ?? []).some((r) => r.n === newRound)) {
+    const tip = s.branch ? git(root, "rev-parse", "--verify", "--quiet", `refs/heads/${s.branch}`).stdout.trim() : "";
+    s.rounds = [...(s.rounds ?? []), { n: newRound, head: tip || null, t: new Date().toISOString() }];
   }
   writeState(root, s);
   return readState(root);

@@ -17,6 +17,8 @@ import { readLog } from "./flight-lib.mjs";
 
 const PLUGIN = fileURLToPath(new URL("..", import.meta.url));
 const MIN_NODE = 18;
+// The deny rules /starter-kit:init writes for credential files in the home folder (keep in step with commands/init.md).
+export const CREDENTIAL_DENY = ["Read(~/.ssh/**)", "Edit(~/.ssh/**)", "Read(~/.aws/**)", "Read(~/.azure/**)", "Read(~/.config/gcloud/**)", "Read(~/.gnupg/**)", "Read(~/.kube/**)", "Read(~/.docker/config.json)", "Read(~/.git-credentials)", "Read(~/.config/gh/**)", "Read(~/.npmrc)", "Read(~/.pypirc)", "Read(~/.netrc)", "Read(~/.claude/.credentials.json)", "Edit(~/.bashrc)", "Edit(~/.zshrc)", "Edit(~/.profile)"];
 
 export async function diagnose(project) {
   const checks = [];
@@ -100,6 +102,18 @@ export async function diagnose(project) {
   else if (!claude.includes("starter-kit:managed")) info("Project", "CLAUDE.md is not set up by the kit yet");
   else if (!/STARTER KIT WORKFLOWS/.test(claude)) bad("Project tripwire", "CLAUDE.md lacks the line that notices when hooks are not running", "run the kit's setup again (it adds missing sections without touching yours)");
   else ok("Project", "set up, with the tripwire");
+  if (claude?.includes("starter-kit:managed")) {
+    // Claude's own file tools pass no shell guard, so only deny rules keep them out of the home folder's keys (2.18.0).
+    let deny = [];
+    try {
+      deny = JSON.parse(readFileSync(join(project, ".claude", "settings.json"), "utf8"))?.permissions?.deny ?? [];
+    } catch {
+      /* no settings file */
+    }
+    const want = CREDENTIAL_DENY.filter((r) => !deny.includes(r));
+    if (!want.length) ok("Credential files", "Claude's file tools may not read SSH, cloud or registry keys in your home folder");
+    else info("Credential files", `${want.length} of ${CREDENTIAL_DENY.length} deny rules for credential files are missing (${want.slice(0, 3).join(", ")}${want.length > 3 ? " ..." : ""}): run the kit's setup again to add them`);
+  }
   return { version, checks, healthy: checks.every((c) => c.ok !== false) };
 }
 

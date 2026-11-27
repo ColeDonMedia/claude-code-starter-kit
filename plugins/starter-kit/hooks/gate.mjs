@@ -2,13 +2,15 @@
 // program for every matching hook, and starting Node costs about 0.3 s each, so the old set-up made every shell command wait
 // roughly 0.7 s. This runs the same individual hook scripts inside one process (see scripts/inprocess.mjs), in order:
 //   pre   (before any tool)   flight recorder; for shell commands: safety, database, secret, push, package guards;
-//                             for file edits: file guard, plan check; for agent launches: the model check. The first block ends the run.
-//   post  (after any tool)    flight recorder; after file edits: related tests; after shell commands: quiet output.
+//                             for file edits: file guard, plan check; for agent launches: the model check; for web fetches: the
+//                             fetch guard (no secret leaves in an address). The first block ends the run.
+//   post  (after any tool)    flight recorder; after file edits: dangerous-code warning, related tests; after shell commands: quiet
+//                             output; after web fetches, searches and MCP tools: the injection warning.
 //   stop  (a turn ends)       flight recorder, verify gate, docs gate.
 //   start (a session starts)  session note (startup, clear, compact; resume and fork: only the resume-cost line), flight
 //                             recorder, auto-update (startup only).
 //   subagent (one starts)     tells starter-kit subagents where the kit's scripts are.
-//   substop  (one finishes)   checks the scout's pointers, and the conductor's "merged" claim, before anyone relies on them.
+//   substop  (one finishes)   records its token use, checks the scout's pointers, and the conductor's "merged" claim, before anyone relies on them.
 //   precompact / postcompact  what a compaction summary must keep; a record that one happened.
 // Every hook stays a normal script that is tested alone and through here. A hook that crashes is reported, not skipped silently.
 import { pathToFileURL } from "node:url";
@@ -26,13 +28,14 @@ export function pipeline(mode, input) {
   const isShell = tool === "Bash" || tool === "PowerShell" || (!tool && typeof ti.command === "string");
   const isEdit = ["Edit", "Write", "MultiEdit"].includes(tool) || (!tool && typeof ti.file_path === "string" && typeof ti.command !== "string");
   const isAgent = tool === "Agent" || tool === "Task";
-  if (mode === "pre") return ["flight-recorder", ...(isShell ? ["safety-guard", "db-guard", "secret-guard", "push-gate", "package-guard"] : isEdit ? ["file-guard", "plan-gate"] : isAgent ? ["agent-route"] : [])];
-  if (mode === "post") return ["flight-recorder", ...(isEdit ? ["test-related"] : isShell ? ["quiet-output"] : [])];
+  const isOutside = tool === "WebFetch" || tool === "WebSearch" || /^mcp__/.test(String(tool ?? "")); // content written by strangers
+  if (mode === "pre") return ["flight-recorder", ...(isShell ? ["safety-guard", "db-guard", "secret-guard", "push-gate", "package-guard"] : isEdit ? ["file-guard", "plan-gate"] : isAgent ? ["agent-route"] : tool === "WebFetch" ? ["fetch-guard"] : [])];
+  if (mode === "post") return ["flight-recorder", ...(isEdit ? ["code-warn", "test-related"] : isShell ? ["quiet-output"] : isOutside ? ["inject-warn"] : [])];
   if (mode === "stop") return ["flight-recorder", "verify-gate", "docs-gate"];
   // A resumed or forked chat already holds the note; session-start then only says what resuming costs, when it is worth saying.
   if (mode === "start") return [...(["startup", "clear", "compact", "resume", "fork", undefined].includes(input?.source) ? ["session-start"] : []), "flight-recorder", ...(input?.source === "startup" ? ["auto-update"] : [])];
   if (mode === "subagent") return ["subagent-start"];
-  if (mode === "substop") return ["scout-check", "conductor-check"];
+  if (mode === "substop") return ["flight-recorder", "scout-check", "conductor-check"];
   if (mode === "precompact") return ["compact-notes"];
   if (mode === "postcompact" || mode === "postfail") return ["flight-recorder"]; // a failed tool call is recorded as failed, not as blocked
   return [];

@@ -45,6 +45,11 @@ result in the gap check. If there are no web tools, say so and continue.
 Pick boring, widely used, well-documented technology that suits the product and can be hosted cheaply. One line
 per choice with the reason. Check the current stable versions from the official docs or package registry — never
 from memory. Prefer what the project already uses.
+Check what this computer has before relying on it (`docker --version`, `git --version`, the browsers Playwright needs): every
+criterion must be provable here. Don't choose Docker for local development or proof unless it is installed or the host requires it.
+A criterion this computer cannot prove (a container build, another operating system) is either reworded to what it can prove ("a
+backup restores into a fresh local copy and the data is there") or marked to be proven by a named GitHub job (`→ ci:` in the
+roadmap); say which in the plan, so the owner knows those parts are only proven after the first push.
 
 ## 5. Compare with the existing code (when there is code)
 Mark each requirement: already works, partly there, missing, or conflicts with how the code is built. Reuse
@@ -129,7 +134,7 @@ On approval, write the project's memory so any later session can pick up with fu
   `Accepted: pending`, then one checkbox per feature, in order (`- [ ] Feature name [M] — one-line goal`), with that
   feature's acceptance criteria (including its security criteria, and a `high-risk` tag where it applies) indented
   beneath it as unticked checkboxes. A box is ticked later, and only with proof: `- [x] Name — goal (merged <commit>)` and, per
-  criterion, `→ test: <file>::<test name>` or `→ manual: <how it was checked>`. A hook rejects ticks without proof.
+  criterion, `→ test: <file>::<test name>` or `→ manual: <how it was checked>`, or `→ ci: <workflow file>::<job>` for what only GitHub can prove. A hook rejects ticks without proof.
 - `PROJECT.md` (the master document): what it is, the stack and why, how to run it, the architecture map, the
   decisions made in this planning (with the reasons and what was rejected), current state, known problems, next steps,
   plus `## Success measures` and `## Risks` (one line each, as agreed in the plan).

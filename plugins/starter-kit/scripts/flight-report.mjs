@@ -49,9 +49,12 @@ export function analyze(events) {
   return { starts, stops, edits, flow, agents, unfinished, failed, notes, models, events: events.length };
 }
 
-// Which models the agents asked for and ran on, the tokens per model, and review rounds per build (reviewer launches after each
-// builder launch: follow-up rounds reuse the same builder, so a new builder launch starts a new count). The numbers a trial needs
+// Which models the agents asked for and ran on, the tokens per model, and review rounds per build. A round re-runs only the reviewers
+// that objected, so a build's rounds are the most launches of any ONE reviewing agent after its builder launch (trial 3: counting
+// only the code reviewer, which approved early, showed 2 rounds for a build that had 6). The numbers a trial needs
 // to judge the kit's model choices (plan task M-14).
+const REVIEWERS = new Set(["reviewer", "challenger", "security-reviewer", "red-team", "ui-reviewer"]);
+
 export function modelUse(events) {
   const asked = {};
   const tokens = {};
@@ -59,16 +62,18 @@ export function modelUse(events) {
   const scout = { runs: 0, ok: 0, bad: 0 };
   const misses = [];
   const savings = { rewrites: 0, quiet: 0, linesIn: 0, linesKept: 0, compactions: 0, conductor: {} };
+  const used = new Map();
   for (const e of events) {
     const isAgent = e.tool === "Agent" || e.tool === "Task";
     if (e.ev === "try" && isAgent && e.agent) {
       const a = short(e.agent);
       asked[a] ??= {};
       asked[a][e.ask || "default"] = (asked[a][e.ask || "default"] ?? 0) + 1;
-      if (a === "implementer") rounds.push(0);
-      else if (a === "reviewer" && rounds.length) rounds[rounds.length - 1]++;
+      if (a === "implementer") rounds.push({});
+      else if (REVIEWERS.has(a) && rounds.length) rounds[rounds.length - 1][a] = (rounds[rounds.length - 1][a] ?? 0) + 1;
     }
     if (e.ev === "ok" && isAgent && e.ran && Number(e.tok) > 0) tokens[e.ran] = (tokens[e.ran] ?? 0) + Number(e.tok);
+    if (e.ev === "use" && e.aid) used.set(e.aid, e); // the last line per agent holds its final totals
     if (e.ev === "ok" && isAgent && e.miss !== undefined) misses.push(Number(e.miss));
     if (e.ev === "scout") {
       scout.runs++;
@@ -84,7 +89,23 @@ export function modelUse(events) {
     if (e.ev === "compact") savings.compactions++;
     if (e.ev === "conductor" && e.res) savings.conductor[e.res] = (savings.conductor[e.res] ?? 0) + 1;
   }
-  return { asked, tokens, rounds, scout, misses, savings };
+  // Each agent's own record (every agent, background and nested ones included) replaces the launch counts, which miss agents
+  // started in the background. Per model: tokens written, fresh input, and context re-read from the cache (the cheap part).
+  const usage = {};
+  const byRole = {};
+  for (const e of used.values()) {
+    const m = e.ran || "unknown";
+    const u = (usage[m] ??= { agents: 0, out: 0, inp: 0, cw: 0, cr: 0 });
+    u.agents++;
+    for (const k of ["out", "inp", "cw", "cr"]) u[k] += Number(e[k]) || 0;
+    const r = short(e.agent) || "unknown";
+    byRole[r] = (byRole[r] ?? 0) + (Number(e.out) || 0);
+  }
+  if (used.size) {
+    for (const k of Object.keys(tokens)) delete tokens[k];
+    for (const [m, u] of Object.entries(usage)) tokens[m] = u.out + u.inp + u.cw + u.cr;
+  }
+  return { asked, tokens, usage, byRole, rounds: rounds.map((r) => Math.max(0, ...Object.values(r))), scout, misses, savings };
 }
 
 // A build is stalled when the same roadmap item has been "next" at the start of `sessions` sessions in a row, or when one
@@ -119,7 +140,11 @@ export function report(events, { all = false } = {}) {
   const m = a.models;
   const fmt = (o) => Object.entries(o).map(([k, v]) => `${k} ${v}`).join(", ");
   if (Object.keys(m.asked).length) lines.push(`Models asked for: ${Object.entries(m.asked).map(([k, v]) => `${k} (${fmt(v)})`).join("; ")}`);
-  if (Object.keys(m.tokens).length) lines.push(`Agent tokens by model: ${Object.entries(m.tokens).map(([k, v]) => `${k} ${v.toLocaleString("en-US")}`).join(", ")}`);
+  const n = (v) => v.toLocaleString("en-US");
+  if (Object.keys(m.usage).length) {
+    lines.push(`Agent tokens by model (each agent's own record): ${Object.entries(m.usage).map(([k, u]) => `${k}: ${u.agents} agent(s), ${n(u.out)} written, ${n(u.inp + u.cw)} read new, ${n(u.cr)} re-read from cache`).join("; ")}`);
+    lines.push(`Tokens written by role: ${Object.entries(m.byRole).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${n(v)}`).join(", ")}`);
+  } else if (Object.keys(m.tokens).length) lines.push(`Agent tokens by model: ${Object.entries(m.tokens).map(([k, v]) => `${k} ${n(v)}`).join(", ")}`);
   if (m.rounds.length) lines.push(`Review rounds per build: ${m.rounds.join(", ")}`);
   if (m.scout.runs) lines.push(`Scout reports checked: ${m.scout.runs}; pointers ${m.scout.ok} good, ${m.scout.bad} wrong`);
   if (m.misses.length) lines.push(`Files builders had to find for themselves: ${m.misses.join(", ")}`);

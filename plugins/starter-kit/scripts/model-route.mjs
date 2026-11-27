@@ -3,7 +3,9 @@
 // project's rigor, and this computer's plan. It is the ONE place that decides (the MODEL RULE in the repo's CLAUDE.md): agent files
 // carry its starting models (a test compares them), and hooks/agent-route.mjs enforces its minimums. It never picks Fable.
 // Run: node model-route.mjs --project <dir> --role <agent> [--feature "<text>"] [--attempt <n>] [--builder haiku|sonnet|opus]
-//        [--mode plan|range|full|launch|emergency] [--json]
+//        [--mode plan|range|full|launch|emergency|recheck] [--json]
+// recheck: a reviewer looking again after a fix, at its own earlier findings and the changed lines only. That runs on Sonnet
+// (the security reviewer keeps its Opus floor), because trial 3 spent most of its Opus tokens on re-checks.
 //      node model-route.mjs --set-ceiling sonnet|none     (this computer's plan has no Opus; stored outside every project)
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -16,7 +18,7 @@ export const rank = (m) => ORDER.indexOf(m);
 const atLeast = (m, floor) => (rank(m) >= rank(floor) ? m : floor);
 
 // The lowest model each role may ever run on (before a plan's ceiling). Unknown roles have no minimum.
-export const FLOOR = { scout: "haiku", researcher: "haiku", conductor: "sonnet", implementer: "sonnet", reviewer: "sonnet", challenger: "sonnet", "ui-reviewer": "sonnet", investigator: "sonnet", "red-team": "sonnet", "security-reviewer": "opus" };
+export const FLOOR = { scout: "haiku", researcher: "haiku", conductor: "sonnet", implementer: "sonnet", reviewer: "sonnet", challenger: "sonnet", "ui-reviewer": "sonnet", investigator: "sonnet", "red-team": "sonnet", "user-tester": "sonnet", "security-reviewer": "opus" };
 export const EFFORT = { scout: "low", researcher: "medium" }; // every other role: high
 export const RIGORS = ["prototype", "product", "critical"];
 export const REACH = 10; // a file with this many dependents makes a change far-reaching
@@ -36,7 +38,11 @@ export function route(f) {
   const any = (list) => list.some(Boolean); // evaluates every entry, so every reason that applies is listed
   const risk = f.risk ? `risky area${f.riskWhy ? `: ${f.riskWhy}` : ""}` : "";
   let model;
-  switch (role) {
+  const recheck = f.mode === "recheck" && ["reviewer", "challenger", "red-team", "ui-reviewer"].includes(role) && rigor !== "critical";
+  switch (recheck ? "recheck" : role) {
+    case "recheck":
+      model = (when(true, "re-check of a fix: only its own earlier findings and the changed lines"), "sonnet");
+      break;
     case "scout":
     case "researcher":
       model = "haiku";
@@ -57,7 +63,7 @@ export function route(f) {
     case "challenger":
       model = rigor === "critical"
         ? when(true, "critical project") && "opus"
-        : any([when(f.mode === "plan", "checking the plan"), when(size === "L" && Boolean(f.size), "large feature"), when(f.risk, risk), when(attempt >= 3, "third attempt after two failed reviews")]) ? "opus" : "sonnet";
+        : any([when(f.mode === "plan", "checking the plan"), when(size === "L" && Boolean(f.size), "large feature"), when(attempt >= 3, "third attempt after two failed reviews")]) ? "opus" : (when(true, f.risk ? "the security reviewer covers the risky area; the challenger checks the evidence" : "checks the evidence"), "sonnet");
       break;
     case "conductor": // it runs the workflow and judges the reports; the builder and reviewers get their own models
       model = any([when(rigor === "critical", "critical project"), when(size === "L" && Boolean(f.size), "large feature"), when(f.risk, risk)]) ? "opus" : (when(true, "runs the workflow; the agents it starts get their own models"), "sonnet");
@@ -68,6 +74,9 @@ export function route(f) {
     case "red-team":
       model = rigor === "prototype" ? (when(true, "prototype"), "sonnet") : when(true, "attacks need the stronger model") && "opus";
       break;
+    case "user-tester": // follows the plan's own words through the app; judging taste and attacks belong to other agents
+      model = rigor === "critical" ? when(true, "critical project") && "opus" : (when(true, "walks the plan's steps as an ordinary user"), "sonnet");
+      break;
     case "security-reviewer":
       model = when(true, "security reviews always run on the stronger model") && "opus";
       break;
@@ -75,12 +84,12 @@ export function route(f) {
       model = "sonnet";
   }
   // Never weaker than the builder whose work it checks, and never below the role's floor.
-  if (role === "reviewer" && f.builder && rank(f.builder) > rank(model) && rank(f.builder) <= rank("opus")) {
+  if (role === "reviewer" && !recheck && f.builder && rank(f.builder) > rank(model) && rank(f.builder) <= rank("opus")) {
     model = f.builder;
     reasons.push(`never weaker than the builder (${f.builder})`);
   }
   model = atLeast(model, FLOOR[role]);
-  if (rank(model) > rank("opus")) model = "opus"; // the kit never picks Fable by itself (owner decision D12)
+  if (rank(model) > rank("opus")) model = "opus"; // the kit never picks Fable by itself (D12: Claude's choice, open for the owner)
   // A plan without the stronger model caps everything, and says so when a review drops below its floor.
   if (f.ceiling && rank(f.ceiling) >= 0 && rank(model) > rank(f.ceiling)) {
     const below = rank(FLOOR[role]) > rank(f.ceiling);

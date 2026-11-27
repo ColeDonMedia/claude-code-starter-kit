@@ -11,7 +11,7 @@ Build this in isolation and merge it when it's proven: $ARGUMENTS
 2. Run `node "${CLAUDE_PLUGIN_ROOT}/scripts/build-state.mjs" --project . --plan --feature "<the feature>"`.
 3. **RUN IN conductor:** launch the `conductor` agent with the feature, MAIN, BASE and START or RESUME as printed, on the model and
    effort `node "${CLAUDE_PLUGIN_ROOT}/scripts/model-route.mjs" --project . --role conductor --feature "<the feature>"` prints. Then:
-   MERGED: tell the owner in plain words what works and how to see it, run `/starter-kit:accept` if NEXT says a milestone finished,
+   MERGED: tell the owner in plain words what works and how to see it, then the PROGRESS line as printed, run `/starter-kit:accept` if NEXT says a milestone finished,
    and carry on with the next roadmap item. NEEDS OWNER: ask the owner, then send the answer to the same conductor (a new one if it
-   cannot be resumed). BLOCKED: tell the owner plainly, and where the work is. CANNOT DELEGATE, or the launch failed: step 4.
+   cannot be resumed). BLOCKED: tell the owner plainly, where the work is, and what `worth-it.mjs --project .` recommends. CANNOT DELEGATE, or the launch failed: step 4.
 4. **RUN HERE:** read `${CLAUDE_PLUGIN_ROOT}/workflows/feature.md` and follow it in this conversation.

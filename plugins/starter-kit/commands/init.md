@@ -30,7 +30,11 @@ into a project's history, never invent a name, and never change the computer-wid
 
 ## 4. Permissions (`.claude/settings.json`)
 Merge into the existing file if there is one; never drop existing entries.
-- deny (add without asking — these only restrict): `Read(./.env)`, `Read(./.env.*)`, `Read(./**/*.pem)`, `Read(./**/*.key)`.
+- deny (add without asking — these only restrict): `Read(./.env)`, `Read(./.env.*)`, `Read(./**/*.pem)`, `Read(./**/*.key)`, and the
+  credential files in the user's home, which the file tools could otherwise read without any shell guard seeing it:
+  `Read(~/.ssh/**)`, `Edit(~/.ssh/**)`, `Read(~/.aws/**)`, `Read(~/.azure/**)`, `Read(~/.config/gcloud/**)`, `Read(~/.gnupg/**)`,
+  `Read(~/.kube/**)`, `Read(~/.docker/config.json)`, `Read(~/.git-credentials)`, `Read(~/.config/gh/**)`, `Read(~/.npmrc)`,
+  `Read(~/.pypirc)`, `Read(~/.netrc)`, `Read(~/.claude/.credentials.json)`, `Edit(~/.bashrc)`, `Edit(~/.zshrc)`, `Edit(~/.profile)`.
 - `"autoCompactWindow": 300000` (add without asking; it only changes when long chats here are summarised, not what runs): long
   chats compact at 300,000 tokens instead of near a million, so every message stops re-sending a huge history. Mention it in one
   line. Keep a value that is already there.
@@ -81,19 +85,26 @@ Tell the user, once, that they can list their name, email and client names (one 
 
 ## 8. Checks on GitHub (only if the project has a GitHub remote or the user plans to use GitHub)
 Create `.github/workflows/checks.yml` that runs on every push and pull request. Use ONLY official actions from the
-`actions/` organisation pinned to a major version, give the workflow read-only permissions, and no secrets:
+`actions/` organisation, each pinned to an exact commit with its version as a comment, give the workflow read-only
+permissions, and no secrets. Look each hash up when writing the file, never from memory: the newest release tag from
+`git ls-remote --tags --sort=-v:refname https://github.com/actions/<name>` (ignore pre-releases), then the commit that tag points at
+(the `^{}` line when there is one). `/starter-kit:maintain` refreshes them.
 ```yaml
 name: checks
 on: [push, pull_request]
 permissions:
   contents: read
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   checks:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
-      # <stack setup, e.g. actions/setup-node@v4 with node-version-file, or actions/setup-python@v5>
+      - uses: actions/checkout@<40-character commit> # v<N>
+        with: { fetch-depth: 0, persist-credentials: false }
+      # <stack setup, e.g. actions/setup-node@<commit> # v<N> with node-version-file, or actions/setup-python>
       - run: <install command>
       - run: <each verify command, one step each>
       - run: <dependency audit, e.g. npm audit --omit=dev --audit-level=high | pip-audit | cargo audit>

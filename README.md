@@ -24,29 +24,30 @@
 - **Plans before it builds.** A new app gets researched, sized, designed and broken into a checklist you approve once.
 - **Builds test-first, in isolation.** Each feature is built in its own branch and its own fresh context, reviewed separately, and
   merged only when the tests pass, so your chat stays small.
-- **Guards your computer and secrets.** Dangerous commands, leaked keys, invented packages, remote databases and unchecked pushes
-  are stopped.
-- **Remembers where it left off.** Say "continue" and it resumes from the last verified step.
+- **Guards your computer and secrets.** Dangerous commands, leaked keys, fake packages and unchecked pushes are stopped, and its
+  own security checks need nothing installed.
+- **Reviews in proportion.** Only problems that break what you agreed, or let a stranger in, hold a feature back; the rest is
+  listed to fix before launch.
+- **Remembers where it left off.** Say "continue" to resume from the last verified step.
 
 ## Install
 
 Once per computer:
 
 ```
-claude plugin marketplace add ColeDonMedia/claude-code-starter-kit
+claude plugin marketplace add ColeDonMedia/claude-code-starter-kit@stable
 claude plugin install starter-kit@starter-kit-marketplace
 ```
 
-Restart Claude Code. The kit then updates itself daily from this repository.
+Restart Claude Code. The kit then updates itself daily, only to versions that passed their tests.
 
 <details>
 <summary>Install trouble?</summary>
 
 - Inside Claude Code, the same commands are `/plugin marketplace add …` and `/plugin install …`.
 - If the `owner/repo` form fails because SSH isn't set up, use
-  `https://github.com/ColeDonMedia/claude-code-starter-kit.git` instead.
+  `https://github.com/ColeDonMedia/claude-code-starter-kit.git#stable` instead.
 - Update by hand: `claude plugin marketplace update starter-kit-marketplace`.
-- Something seems off? Tell Claude the kit is misbehaving: it runs a health check and explains.
 </details>
 
 ## How you use it
@@ -55,13 +56,13 @@ Open a project folder in Claude Code and talk normally.
 
 | You say | What happens |
 |---|---|
-| *(open a project that isn't set up)* | It detects the stack, writes the project's `CLAUDE.md`, and asks you one yes/no question. |
-| "Build me an app that…" | A plan with research, size, design and a roadmap. You approve it once; it builds feature by feature. |
+| *(open a project that isn't set up)* | It sets the project up and asks you one yes/no question. |
+| "Build me an app that…" | A researched plan and roadmap. You approve it once; it builds feature by feature. |
 | "Add a…" / "Fix the…" | The feature is built test-first in its own branch, reviewed, and merged when green. |
-| "This error keeps happening" | It finds the root cause with evidence, then adds a test so it can't come back. |
+| "This error keeps happening" | It finds the cause with evidence and adds a test so it stays fixed. |
 | "Continue" | It carries on with the next roadmap item, or resumes one that was cut off. |
-| "Where are we?" | Progress, what's next, risks, and what it needs from you. |
-| "Ship it" | The full pre-ship scan runs first; pushes and deploys are blocked until it passes. |
+| "Where are we?" | Progress, what's next, what it needs from you. |
+| "Ship it" | The full pre-ship scan runs; pushes wait until it passes. |
 
 More in [How it works](docs/how-it-works.md).
 
@@ -95,7 +96,7 @@ Claude starts these itself; you can also type them.
 | | `/starter-kit:maintain` | The monthly check-up |
 | | `/starter-kit:status` | Where things stand, in plain words |
 
-### 10 agents
+### 11 agents
 
 | Agent | Model | Job |
 |---|---|---|
@@ -106,14 +107,12 @@ Claude starts these itself; you can also type them.
 | `reviewer` | Opus | Reviews correctness and runs the tests (read-only) |
 | `ui-reviewer` | Sonnet | Looks at the running app at phone and desktop size (read-only) |
 | `security-reviewer` | Opus | Hardening review of risky features and before shipping (read-only) |
-| `challenger` | Sonnet; Opus for plans and risky features | Tries to prove the work isn't done, and checks the plan before you approve it (read-only) |
+| `challenger` | Sonnet; Opus for plans and large features | Tries to prove the work isn't done; checks the plan (read-only) |
 | `investigator` | Sonnet; Opus once a first guess fails | Finds a bug's root cause outside the main conversation (read-only) |
 | `red-team` | Opus | Attacks a local copy like a hostile user, writes a test for every break |
+| `user-tester` | Sonnet | Tries each finished milestone like a first-time user, before you do |
 
 How models are picked: [which model does what](docs/how-it-works.md#which-model-does-what).
-
-Plus a design library of 89 styles, 194 palettes and 74 font pairings, WCAG 2.2 AA accessibility checks, speed and load tests,
-database migration checks, and a code index for very large codebases.
 
 ## Protection built in
 
@@ -125,9 +124,10 @@ database migration checks, and a code index for very large codebases.
 | Push gate | Pushes, releases and deploys before the full pre-ship scan passes for that exact commit |
 | Database guard | Connecting to any database that isn't on your computer |
 | Model check | A review or security review started on a weaker model than its job needs |
+| File and web guards | Claude's own tools reading your key files, or a key leaving inside a web address; warns about injected orders in pages |
+| Built-in scanners | Known flaws and malware in dependencies, unsafe GitHub workflows, Dockerfiles and Compose files, missing headers on the local app |
 
-The guards prove they are running: each update triggers a self-check, and a guard that crashes refuses the command instead of
-letting it through. A project can't switch your protections off without your approval on this computer.
+The guards prove they are running, a crashed guard refuses the command, and a project can't switch them off without your approval.
 Details: [Safety and security](docs/safety.md).
 
 ## What still needs you
@@ -138,10 +138,9 @@ Details: [Safety and security](docs/safety.md).
 
 ## What's proven and what isn't
 
-- **Proven:** 507 automated tests over the hooks and scripts, including fuzz tests that throw hundreds of disguised attacks at
-  the guards. They run before every release.
-- **Not yet proven:** a full real-world build from idea to launch. [Trial runs](docs/trials.md) describe how that is being tested.
-- Tested on Windows so far; macOS and Linux are intended.
+- **Proven:** 559 automated tests over the hooks and scripts, including fuzz tests that throw hundreds of disguised attacks at
+  the guards. Every push runs them on Windows, macOS and Linux.
+- **Not yet proven:** a full real-world build from idea to launch. A [trial](docs/trials.md) has built two features of a real app so far.
 
 ## Requirements
 
@@ -170,7 +169,6 @@ Run the tests before every change:
 node --test plugins/starter-kit/hooks/*.test.mjs plugins/starter-kit/scripts/*.test.mjs
 ```
 
-Plugins can't ship a `CLAUDE.md` or permission rules, which is why the `init` workflow writes those into each project.
 Notes for people working on the kit: [handoff](docs/development/HANDOFF.md) and [improvement plan](docs/development/IMPROVEMENT-PLAN.md).
 
 ## License

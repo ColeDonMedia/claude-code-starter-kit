@@ -15,6 +15,9 @@ Keep the user's attention for decisions only; do the rest yourself and report in
   the browser tests, review and the proof checks. Patch and minor updates go together. A major version that changes behavior is a
   decision: list it for the user with what it changes and the risk, and don't apply it unasked. Never loosen or delete a test to get an update through.
 - New or changed packages go through the package guard as usual.
+- GitHub workflow steps: for each `uses: <owner>/<action>@<commit> # v<N>`, look up the newest release tag of that action with
+  `git ls-remote --tags --sort=-v:refname https://github.com/<owner>/<action>` and move the pin to its commit, in the same
+  maintenance feature. A new major version is listed like any other.
 
 ## 2. Security re-check
 Run `/starter-kit:audit` on what changed since the last maintenance (secret scan, the dependency audit, `node "${CLAUDE_PLUGIN_ROOT}/scripts/license-check.mjs"` if it exists),

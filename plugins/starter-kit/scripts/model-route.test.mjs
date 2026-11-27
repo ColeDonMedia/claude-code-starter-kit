@@ -27,8 +27,11 @@ function project(files = {}) {
 const cli = (args, env = {}) => spawnSync(process.execPath, [SCRIPT, ...args], { encoding: "utf8", env: { ...process.env, ...env } });
 
 test("each role starts where the plan says", () => {
-  const want = { scout: "haiku", researcher: "haiku", conductor: "sonnet", implementer: "sonnet", reviewer: "opus", challenger: "sonnet", "ui-reviewer": "sonnet", investigator: "sonnet", "red-team": "opus", "security-reviewer": "opus" };
+  const want = { scout: "haiku", researcher: "haiku", conductor: "sonnet", implementer: "sonnet", reviewer: "opus", challenger: "sonnet", "ui-reviewer": "sonnet", investigator: "sonnet", "red-team": "opus", "user-tester": "sonnet", "security-reviewer": "opus" };
   for (const [role, model] of Object.entries(want)) assert.equal(baseline(role).model, model, role);
+  assert.equal(route({ role: "user-tester", size: "L", risk: true }).model, "sonnet", "the user tester follows steps; size and risk do not change it");
+  assert.equal(route({ role: "user-tester", rigor: "critical" }).model, "opus");
+  assert.equal(baseline("user-tester").effort, "high");
   assert.equal(route({ role: "conductor", size: "L" }).model, "opus");
   assert.equal(route({ role: "conductor", size: "M", risk: true }).model, "opus");
   assert.equal(route({ role: "conductor", size: "M" }).model, "sonnet");
@@ -68,6 +71,12 @@ test("reviews are never weaker than the build, and the security review is always
   assert.equal(route({ role: "investigator", attempt: 2 }).model, "opus");
   assert.equal(route({ role: "investigator", mode: "emergency" }).model, "opus");
   assert.equal(route({ role: "red-team", rigor: "prototype" }).model, "sonnet");
+  // A risky feature gets the security reviewer on Opus; the challenger only checks the evidence, on Sonnet (trial 3: 8 Opus runs).
+  assert.equal(route({ role: "challenger", risk: true }).model, "sonnet");
+  // Re-checks after a fix run on Sonnet, even after an Opus builder; the security reviewer keeps its floor; critical keeps Opus.
+  for (const role of ["reviewer", "challenger", "red-team", "ui-reviewer"]) assert.equal(route({ role, mode: "recheck", builder: "opus", risk: true }).model, "sonnet", role);
+  assert.equal(route({ role: "security-reviewer", mode: "recheck" }).model, "opus");
+  assert.equal(route({ role: "reviewer", mode: "recheck", rigor: "critical" }).model, "opus");
 });
 
 // Every combination: more risk, size, reach, attempts, rigor or a stronger builder never gives a weaker model; nothing is ever

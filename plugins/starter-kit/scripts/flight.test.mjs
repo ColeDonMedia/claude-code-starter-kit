@@ -174,15 +174,48 @@ test("the report shows models asked for, tokens per model and review rounds per 
     e({ ev: "try", tool: "Agent", agent: "starter-kit:reviewer", ask: "opus", id: "3" }), e({ ev: "ok", tool: "Agent", id: "3", ran: "claude-opus-5-5", tok: "8000" }),
     e({ ev: "try", tool: "Agent", agent: "starter-kit:implementer", id: "4" }), e({ ev: "ok", tool: "Agent", id: "4" }),
     e({ ev: "try", tool: "Agent", agent: "starter-kit:reviewer", ask: "opus", id: "5" }), e({ ev: "ok", tool: "Agent", id: "5" }),
+    e({ ev: "try", tool: "Agent", agent: "starter-kit:challenger", id: "6" }), e({ ev: "try", tool: "Agent", agent: "starter-kit:challenger", id: "7" }),
+    e({ ev: "try", tool: "Agent", agent: "starter-kit:challenger", id: "8" }), // the challenger objected three times in the second build
     e({ ev: "scout", ok: "9", bad: "1" }),
   ];
   const r = report(events);
   assert.match(r, /implementer \(sonnet 1, default 1\)/);
   assert.match(r, /claude-opus-5-5 20,000/);
   assert.match(r, /claude-sonnet-5-5 30,000/);
-  assert.match(r, /Review rounds per build: 2, 1/);
+  assert.match(r, /Review rounds per build: 2, 3/);
   assert.match(r, /Scout reports checked: 1; pointers 9 good, 1 wrong/);
   assert.match(r, /find for themselves: 2/);
+});
+
+test("every agent's tokens come from its own transcript when it stops, background ones included, each message counted once (trial 3)", () => {
+  const s = sandbox();
+  try {
+    const t = join(s.dir, "agent.jsonl");
+    const msg = (id, out, cr, model = "claude-opus-5-5") => JSON.stringify({ type: "assistant", message: { id, model, usage: { input_tokens: 2, cache_creation_input_tokens: 100, cache_read_input_tokens: cr, output_tokens: out }, content: [{ type: "text", text: "PRIVATE REPORT TEXT" }] } });
+    // one message split over two lines (same id, same usage), a second message, and lines without usage
+    writeFileSync(t, [JSON.stringify({ type: "user", message: { content: "brief" } }), msg("m1", 50, 1000), msg("m1", 50, 1000), msg("m2", 30, 2000), "not json"].join("\n"));
+    const stop = (extra) => fire(s.dir, s.logs, { hook_event_name: "SubagentStop", agent_type: "starter-kit:conductor", agent_id: "c1", agent_transcript_path: t, stop_hook_active: false, last_assistant_message: "x", ...extra });
+    assert.equal(stop().status, 0);
+    let use = readLog(s.dir).filter((e) => e.ev === "use");
+    assert.equal(use.length, 1);
+    assert.deepEqual([use[0].ran, use[0].out, use[0].inp, use[0].cw, use[0].cr, use[0].agent, use[0].aid], ["claude-opus-5-5", "80", "4", "200", "3000", "starter-kit:conductor", "c1"]);
+    assert.ok(!readFileSync(logPath(s.dir), "utf8").includes("PRIVATE"), "never the transcript's words");
+    // a stop sent back by a check fires again later with bigger totals: the report keeps the last one per agent
+    writeFileSync(t, [msg("m1", 50, 1000), msg("m2", 30, 2000), msg("m3", 20, 3000)].join("\n"));
+    stop({ stop_hook_active: true });
+    const t2 = join(s.dir, "reviewer.jsonl");
+    writeFileSync(t2, msg("r1", 7, 10, "claude-sonnet-5-5"));
+    fire(s.dir, s.logs, { hook_event_name: "SubagentStop", agent_type: "starter-kit:ui-reviewer", agent_id: "u1", agent_transcript_path: t2 });
+    fire(s.dir, s.logs, { hook_event_name: "SubagentStop", agent_type: "starter-kit:scout", agent_id: "x", agent_transcript_path: join(s.dir, "missing.jsonl") });
+    use = readLog(s.dir).filter((e) => e.ev === "use");
+    assert.equal(use.length, 3, "a missing transcript records nothing");
+    const r = report(readLog(s.dir));
+    assert.match(r, /claude-opus-5-5: 1 agent\(s\), 100 written, 306 read new, 6,000 re-read from cache/);
+    assert.match(r, /claude-sonnet-5-5: 1 agent\(s\), 7 written/);
+    assert.match(r, /Tokens written by role: conductor 100, ui-reviewer 7/);
+  } finally {
+    s.done();
+  }
 });
 
 test("a tool that ran and failed is reported as failed, not as blocked (found by the first live trial)", () => {

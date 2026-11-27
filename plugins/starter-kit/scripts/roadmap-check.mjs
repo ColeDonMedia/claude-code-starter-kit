@@ -5,6 +5,9 @@
 //   - [x] Sign in — people can create an account and sign in (merged a1b2c3d)
 //     - [x] A visitor can sign up with email and password → test: test/auth.test.js::signs up a visitor
 //     - [x] The login page looks right on a phone → manual: opened it at 375px width, screenshot checked
+//     - [x] The Docker image builds and passes its smoke test → ci: .github/workflows/checks.yml::docker
+//   "ci:" is for what this computer cannot prove (Docker absent, another operating system): the job must exist in that workflow
+//   file. It counts as done for the build, and the launch waits until that job has passed on GitHub.
 //   - [ ] Save recipes — logged-in users can save a recipe
 //
 // A ticked feature must name a merge commit that exists and is part of the current history, must have at least one
@@ -23,6 +26,7 @@ export function checkRoadmap(root) {
   const problems = [];
   let items = 0;
   let ticked = 0;
+  const ci = [];
   let current = null; // { title, done, criteria: [] }
   const finish = () => {
     if (!current || !current.done) return;
@@ -34,14 +38,24 @@ export function checkRoadmap(root) {
     else if (git("merge-base", "--is-ancestor", m[1], "HEAD").status !== 0) problems.push(`"${name}" names commit ${m[1]}, which is not part of the current history`);
     if (!current.criteria.length) problems.push(`"${name}" is ticked but lists no acceptance criteria`);
     for (const c of current.criteria) {
-      const cn = c.text.replace(/\s*(→|->)\s*(test|manual):.*$/i, "").slice(0, 70);
+      const cn = c.text.replace(/\s*(→|->)\s*(test|manual|ci):.*$/i, "").slice(0, 70);
       if (!c.done) {
         problems.push(`"${name}" is ticked but the criterion "${cn}" is not`);
         continue;
       }
       const t = /(?:→|->)\s*test:\s*(.+?)\s*$/i.exec(c.text);
       const man = /(?:→|->)\s*manual:\s*(.{8,})$/i.exec(c.text);
-      if (t) {
+      const job = /(?:→|->)\s*ci:\s*(.+?)::\s*([\w.-]+)\s*$/i.exec(c.text);
+      if (job) {
+        const rel = job[1].trim();
+        const p = resolve(root, rel);
+        const text = p.startsWith(resolve(root)) && existsSync(p) ? readFileSync(p, "utf8") : null;
+        const jobLine = new RegExp(`^\\s{2}${job[2].replace(/\./g, "\\.")}:\\s*$`, "m");
+        if (!/^\.github[\\/]workflows[\\/][^\\/]+\.ya?ml$/i.test(rel)) problems.push(`"${name}": criterion "${cn}" says ci: but ${rel} is not a GitHub workflow file`);
+        else if (text === null) problems.push(`"${name}": criterion "${cn}" points to workflow ${rel}, which does not exist`);
+        else if (!jobLine.test(text)) problems.push(`"${name}": ${basename(rel)} has no job named "${job[2]}"`);
+        else ci.push({ feature: name, criterion: cn, file: rel, job: job[2] });
+      } else if (t) {
         const [rel, ...rest] = t[1].split("::");
         const p = resolve(root, rel.trim());
         if (!p.startsWith(resolve(root)) || !existsSync(p)) problems.push(`"${name}": criterion "${cn}" points to test file ${rel.trim()}, which does not exist`);
@@ -49,7 +63,7 @@ export function checkRoadmap(root) {
           const testName = rest.join("::").trim().replace(/^["'`]|["'`]$/g, "");
           if (testName && !readFileSync(p, "utf8").includes(testName)) problems.push(`"${name}": ${basename(rel.trim())} has no test named "${testName.slice(0, 50)}"`);
         }
-      } else if (!man) problems.push(`"${name}": criterion "${cn}" has no "→ test: <file>::<name>" or "→ manual: <how it was checked>"`);
+      } else if (!man) problems.push(`"${name}": criterion "${cn}" has no "→ test: <file>::<name>", "→ manual: <how it was checked>" or "→ ci: <workflow>::<job>"`);
     }
   };
   // Milestones group a few features and end with the owner's own acceptance, in their words:
@@ -90,7 +104,7 @@ export function checkRoadmap(root) {
     if (m.accepted === "malformed") problems.push(`Milestone ${m.n}: the "Accepted:" line must be "Accepted: pending" or 'Accepted: yes (YYYY-MM-DD) — owner said: "<their own words>"'`);
     if (allDone && m.accepted !== "yes") unaccepted.push({ n: m.n, name: m.name });
   }
-  return { items, ticked, problems, milestones: milestones.map((m) => ({ n: m.n, name: m.name, features: m.features.length, done: m.features.filter((f) => f.done).length, accepted: m.accepted === "yes" })), unaccepted };
+  return { items, ticked, problems, ci, milestones: milestones.map((m) => ({ n: m.n, name: m.name, features: m.features.length, done: m.features.filter((f) => f.done).length, accepted: m.accepted === "yes" })), unaccepted };
 }
 
 if (process.argv[1] && basename(process.argv[1]) === "roadmap-check.mjs") {
@@ -108,5 +122,6 @@ if (process.argv[1] && basename(process.argv[1]) === "roadmap-check.mjs") {
   if (!r.items) console.log("No ROADMAP.md items to check.");
   else if (!r.problems.length) console.log(`Roadmap OK: ${r.ticked} of ${r.items} items done, each backed by a merge and tests.`);
   else console.log(`Roadmap has ${r.problems.length} unproven claim(s):\n- ${r.problems.join("\n- ")}`);
+  if (r.ci.length) console.log(`Proven only on GitHub after a push (the launch waits for these jobs to pass): ${[...new Set(r.ci.map((c) => `${c.file}::${c.job}`))].join(", ")}`);
   process.exitCode = r.problems.length ? 1 : 0;
 }

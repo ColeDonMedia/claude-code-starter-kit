@@ -4,6 +4,90 @@ What changed in each release of the starter-kit plugin, newest first, in plain w
 repository's history. Every release bumps `version` in `plugins/starter-kit/.claude-plugin/plugin.json`; a test
 fails if this file has no entry for the current version.
 
+## [2.18.0] — 2026-11-26
+- **Reviews in proportion to the app (from trial 3).** The portal's first feature took six review rounds, mostly hardening a
+  one-owner sign-in against floods. Now every reviewer marks each finding BLOCKS (it breaks an agreed criterion or a named threat,
+  or lets an outsider reach someone else's data, account, code or secrets) or LATER. Only BLOCKS findings start another round; LATER
+  ones go under "Harden before launch" in `PROJECT.md`, which the launch review checks. The red team attacks once per feature and
+  then only re-checks; the UI reviewer's taste scores hold the merge for two looks, then go to the owner at acceptance.
+- **Cheaper re-checks.** A reviewer confirming its own findings after a fix runs on Sonnet (the security reviewer stays on Opus,
+  and a `critical` project keeps Opus everywhere). The challenger stays on Sonnet for risky features, which already get the
+  security reviewer on Opus. In trial 3 the challenger ran 8 times on Opus.
+- **One stop rule.** Three overlapping round limits are now one: from round 3, the worth-it check decides whether you are asked;
+  round 6 always goes to you. A stronger builder after round 2 stays.
+- **Plans this computer can prove.** Planning checks what is installed (Docker was not, so two of the portal's criteria could never
+  be ticked). A criterion this computer cannot prove is reworded, or marked `→ ci: <workflow>::<job>`: the roadmap check accepts it
+  when that job exists, and the launch waits until the job has passed on GitHub.
+- **Cleanup after every merge.** `scripts/cleanup.mjs` removes build folders and branches whose work is already in main (merged,
+  or the same change copied in, as red-team tests are), and keeps anything unsaved, unmerged, locked by a running agent, or not
+  made by the kit. The portal had six left over.
+- **The flight report counts rounds right.** It counted only the code reviewer, which approved early, so F-001 showed 2 rounds
+  instead of 6. It now counts the busiest reviewer per build.
+- **Exact pins.** Setup's GitHub checks file pins each official action to an exact commit (looked up with `git ls-remote`), adds
+  time limits, cancels runs a newer push replaced, and keeps the checkout's credentials out of the job. Maintenance refreshes the
+  pins. Repeated unpinned steps in one file are one finding.
+- **Tokens per feature.** The progress line after each merge says how many tokens that feature used and how much was on Opus.
+- **The kit tests itself on GitHub, and updates only from `stable`.** `.github/workflows/tests.yml` runs every test on Windows,
+  macOS and Linux with the oldest and newest supported Node, and moves the `stable` branch to `main` only when all of it passes.
+  The README now installs from `@stable`, so a bad commit on `main` never reaches anyone.
+- **Security: Claude's own file and web tools are now guarded too.** The shell guards never saw the Read and WebFetch tools,
+  so a prompt injection could read `~/.ssh` with one and leak it inside a web address with the other. Setup now writes deny rules
+  for the credential files in your home folder (the doctor reports missing ones). A new fetch guard refuses web addresses carrying a key or a private term, and asks first for throwaway capture
+  services. A new injection warning flags web pages, search results and MCP answers that look like orders to an AI, without
+  blocking them. A new dangerous-code warning tells the builder the moment it writes `eval`, HTML or SQL built from strings, shell
+  commands, unsafe deserialising, switched-off certificate checks, weak hashes or random numbers, or a CI workflow change, with
+  the safe form. All of it is pattern matching on this computer: no model, no network.
+- **Security: the kit's own scanners, nothing to install.** A new built-in check (plain Node, like the rest of the kit) runs in
+  the pre-ship scan, the audit and `vet`: every dependency in every language's lockfile against OSV.dev, the free public database of
+  known flaws and known malware (only names and versions are sent; with no internet it says "not checked", never "passed"); GitHub
+  workflows (untrusted text in shell steps, `pull_request_target` running a stranger's code, secrets in logs, unpinned actions);
+  Dockerfiles (baked-in secrets, downloads piped into a shell, unpinned images, root); and Compose files (privileged containers, the
+  Docker socket, databases open to the network). For the red team and launch it also checks the running local copy: security
+  headers, CORS, sign-in cookies, a served `.env` or `.git`, stack traces. A HIGH finding blocks shipping. Four free scanners
+  (zizmor, hadolint, Trivy, Opengrep or Semgrep) run too if they happen to be on the computer, but the kit
+  never lists a missing one or asks for an install. `launch` pins actions with git and makes the parts list (SBOM) with npm.
+- **Security: sharper reviews, safer add-ons.** The security reviewer now traces each hole from input to harm before reporting
+  it, reports by confidence, skips test files and values only the server controls, and numbers its findings. The add-on vetting
+  scan now catches MCP tool poisoning (hidden orders in tool descriptions, tools that try to change other tools), unpinned MCP
+  servers and plain-http remote servers. The vetting record lists the security add-ons that were read, with what was adopted.
+  Ideas from Anthropic's security-guidance plugin, Trail of Bits' claude-code-config, Lasso's claude-hooks and Sentry's
+  security-review skill; no text or code copied.
+- Fixed: when a related test failed after an edit, other warnings from the same edit were dropped.
+- **A first-time user tries each milestone before you do.** A new `user-tester` agent (Sonnet) gets only the plan's description
+  of the milestone, never the code or the builder's tests, starts the app on this computer and uses it in a real browser at phone
+  and desktop sizes, including normal mistakes (wrong password, empty form, Back, refresh, double click). It writes one browser
+  test per journey; a step that doesn't work becomes a failing test and a fix on the roadmap before you are asked. Passing journeys
+  are kept as tests. It runs in `/starter-kit:accept`; `{ "userTester": false }` skips it. Found in the third trial: the builder
+  wrote the only browser tests of its own work, so a misread feature would have reached the owner first.
+- **Each milestone is checked against the plan you approved.** Before you are asked, a new script (`milestone-gaps.mjs`) compares
+  the finished milestone with the roadmap as first committed. It lists approved features or criteria that were dropped or
+  reworded, cited tests marked to skip, one test cited for several criteria, and high-risk criteria checked only by hand. The
+  challenger judges only those leads. A dropped promise with no recorded decision becomes a question for you; the rest become
+  fixes. The same check runs on each feature as it is recorded (`--feature F-001`), so a criterion lost while the builder's
+  brief was written is caught right away, not at the end of the milestone.
+- **"Is another round worth it?"** From review round 4 on, and before any blocked report, a new script (`worth-it.mjs`) reads
+  the feature's history from git, the build state and the logs: each round's size, the files it touched, and the tokens it cost.
+  It says whether the findings are shrinking or the same area is being dug deeper, and recommends one of four choices: keep
+  going, accept the rest as known risks and merge, split the rest into a later item, or start smaller. Unless the findings are
+  shrinking, the conductor stops and asks you, with those numbers. The build state now records when each round starts. Found in
+  trial 3: F-001 reached round 6, each round answering a deeper flood attack on sign-in.
+- **Progress against the scope you approved, after every feature.** The status report now weighs progress by size (a large
+  feature counts more than a small one), counts acceptance criteria proven, shows how the scope moved since you approved it
+  (features added, dropped, criteria reworded), and names the feature being built right now and its stage ("in review, round
+  2"), which it could not see before. Every merge report ends with a one-line PROGRESS summary of the same numbers. Fixed: a
+  bulleted "None." under "Questions waiting for the user" was shown as a question.
+- **The feature conductor no longer stops halfway to wait.** In trial 3 it twice ended its turn "waiting for the builder", which
+  ends its run, and the report check called that a bad report. It now waits with a new script (`wait-agent.mjs`, which watches the
+  builder's folder and returns when it has committed) and launches reviewers in the foreground; the check recognises a stop to
+  wait and says how to wait instead.
+- **Real token counts for every agent.** Agents started in the background returned no count, so the flight report missed the
+  conductor and everything it started. Each kit agent's own use is now read from its transcript when it finishes (the model and
+  four numbers, never its words), each message counted once, and the report shows per model what was written, read new and
+  re-read from the cache, and which roles wrote most. Trial 3's real numbers: the builder wrote about half of all Opus output.
+- Re-review stays as it was: trial 3 re-ran all five reviewers in round 2 because all five had objected in round 1, and only the
+  three that objected in round 2 ran in round 3. The workflow now also says the red team re-runs its own tests and attacks only
+  what the fix changed, which is what it did.
+
 ## [2.17.2] — 2026-11-25
 Fixes from the second live trial, which built a working quote builder but skipped the plan and every review.
 - **Plan first, enforced.** Told to plan first, Claude decided the request was detailed enough and built the whole app itself: no

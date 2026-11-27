@@ -86,11 +86,21 @@ test("a conductor's MERGED is believed only for a real commit on the main branch
     assert.match(JSON.parse(s.run(CHECK, stop(`RESULT: MERGED ${off}`)).stdout).reason, /not on the main checkout's current branch/);
     assert.match(JSON.parse(s.run(CHECK, stop("All done, it works!")).stdout).reason, /first line must be/);
     assert.equal(s.run(CHECK, stop("All done, it works!", { stop_hook_active: true })).stdout.trim(), "", "never sent back twice");
+    // trial 3: the conductor ended its turn twice "to wait" for the builder, which ends its run; it is told how to wait instead
+    for (const w of ["The implementer is working on the fixes; I'll continue when its report arrives.", "I'm waiting for the builder's fix report."]) {
+      const r = JSON.parse(s.run(CHECK, stop(w)).stdout);
+      assert.equal(r.decision, "block", w);
+      assert.match(r.reason, /ends your run/);
+      assert.match(r.reason, /wait-agent\.mjs" --worktree/);
+      assert.ok(!/first line must be/.test(r.reason), w);
+    }
+    assert.equal(s.run(CHECK, stop("I'm waiting for the builder's fix report.", { stop_hook_active: true })).stdout.trim(), "", "never sent back twice");
     for (const ok of ["RESULT: BLOCKED\nWHERE: feature/x", "RESULT: NEEDS OWNER\nQUESTION: which colour?", "RESULT: CANNOT DELEGATE"]) assert.equal(s.run(CHECK, stop(ok)).stdout.trim(), "", ok);
     assert.equal(s.run(CHECK, stop("RESULT: MERGED deadbee1", { agent_type: "starter-kit:reviewer" })).stdout.trim(), "", "other agents are not checked");
     const log = s.flight();
     assert.match(log, /"ev":"conductor","sid":"s","res":"merged"/);
     assert.match(log, /"res":"merged-rejected"/);
+    assert.match(log, /"res":"waiting-rejected"/);
     assert.ok(!/All done|which colour|feature\/x/.test(log), "the log holds the result kind, never the report");
   } finally {
     s.done();

@@ -9,8 +9,9 @@ You are looking at the entire codebase, not a diff. Read-only: change nothing un
 ## 1. Run the tools first (cheap and objective)
 - Secret scan of everything tracked, including old history: `node "${CLAUDE_PLUGIN_ROOT}/scripts/secret-scan.mjs" --files $(git ls-files)`
   and, for history, `git log -p --all` through the same scanner if the project has been public or shared.
-- The ecosystem's dependency audit (`npm audit`, `pip-audit`, `cargo audit`, `bundler-audit`, `govulncheck`) and any
-  static analyser that is already installed (`semgrep`, `bandit`, `gosec`). Don't install anything.
+- `node "${CLAUDE_PLUGIN_ROOT}/scripts/sec-tools.mjs" --project .`: run every RUN line. The first is the kit's own checks (every
+  language's dependencies against OSV.dev, CI workflows, Dockerfiles, Compose files), which need nothing installed; the rest are
+  extra scanners that happen to be on this computer. Add `npm audit` for a Node project. Never install a tool or suggest one.
 - Dependencies: list direct dependencies and run `node "${CLAUDE_PLUGIN_ROOT}/scripts/pkg-check.mjs" <npm|pypi|cargo> <name>`
   on any you don't recognise. Flag names that don't exist, brand-new ones, and any that run install scripts.
 

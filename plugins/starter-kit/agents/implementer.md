@@ -99,7 +99,8 @@ report with `PACK MISSES: <n>`, the number of files you needed that the pointers
 Report back, briefly: the BRANCH name and the WORKTREE path (absolute), files changed, tests added, the
 final test command and its output summary, and anything you were unsure about. Do not paste whole files.
 Include a table with one row per acceptance criterion in your brief: `criterion → file::exact test name`, or
-`criterion → manual: how it was checked by hand` for what a test cannot show (how a screen looks). A criterion you did
+`criterion → manual: how it was checked by hand` for what a test cannot show (how a screen looks), or `criterion → ci: .github/workflows/<file>::<job>` for what this
+computer cannot run (no Docker here): write that job, and say in your report it is unproven until GitHub runs it. A criterion you did
 not cover must say NOT DONE. Never claim a criterion is met without naming the test that proves it. Also list new
 folders, services, settings and environment variables, and decisions you made with their reasons. If the change collects, stores,
 sends or shows personal data, or adds any third-party service (analytics, payments, email, AI), say exactly what data goes where, so

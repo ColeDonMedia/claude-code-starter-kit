@@ -7,10 +7,13 @@ Run the full pre-ship sweep using the commands listed under "Commands" in CLAUDE
 2. Typecheck / static analysis.
 3. Lint.
 4. Production build / package / compile.
-5. Dependency vulnerability audit, using the ecosystem's own tool if there is one (`npm audit --omit=dev`,
-   `pip-audit`, `cargo audit`, `bundler-audit`, `govulncheck`). Report high and critical findings. Don't
-   auto-fix or upgrade packages; list what needs upgrading and why. If the tool isn't installed, say so
-   and mark the step "not run" rather than skipping it silently.
+5. Security checks: run `node "${CLAUDE_PLUGIN_ROOT}/scripts/sec-tools.mjs" --project .` and every RUN line it prints. The first is
+   always the kit's own checks, which need nothing installed: every dependency in every language's lockfile against OSV.dev (known
+   flaws and known malware), GitHub workflows, Dockerfiles and Compose files. Any other line is an extra scanner that happens to be
+   on this computer. Also run `npm audit --omit=dev` for a Node project (it comes with npm). A HIGH finding blocks; fix it, or
+   record it as an accepted risk with the owner. Don't auto-upgrade packages; list what needs upgrading and why. If the kit says
+   dependencies were not checked (no internet), mark that part "not run" in the report, never as passed. Never install a tool or
+   suggest one.
 6. Only once steps 1–5 are green: the starter-kit `security-reviewer` agent on everything changed since
    the last ship, with the `model` and `effort` that `node "${CLAUDE_PLUGIN_ROOT}/scripts/model-route.mjs" --project . --role security-reviewer --mode range`
    prints (if it says capped, put that at the top of the report).

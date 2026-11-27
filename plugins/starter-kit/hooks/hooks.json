@@ -17,7 +17,7 @@
     ],
     "SubagentStop": [
       {
-        "matcher": "^starter-kit:(scout|conductor)$",
+        "matcher": "^starter-kit:",
         "hooks": [
           { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/gate.mjs\" substop", "timeout": 30 }
         ]
@@ -43,6 +43,12 @@
         "hooks": [
           { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/gate.mjs\" pre", "timeout": 120 }
         ]
+      },
+      {
+        "matcher": "WebFetch",
+        "hooks": [
+          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/gate.mjs\" pre", "timeout": 20 }
+        ]
       }
     ],
     "PostToolUse": [
@@ -50,6 +56,12 @@
         "matcher": "Bash|PowerShell|Edit|Write|MultiEdit|Skill|Agent|Task",
         "hooks": [
           { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/gate.mjs\" post", "timeout": 120 }
+        ]
+      },
+      {
+        "matcher": "WebFetch|WebSearch|mcp__.*",
+        "hooks": [
+          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/gate.mjs\" post", "timeout": 20 }
         ]
       }
     ],

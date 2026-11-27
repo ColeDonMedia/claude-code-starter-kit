@@ -32,10 +32,44 @@ export function modelName(v) {
 export const effortName = (v) => (["low", "medium", "high", "xhigh", "max"].includes(v) ? v : undefined);
 export const count = (v) => (Number.isFinite(v) && v >= 0 ? Math.round(v) : undefined);
 
+// What one agent used, read from its own transcript when it finishes: the model and four token counts, nothing else. A message
+// with several parts is written as several lines carrying the same usage, so each message id is counted once. An agent started in
+// the background returns at once, so its launch never reports this; its transcript always does.
+export function transcriptUsage(path) {
+  const seen = new Map();
+  let model;
+  try {
+    for (const line of readFileSync(path, "utf8").split("\n")) {
+      if (!line.includes('"usage"')) continue;
+      let e;
+      try {
+        e = JSON.parse(line);
+      } catch {
+        continue;
+      }
+      const msg = e?.message;
+      if (e?.type !== "assistant" || !msg?.usage) continue;
+      seen.set(msg.id ?? e.uuid ?? seen.size, msg.usage);
+      if (typeof msg.model === "string" && !msg.model.startsWith("<")) model = msg.model;
+    }
+  } catch {
+    return null;
+  }
+  if (!seen.size) return null;
+  const sum = { out: 0, inp: 0, cw: 0, cr: 0 };
+  for (const u of seen.values()) {
+    sum.out += count(u.output_tokens) ?? 0;
+    sum.inp += count(u.input_tokens) ?? 0;
+    sum.cw += count(u.cache_creation_input_tokens) ?? 0;
+    sum.cr += count(u.cache_read_input_tokens) ?? 0;
+  }
+  return { model: modelName(model), ...sum };
+}
+
 // Keep only harmless fields. Anything not on this list is dropped.
 export function sanitize(e) {
   const out = { t: e.t ?? new Date().toISOString() };
-  for (const k of ["ev", "tool", "skill", "agent", "prog", "src", "id", "sid", "stop", "item", "ask", "eff", "ran", "tok", "model", "miss", "ok", "bad", "lines", "kept", "rw", "res", "mt", "mk"]) {
+  for (const k of ["ev", "tool", "skill", "agent", "prog", "src", "id", "sid", "stop", "item", "ask", "eff", "ran", "tok", "model", "miss", "ok", "bad", "lines", "kept", "rw", "res", "mt", "mk", "aid", "out", "inp", "cw", "cr"]) {
     if (e[k] !== undefined && e[k] !== null) out[k] = String(e[k]).replace(/[^\w:.\-/ ]/g, "").slice(0, 60);
   }
   return out;

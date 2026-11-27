@@ -43,5 +43,35 @@ exception is DATA: see "Data included in the kit" below.
 | [thedotmack/claude-mem](https://github.com/thedotmack/claude-mem) | 4dc8e48cdd | Apache-2.0 | Skip | 4,000+ files; records everything from your sessions, with Docker, bun and uv installers and cloud endpoints. Too much surface and privacy exposure for a default. |
 | [affaan-m/ECC](https://github.com/affaan-m/ECC) | 4adeee6732 | MIT | Skip | 1,089 skills (about 54,000 tokens of descriptions) and 9 hook configs, 66 MB. Idea only: make the agent investigate a file before first editing it. |
 
+## Security add-ons: read, not yet scanned (2026-11-26)
+
+These were read from their own pages and READMEs, **not cloned and scanned** like the rows above. Run `/starter-kit:vet` on
+one before installing it. "Idea adopted" means the kit now does the same thing in its own code (2.18.0); nothing was copied.
+
+| Project | License | Verdict | Notes |
+|---|---|---|---|
+| [getsentry/skills](https://github.com/getsentry/skills) `security-review` | Apache-2.0 | **Optional add-on** (pick that one skill) | A careful review skill: traces data flow before reporting, HIGH/MEDIUM confidence, a "do not flag" list. Method adopted in the security reviewer. The repo is written for Sentry's own staff. |
+| [Anthropic security-guidance](https://code.claude.com/docs/en/security-guidance) (official marketplace) | not stated | **Optional, text-matching layer only** | Warns on risky code as it is written. Its other two layers run a model review after every turn and every commit (uses usage, repeats the kit's reviewer, installs a Python package): turn them off with `ENABLE_STOP_REVIEW=0` and `ENABLE_COMMIT_REVIEW=0`. Idea adopted as `hooks/code-warn.mjs`. |
+| [trailofbits/claude-code-config](https://github.com/trailofbits/claude-code-config) | not visible | Reference | Deny rules for credential files, a sandbox-first setup. Rewrites your own settings and needs bash and jq; "No Windows support yet". Deny list adopted in `/starter-kit:init`. |
+| [lasso-security/claude-hooks](https://github.com/lasso-security/claude-hooks) | MIT | Idea adopted | Warn-only prompt-injection check on tool output, pattern matching, no network. Adopted as `hooks/inject-warn.mjs`. |
+| [dwarvesf/claude-guardrails](https://github.com/dwarvesf/claude-guardrails) | MIT | Idea adopted; skip install | Deny rules, shell hooks and an injection scanner; its own README calls the hooks "defense in depth, not a security boundary". Merges into your user settings. |
+| [Semgrep plugin](https://claude.com/plugins/semgrep) | — | Skip; use the free CLI | Needs a Semgrep account; whether code is scanned on their servers was not confirmed. The kit runs the free `semgrep` command-line tool when installed. |
+| [anthropics/claude-code-security-review](https://github.com/anthropics/claude-code-security-review) | — | Skip | GitHub Action that needs an API key (this kit never spends API tokens); its README says it is not hardened against prompt injection. |
+
+**Free command-line tools the kit also runs if they are already on the computer** (the kit's own checks in
+`scripts/sec-builtin.mjs` need none of them, and the kit never asks for an install; read from their own pages on 2026-11-26, not
+scanned). The built-in dependency check uses the free public [OSV.dev](https://osv.dev/) database. Kept, because each finds more than
+the built-in checks: [zizmor](https://docs.zizmor.sh/) (GitHub Actions), [hadolint](https://github.com/hadolint/hadolint)
+(Dockerfiles), [Trivy](https://trivy.dev/) (infrastructure files, container images), [Opengrep](https://github.com/opengrep/opengrep)
+(LGPL-2.1) or the [Semgrep CLI](https://semgrep.dev/) (code patterns). [OpenSSF Scorecard](https://github.com/ossf/scorecard) is read
+from its public results page during `vet`.
+Dropped after one day (2.18.0): osv-scanner and GuardDog (the built-in OSV.dev check covers known flaws and known malware),
+actionlint and pinact (the built-in workflow check and `git ls-remote` cover pinning), Grype and Syft (Trivy; npm makes the parts
+list), Bearer (licence unclear), ZAP (needs Docker), Schemathesis and Mozilla's local scanner (the built-in live checks cover headers,
+CORS and cookies), Socket Firewall and Aikido Safe Chain (need setting up), Harden-Runner (sends data to a third party).
+Skipped: garak and promptfoo's red team (they call an AI model, which spends tokens), the CodeQL CLI (free for public repositories
+only), ggshield and detect-secrets (the kit's secret guard covers them), Checkov and KICS (Trivy covers them), Llama Prompt
+Guard 2 (a large local model under Meta's licence).
+
 **Not included at all:** jailbreak or "safety bypass" skills, and heavy multi-agent swarm orchestrators
 (token-hungry, would conflict with this kit's routing).

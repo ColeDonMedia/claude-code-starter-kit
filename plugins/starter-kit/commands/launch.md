@@ -10,6 +10,8 @@ accounts, adding a payment method, pasting keys into a hosting dashboard). Never
 put a secret value in any file, and ask before anything that costs money or creates an account.
 
 ## 0. Before you start
+- Every job `roadmap-check.mjs --project .` lists as "proven only on GitHub" has passed on the pushed commit (`gh run list`, or the
+  owner checks the repository's Actions tab); until then those criteria are not proven.
 - `node "${CLAUDE_PLUGIN_ROOT}/scripts/roadmap-check.mjs" --project . --acceptance` must show nothing waiting (the owner has tried every finished
   milestone), and `/starter-kit:full-scan` must have passed. If the app has sign-in, payments, personal data or uploads, the
   red team (`/starter-kit:redteam`) must have run, and `node "${CLAUDE_PLUGIN_ROOT}/scripts/legal-check.mjs" --project .` must pass (privacy policy, terms and
@@ -45,6 +47,10 @@ Record in RUNBOOK.md, under "Environments and settings", the NAMES of the paymen
 Deploys come from git, not from someone's laptop: merging to `main` updates staging automatically; production is a deliberate
 second step (a promote button, or a tagged release). Use the host's own git integration, or an official-actions-only workflow
 in `.github/workflows/` (read-only permissions, secrets only from the host's secret store). Write the steps into "How to deploy".
+Pin every action to an exact commit: `git ls-remote https://github.com/<owner>/<action> refs/tags/<tag>` gives the hash; write
+`uses: <owner>/<action>@<hash> # <tag>` (the kit's own checks flag any left unpinned).
+Record what the release contains: for a Node project `npm sbom --sbom-format cyclonedx > sbom.cdx.json` (built into npm); for
+other stacks skip it without mentioning it. The parts list is kept with the release so a later security alert can be checked against it in minutes.
 
 ## 3. Know when it breaks
 - **Errors:** add an error-tracking service with a free tier. Vet the package first (`node "${CLAUDE_PLUGIN_ROOT}/scripts/pkg-check.mjs"`), scrub personal data
@@ -63,7 +69,11 @@ safe to leave). Practise it once on staging. Write the steps and `Rollback last 
 
 ## 6. The front door
 Domain and DNS, HTTPS only with an automatic certificate, www/non-www redirect, the security headers and CORS settings the security
-reviewer's launch checklist lists. Test the live staging address, not just localhost.
+reviewer's launch checklist lists. Test the live staging address, not just localhost. Before that, run the LIVE lines of
+`node "${CLAUDE_PLUGIN_ROOT}/scripts/sec-tools.mjs" --project . --url <the local copy's address>` (the kit's own header, CORS,
+cookie and exposed-file checks, plus any extra scanner already on this computer).
+For the public staging or live address, the owner can check headers at https://developer.mozilla.org/en-US/observatory (Mozilla's
+own site scans it; the address becomes visible to Mozilla, nothing else is sent).
 
 ## 7. Costs and limits
 Estimate the monthly cost at the expected traffic from CURRENT pricing pages (say they are estimates and when you checked), set a spending

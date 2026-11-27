@@ -31,6 +31,7 @@ project's records, so a big project doesn't mean a big brief. Then add:
 - MAIN and BASE, so it can confirm its worktree starts from BASE
 - the reminder that it must install dependencies first (a new worktree has none)
 - the acceptance criteria, if there are any, with the instruction to write one failing test per criterion
+- a branch the roadmap item names as holding failing tests (from the user tester or the red team): merge it first, keep its tests
 
 It commits on its own branch and reports the BRANCH name and the WORKTREE path. Keep its agent ID —
 you will need it in step 2.
@@ -54,31 +55,47 @@ Give each reviewer:
 - the diff to review: `git diff MAIN...BRANCH`
 - what the change is meant to do
 
+**In proportion.** Every reviewer marks its findings BLOCKS or LATER. Only BLOCKS findings go to the builder; LATER ones are
+collected for the records (step 4) and never start a round. The red team attacks once per feature; after that it only re-checks.
+Tell the UI reviewer which look this is (first, second, third ...).
+
 If a reviewer says CHANGES REQUESTED:
 - Send the findings to the SAME implementer (message it with its agent ID) so it keeps working in its
   existing worktree. Do not launch a fresh implementer: that would create a second, empty worktree.
 - If the original implementer can't be resumed, launch a new one and tell it to ignore the worktree it
   was given, and instead work in the existing WORKTREE path on the existing BRANCH.
-- Then review again, but only the fix, and only by the reviewers that objected: give each `git diff <the commit it reviewed>..BRANCH`
+- Then review again, but only the fix, and only by the reviewers that objected, each launched with the model `model-route.mjs ...
+  --mode recheck` prints: give each `git diff <the commit it reviewed>..BRANCH`
   and its own earlier findings, to confirm each is resolved and that the fix broke nothing that depends on it. A reviewer that
   approved is not re-run, except that a fix touching a risky area (the list above) also goes to the security reviewer, and a fix
-  larger than the original change is reviewed as new. The full suite still runs on the final commit. If round 2 still fails, run model-route.mjs with `--attempt 3`: if it names a stronger model than the
-  builder had, start a new implementer on it in the existing WORKTREE and BRANCH (as above) with every finding so far. If that
-  round fails too, or the model is no stronger, stop and ask the user.
+  larger than the original change is reviewed as new. The red team re-runs its own failing tests and attacks only what the fix
+  changed. While the builder fixes, wait for its reply without ending your turn (`scripts/wait-agent.mjs`). The full suite still runs on the final commit.
+- **A stronger builder.** If round 2 still has BLOCKS findings, run model-route.mjs with `--attempt 3`: if it names a stronger model
+  than the builder had, start a new implementer on it in the existing WORKTREE and BRANCH (as above) with every finding so far.
+- **When to stop (the only stop rule).** From round 3 on, before sending a round's findings to the builder, and before any BLOCKED,
+  run `node "${CLAUDE_PLUGIN_ROOT}/scripts/worth-it.mjs" --project .` (rounds, size, files and tokens per round, from git and the
+  logs). Unless it recommends KEEP GOING, stop with NEEDS OWNER: the question is its RECOMMEND line, the two or three reasons that
+  matter, and the other choices, in plain words. Round 6 always goes to the owner, whatever it recommends. With the owner's answer:
+  ACCEPT THE REST, send the builder only what blocks an acceptance criterion, put the rest under `PROJECT.md` "Harden before launch"
+  (with the tests that show them, marked as known) and a decision in `DECISIONS.md`, then merge as usual; SPLIT IT, the same, with
+  the rest as a new unticked roadmap item; START SMALLER, report BLOCKED with the branch kept and a proposed split; KEEP GOING, run
+  the round.
 
 An agent whose report comes back marked partial (it hit its turn limit) is resumed once; if it is partial again, report that
 instead of trusting half a build or half a review.
 
 ## 3. Merge
-Only when the implementer reported a green full suite AND the reviewer said APPROVE AND the challenger's findings
-that block "done" are resolved (and, for high-risk features, no red-team break is left unfixed):
+Only when the implementer reported a green full suite AND the reviewer said APPROVE AND every BLOCKS finding from the
+challenger, the security reviewer and the UI reviewer is resolved (and, for high-risk features, no red-team BLOCKS break is left unfixed):
 - Confirm the main checkout is still clean and still on MAIN.
 - `git merge --no-ff BRANCH` into MAIN.
 - If there is a merge conflict, run `git merge --abort`, and report it. Do not resolve conflicts unasked.
 - Run the full test suite once on the merged result. If it fails, report it; do not continue. In a project whose CLAUDE.md says
   `Size: large`, run the scoped tests instead (`node "${CLAUDE_PLUGIN_ROOT}/scripts/scoped-tests.mjs" --project . --base BASE`, or the full suite when it
   says FULL SUITE); the full suite then runs at every checkpoint and before shipping, and you say so in the report.
-- On success: remove the worktree (`git worktree remove WORKTREE`) and delete the branch (`git branch -d BRANCH`).
+- On success: `node "${CLAUDE_PLUGIN_ROOT}/scripts/cleanup.mjs" --project .` removes every finished worktree and branch (the
+  builder's, the red team's, and any left from earlier builds) whose work is fully merged and has nothing unsaved. It never
+  forces: anything with unmerged commits or unsaved changes is kept and listed; say where those are in the report.
 - Never push. Pushing is the user's call.
 
 ## 4. Prove it, write it down, report, continue
@@ -89,10 +106,19 @@ Done is something you can show, not something you say. Before reporting or ticki
   full suite once more and quote its result.
 - **Write the records**, all in one docs commit:
   - `ROADMAP.md`: tick the feature as `- [x] <name> — <goal> (merged <short id>)`, tick each criterion and add
-    `→ test: <file>::<test name>` (or `→ manual: <how it was checked by hand>` for things a test can't show, such as how a screen looks).
+    `→ test: <file>::<test name>` (or `→ manual: <how it was checked by hand>` for things a test can't show, such as how a screen looks, or
+    `→ ci: .github/workflows/<file>::<job>` for what this computer cannot run, such as a container build; the job must exist).
     Run `node "${CLAUDE_PLUGIN_ROOT}/scripts/roadmap-check.mjs" --project .` and fix anything it reports; it checks the commit and tests are real.
+    Then run `node "${CLAUDE_PLUGIN_ROOT}/scripts/milestone-gaps.mjs" --project . --feature <its F-id, or its name>`, which compares the
+    feature with the roadmap the owner approved. DROPPED (an approved criterion gone or reworded) with no owner decision in
+    `DECISIONS.md`: put the approved wording back, unticked, untick the feature, and stop with NEEDS OWNER asking whether to build it
+    now or drop it. SKIPPED, SHARED or MANUAL: treat each as a review finding. Either fix it (a new implementer on a new branch from
+    MAIN with the gap list, the reviewers that apply on that fix only, merge, then tick) or, when it is not a real gap (one test that
+    truly checks both criteria, a look only a person can judge), say why in LEFT AS IS.
   - `CHANGELOG.md`: one plain-words entry with the commit id.
   - `PROJECT.md`: update current state, the architecture map (one line per folder or key file under a `## Map` heading: `- path — what it is for`), known problems, next steps.
+    Every LATER finding goes under `## Harden before launch` (one line each: what, which feature, which reviewer, the test if any);
+    the launch review checks that list.
   - `DECISIONS.md`: one new line per decision made (`- <date> — <decision> {#D-nnn}, because <reason>; rejected: <alternative>`), with the next
     number from `node "${CLAUDE_PLUGIN_ROOT}/scripts/notes-graph.mjs" --project . --next-id D`. Append only; it is what later sessions read first, so keep each
     line short. If a decision replaces an earlier one, add `status: superseded by [[D-nnn]]` to the OLD line (or `status: reversed`), then
@@ -105,14 +131,15 @@ Done is something you can show, not something you say. Before reporting or ticki
 - If `ROADMAP.md` lists this feature, tick its box as described above and commit that.
 - Tell the user in plain words, a few lines at most (a conductor puts this in its report): what now works, how to see it for
   themselves (the command to run or the page to open), and anything the reviewer flagged that was left as-is. No git details unless
-  something went wrong.
+  something went wrong. End with the line `node "${CLAUDE_PLUGIN_ROOT}/scripts/status.mjs" --project . --line` prints after the
+  records commit, word for word: progress against the approved scope.
 - If anything stopped early, say exactly where the work is (branch and worktree path) so nothing is lost.
 - **Checkpoint.** Run `node "${CLAUDE_PLUGIN_ROOT}/scripts/checkpoint.mjs" --project .`. If one is due (every 3 merged features), stop building and
   re-verify everything first: the full test suite, `roadmap-check.mjs`, `drift-check.mjs`, and the approved plan in `PROJECT.md`
   read against what was really built (anything missing, changed or added without agreement). Fix what you can, report the rest in plain
   words, refresh `ARCHITECTURE.md` (`node "${CLAUDE_PLUGIN_ROOT}/scripts/arch-map.mjs" --project . --write`, in a project with a code index) and
   `SCHEMA.md`, run `notes-graph.mjs --project .` and fix what it reports, run `compact-records.mjs` if a record is oversized, then `checkpoint.mjs --project . --record` and commit.
-- **Going in circles?** If the same feature has failed review 3 times, or you are about to try an approach that already failed, stop and
-  tell the user what is blocking it, with a smaller step or a different approach to choose from.
+- **Going in circles?** If you are about to try an approach that already failed, stop and tell the user what is blocking it, with a
+  smaller step or a different approach to choose from. (Review rounds have their own stop rule in step 2.)
 - In the main conversation: if `ROADMAP.md` has more unticked items and nothing needs the user's decision, start the next one now.
   A conductor stops after its one item, and says in NEXT when this item finished a milestone.

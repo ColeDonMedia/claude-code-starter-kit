@@ -1,10 +1,11 @@
 // SubagentStop hook for the starter-kit conductor: "done is something you can show", applied where a feature is handed back. The
 // report's first line must be one of the four results, and MERGED must name a commit that really exists and is part of the main
 // checkout's current branch. Otherwise the conductor is sent back ONCE to correct its report; the next time it is let through,
-// so it can never loop. The result kind (a word, never the report) goes to the flight log. Other agents pass untouched.
+// so it can never loop. A conductor that stopped only to wait for an agent is told how to wait without ending its run. The result kind (a word, never the report) goes to the flight log. Other agents pass untouched.
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { record } from "../scripts/flight-lib.mjs";
 import { switchedOff } from "../scripts/trust-lib.mjs";
 
@@ -28,10 +29,15 @@ try {
 }
 if (switchedOff(root, cfg, "auto")) process.exit(0);
 
+// A conductor that stops "to wait" for an agent has not written a bad report: it has ended its run too early (trial 3, twice).
+const WAITING = /\b(wait(ing|s)? (for|on|until)|i'?ll (continue|carry on|resume)|(continue|carry on) (when|once)|(when|once|until) (its|the|their) (fix |fixes )?(report|reply|results?) (arrives?|comes? back|is in)|still (working|running))\b/i;
+const WAIT_HELP = `You ended your turn to wait, and that ends your run: nothing you are waiting for can reach you afterwards. Do not stop. Wait with node "${join(dirname(fileURLToPath(import.meta.url)), "..", "scripts", "wait-agent.mjs")}" --worktree <WORKTREE> (shell timeout 300000), again until the reply arrives, then carry on with the workflow. Stop only with a RESULT line.`;
+
 // Why the report cannot be believed, or null.
 function problem(report, cwd) {
   const first = report.split("\n").map((l) => l.replace(/[*`_]/g, "").trim()).find(Boolean) ?? "";
   const m = /^RESULT:\s*(MERGED\b\s*([0-9a-f]{7,40})?|BLOCKED|NEEDS OWNER|CANNOT DELEGATE)\b/i.exec(first);
+  if (!m && WAITING.test(report)) return { kind: "waiting", why: WAIT_HELP, whole: true };
   if (!m) return { kind: "invalid", why: 'the first line must be "RESULT: MERGED <commit>", "RESULT: BLOCKED", "RESULT: NEEDS OWNER" or "RESULT: CANNOT DELEGATE".' };
   const kind = m[1].split(/\s/)[0].toUpperCase() === "MERGED" ? "merged" : m[1].toLowerCase().replace(/\s+/g, "-");
   if (kind !== "merged") return { kind, why: null };
@@ -45,6 +51,7 @@ function problem(report, cwd) {
 const p = problem(input.last_assistant_message, root);
 if (cfg.flightLog !== false) record(root, { ev: "conductor", sid: input.session_id, res: p.why ? `${p.kind}-rejected` : p.kind });
 if (p.why && input.stop_hook_active !== true) {
-  process.stdout.write(JSON.stringify({ decision: "block", reason: `Your report cannot be accepted: ${p.why} Check with git, correct it, and give the whole report again.` }));
+  const reason = p.whole ? p.why : `Your report cannot be accepted: ${p.why} Check with git, correct it, and give the whole report again.`;
+  process.stdout.write(JSON.stringify({ decision: "block", reason }));
 }
 process.exit(0);

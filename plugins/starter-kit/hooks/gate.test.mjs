@@ -103,7 +103,10 @@ test("pipeline: which hooks run for which events", () => {
   assert.deepEqual(pipeline("pre", { tool_name: "Bash", tool_input: { command: "ls" } }), ["flight-recorder", "safety-guard", "db-guard", "secret-guard", "push-gate", "package-guard"]);
   assert.deepEqual(pipeline("pre", { tool_name: "Edit", tool_input: { file_path: "a" } }), ["flight-recorder", "file-guard", "plan-gate"]);
   assert.deepEqual(pipeline("pre", { tool_name: "Read", tool_input: { file_path: "a" } }), ["flight-recorder"]);
-  assert.deepEqual(pipeline("post", { tool_name: "Write", tool_input: { file_path: "a" } }), ["flight-recorder", "test-related"]);
+  assert.deepEqual(pipeline("post", { tool_name: "Write", tool_input: { file_path: "a" } }), ["flight-recorder", "code-warn", "test-related"]);
+  assert.deepEqual(pipeline("pre", { tool_name: "WebFetch", tool_input: { url: "https://x.example" } }), ["flight-recorder", "fetch-guard"]);
+  assert.deepEqual(pipeline("pre", { tool_name: "WebSearch", tool_input: { query: "x" } }), ["flight-recorder"]);
+  for (const t of ["WebFetch", "WebSearch", "mcp__github__get_issue"]) assert.deepEqual(pipeline("post", { tool_name: t, tool_input: {} }), ["flight-recorder", "inject-warn"]);
   assert.deepEqual(pipeline("post", { tool_name: "Bash", tool_input: { command: "ls" } }), ["flight-recorder", "quiet-output"]);
   assert.deepEqual(pipeline("post", { tool_name: "PowerShell", tool_input: { command: "npm test" } }), ["flight-recorder", "quiet-output"]);
   assert.deepEqual(pipeline("pre", { tool_name: "Agent", tool_input: { subagent_type: "x" } }), ["flight-recorder", "agent-route"]);

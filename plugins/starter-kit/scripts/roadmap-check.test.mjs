@@ -165,3 +165,20 @@ test("a milestone cannot be accepted before its features are done", () => {
     r.cleanup();
   }
 });
+
+test("a criterion this computer cannot prove may point at a GitHub job, which must exist", () => {
+  const r = repo();
+  try {
+    r.put(".github/workflows/checks.yml", "name: checks\njobs:\n  test:\n    runs-on: ubuntu-latest\n  docker:\n    runs-on: ubuntu-latest\n");
+    r.put("ROADMAP.md", road(r.sha, "").replace("- [ ] Save", "  - [x] The image builds and passes its smoke test → ci: .github/workflows/checks.yml::docker\n- [ ] Save"));
+    const c = checkRoadmap(r.dir);
+    assert.deepEqual(c.problems, []);
+    assert.deepEqual(c.ci.map((x) => x.job), ["docker"]);
+    r.put("ROADMAP.md", road(r.sha, "").replace("- [ ] Save", "  - [x] The image builds → ci: .github/workflows/checks.yml::deploy\n  - [x] Restores → ci: scripts/smoke.sh::docker\n- [ ] Save"));
+    const bad = checkRoadmap(r.dir).problems.join("\n");
+    assert.match(bad, /checks\.yml has no job named "deploy"/);
+    assert.match(bad, /is not a GitHub workflow file/);
+  } finally {
+    r.cleanup();
+  }
+});

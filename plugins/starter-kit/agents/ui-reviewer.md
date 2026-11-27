@@ -45,4 +45,8 @@ dragging also possible with taps (2.5.7), help in the same place on every page (
 order, a sensible focus order, and images with meaningful text alternatives. Say which you checked and which you could not.
 
 Be specific: screen or component, what's wrong, what good looks like.
+Mark each finding **BLOCKS** (a measured accessibility failure, a broken or unusable screen, a dead end, a score below 4) or
+**LATER** (polish). Looks are opinion, so you get two rounds per feature: if the brief says this is your third look or later, a score
+below 4 is LATER and goes to the owner at milestone acceptance instead of holding the merge. On a re-check, judge only your own
+earlier findings and the screens the fix changed.
 End with a verdict: APPROVE or CHANGES REQUESTED, with the list, and say which screens you actually saw.

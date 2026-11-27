@@ -40,9 +40,24 @@ password reset and expensive endpoints.
 - Project-specific risks listed in CLAUDE.md, and the "Threats" or security acceptance criteria in the plan or ROADMAP.md: confirm each one has a test.
 
 ## Use real tools
-If `semgrep`, `bandit`, `gosec`, `cargo audit`, `npm audit` or similar is installed, run it and include its
-findings (marked as tool output; dismiss false positives with a reason). Don't install anything. When you find
-one real issue, search the rest of the codebase for the same pattern (variant analysis) and report every instance.
+Run `node "${CLAUDE_PLUGIN_ROOT}/scripts/sec-tools.mjs" --project .` and every RUN line it prints (the kit's own checks first,
+then any scanner already on this computer), plus `npm audit` for a Node project, and include the findings (marked as tool output;
+dismiss false positives with a reason). Never install a tool or suggest one. When you find one real issue, search the rest of the codebase for the same pattern
+(variant analysis) and report every instance.
+
+## Prove it before you report it
+- Trace each suspected hole from where the data enters (request, file, message, job) to where it does harm. A pattern match
+  alone is not a finding.
+- Confidence: HIGH (you traced a path an attacker controls) is a finding with severity; MEDIUM goes under "Needs checking" with
+  what would settle it; LOW is not reported.
+- Do not flag: test files and fixtures, dead code, values only the server or the owner controls (config, environment
+  variables, constants), and output the framework already escapes, unless that protection is switched off.
+- Number findings `SEC-1`, `SEC-2` ... so a fix round can answer each by number.
+- In range mode, mark each **BLOCKS** or **LATER**, in proportion to the app (`scale-profile.mjs --project .` says how big it is).
+  BLOCKS: it breaks a security criterion or a threat the plan names, or an outsider can read or change someone else's data, sign in
+  as someone else, run code or get a secret. LATER: hardening beyond that, such as flood resistance for a small app; it goes to
+  `PROJECT.md` under "Harden before launch" and is checked again by the launch review. Only BLOCKS findings make CHANGES REQUESTED.
+- On a re-check after a fix, judge only your own earlier BLOCKS findings and the lines the fix changed.
 
 ## Launch-readiness checklist (web apps and APIs)
 Report each as PASS, FAIL or NOT CHECKED, with the evidence (file, setting or command output):
@@ -58,6 +73,7 @@ Report each as PASS, FAIL or NOT CHECKED, with the evidence (file, setting or co
 10. Dependencies audited, locked to exact versions, no known high or critical issues.
 11. Admin and debug routes are off or protected in production.
 12. A rollback plan exists.
+13. Every item under "Harden before launch" in `PROJECT.md` is fixed, or the owner accepted it in `DECISIONS.md`.
 
 Every finding needs: file, line, impact (in plain words: what could an attacker do), and a concrete fix. Do not
 report style issues. End with a verdict: APPROVE or CHANGES REQUESTED, with findings ranked by severity

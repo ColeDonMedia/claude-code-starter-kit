@@ -37,6 +37,11 @@ const LINE_RULES = [
   ["MEDIUM", "decodes-data", /\batob\(|b64decode\(|Buffer\.from\([^)]*['"]base64['"]/i, "decodes base64 data"],
   ["MEDIUM", "destructive", /\brm\s+-r?f?r?\s+(\/|~|\$HOME)|\bsudo\b|chmod\s+(\+x|777)|\bmkfs\b|\bdd\s+if=|Remove-Item[^\n]*-Recurse[^\n]*-Force/i, "destructive or privileged command"],
   ["MEDIUM", "broad-tools", /allowed-tools:.*\bBash(\(\*\))?\s*($|,|\])/i, "asks for unrestricted shell access"],
+  // MCP tool poisoning: orders hidden in a tool's description, which the AI reads but the user never sees.
+  ["HIGH", "tool-poison-read", /(before|first|always)\b[^.\n]{0,60}\b(read|open|cat|load|include|pass)\b[^.\n]{0,40}(~\/|\$HOME|%USERPROFILE%)?[\\/]?\.(ssh|aws|env|npmrc|netrc|gnupg|kube|config[\\/]gh)\b|\bid_rsa\b[^.\n]{0,60}\b(as|into)\s+(the\s+)?(param|argument|parameter|sidenote|note|context)/i, "tool text tells the AI to read credential files (MCP tool poisoning)"],
+  ["HIGH", "tool-shadowing", /\b(when|whenever|if)\b[^.\n]{0,40}\b(other|another|any)\s+tools?\b[^.\n]{0,80}\b(instead|also|first|must)\b|\b(instead\s+of|rather\s+than)\s+(calling|using)\s+(the\s+)?\w+\s+tool\b/i, "tool text tries to change how OTHER tools behave (tool shadowing)"],
+  ["MEDIUM", "tool-important-tag", /<\s*(IMPORTANT|SYSTEM|INSTRUCTIONS?|HIDDEN|SECRET)\s*>/, "an <IMPORTANT>-style tag, the usual wrapper for hidden orders in a tool description"],
+  ["MEDIUM", "unpinned-latest", /\b(npx|uvx|bunx|pnpm\s+dlx)\b[^\n"']*@latest\b/i, "runs the newest published version every time (a compromised release would run automatically)"],
 ];
 
 // ---- secret access (MEDIUM alone, HIGH together with network) ----
@@ -101,6 +106,12 @@ function scanSpecial(rel, text) {
   if (name === ".mcp.json" || json?.mcpServers) {
     const parts = Object.entries(json?.mcpServers ?? {}).map(([n, s]) => `${n}: ${s.command ? s.command + " " + (s.args ?? []).join(" ") : s.url ?? "?"}`);
     add("MEDIUM", rel, 0, "defines-mcp", `defines MCP servers (programs or remote services Claude would talk to): ${parts.join(" ; ")}`);
+    for (const [n, s] of Object.entries(json?.mcpServers ?? {})) {
+      // `npx some-server` with no version fetches whatever was published last, on every start.
+      const pkg = /^(npx|uvx|bunx)$/i.test(String(s?.command ?? "")) ? (s.args ?? []).find((a) => typeof a === "string" && !a.startsWith("-")) : null;
+      if (pkg && !/@\d|==\d/.test(pkg.replace(/^@/, ""))) add("MEDIUM", rel, 0, "mcp-unpinned", `MCP server "${n}" runs "${pkg}" without a fixed version, so a new (possibly compromised) release runs automatically; pin it (name@1.2.3)`);
+      if (typeof s?.url === "string" && /^http:\/\//i.test(s.url) && !/^http:\/\/(localhost|127\.0\.0\.1|\[::1\])/i.test(s.url)) add("HIGH", rel, 0, "mcp-plain-http", `MCP server "${n}" is reached over plain http (anyone on the network can read or change it): ${s.url}`);
+    }
   }
   if (name === ".gitmodules") add("MEDIUM", rel, 0, "submodules", "pulls in other repositories (not scanned)");
   if (name === "setup.py") add("MEDIUM", rel, 0, "setup-py", "setup.py runs code at install time");

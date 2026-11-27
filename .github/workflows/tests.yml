@@ -1,0 +1,53 @@
+# The kit's own tests on every push and pull request, on Windows, macOS and Linux, on the oldest and newest Node the kit supports.
+# Free for a public repository, no tokens, no secrets. Official actions only, pinned to exact commits (refresh them by hand:
+# git ls-remote --tags --sort=-v:refname https://github.com/actions/<name>). `claude plugin validate` is not run here (no CLI).
+name: tests
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node: [18, 24]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ matrix.node }}
+      - run: git config --global user.name "ci" && git config --global user.email "ci@example.com"
+      - run: node --test plugins/starter-kit/hooks/*.test.mjs plugins/starter-kit/scripts/*.test.mjs
+      - name: hook tests through the merged runner
+        run: node --test plugins/starter-kit/hooks/*.test.mjs
+        env:
+          KIT_VIA_GATE: "1"
+
+  # Moves the "stable" branch to this commit only when every test above passed on a push to main. Computers that install the kit
+  # from the stable channel (see the README) therefore never receive a commit that failed on any operating system.
+  promote:
+    needs: tests
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - run: git push origin "HEAD:refs/heads/stable"

@@ -4,7 +4,7 @@ Read this, then `IMPROVEMENT-PLAN.md` (the work list, next to this file), the ro
 `CHANGELOG.md` (history). The README is a short front page; topic detail lives in `docs/`.
 Rewrite this file at the end of every session; keep it under 55 lines and true.
 
-## State at version 2.19.0 (2026-11-27)
+## State at version 2.19.1 (2026-11-27)
 - Public repo, MIT, installed from GitHub. Auto-update checks once per 24 hours at session start, in the background; a new
   version takes effect on the session AFTER that. This machine is updated by hand before each trial.
 - `plugins/starter-kit/`: 21 commands, 1 workflow file, 11 agents, 22 hook scripts (`gate.mjs` runs the rest), 53 helper scripts,
@@ -12,11 +12,11 @@ Rewrite this file at the end of every session; keep it under 55 lines and true.
 - LIVE TRIALS (`docs/trials.md`): runs 1-2 (quote builder) gave 2.17.1 and 2.17.2. SessionStart carries NO model field. OWNER RULE: never spend API tokens (no `claude -p`, no npx claude-code runs, no `claude plugin eval`). `CLAUDE.md` says so.
 - Done: Phase 0, Phase M (all but M-14), Phase S (all but S-12). Choices: D1 merged hook runner; D11 Opus for medium, large and
   risky features and D12 never Fable are Claude's choices, NOT the owner's (still open); D13 compact project chats at 300K; D14 Phase S part B built before a trial, old flow as fallback.
-- 2.18.0 is pushed and `stable` (tests.yml green on all six). 2.19.0 (UI checklist) is committed locally, NOT pushed.
-  Trial 3 (a client portal, on 2.17.2) is still running milestone 1.
+- 2.19.0 pushed and `stable`; 2.19.1 committed, NOT pushed. Trial 3 (2.17.2) finished milestone 1 ("Works, accept it"; `docs/trials.md`), now on F-004.
 
 ## Recent work, and how far it is verified
-- 2.19.0: UI checklist (`ui-checklist.mjs`, `ui-check.mjs`, `templates/ui-checkpoint.js`, `.claude/ui.json`); browser proof in `ui-e2e.test.mjs` (`KIT_PLAYWRIGHT_DIR`). NOT tried in a live build.
+- 2.19.1 (trial 3 fixes, see CHANGELOG). 2.19.0: UI checklist (`ui-checklist.mjs`, `ui-check.mjs`, `templates/ui-checkpoint.js`,
+  `.claude/ui.json`); browser proof in `ui-e2e.test.mjs` (`KIT_PLAYWRIGHT_DIR`). Neither tried in a live build.
 - 2.18.0: `user-tester` agent (Sonnet; Opus at critical) walks a finished milestone from ROADMAP.md alone, one Playwright journey
   per criterion under `e2e/journeys/`; run from `/starter-kit:accept` step 3; breaks become fixes naming its branch, merged first.
   `milestone-gaps.mjs` (dropped/reworded vs the first committed ROADMAP.md, skipped, shared, manual-on-high-risk) runs in accept
@@ -35,8 +35,8 @@ Rewrite this file at the end of every session; keep it under 55 lines and true.
 - 2.16.0: quiet output via `updatedToolOutput` (NOT verified live that Claude Code accepts it), fix-only re-review.
 
 ## Not verified (be honest about this)
-- Hooks run live (trials 1-3); trial 3 merged F-001 (6 rounds) and F-002 on 2.17.x. No milestone finished, so
-  acceptance and M-14/S-12 are unproven. macOS and Linux pass the unit tests on GitHub, never run live; Postgres/MySQL: only the plan parser. Ship marker: prose (P2-2).
+- Hooks run live (trials 1-3); trial 3 finished milestone 1 on 2.17.2 (rounds 6, 2, 2; 84% of agent tokens on Opus). 2.18+ untried live, so
+  M-14/S-12 are unproven. macOS and Linux pass the unit tests on GitHub, never run live; Postgres/MySQL: only the plan parser. Ship marker: prose (P2-2).
 - Pattern-based screens, not proof: the PowerShell reader, code index, API and migration checks, model-route's risky-word list,
   quiet-lib's lists, and the 2.18.0 fetch guard, code warning and injection warning (miss reworded or novel attacks).
 
@@ -46,7 +46,7 @@ Rewrite this file at the end of every session; keep it under 55 lines and true.
 
 ## Do this first next session
 1. D7 (push policy) is still open; D2 is yes (2026-11-26).
-2. When trial 3 finishes milestone 1 (F-002 merged 1c4f82c on 2.17.2; F-003 next), read its flight report, log it in `docs/trials.md`.
+2. Trial 3 must start a NEW session to get 2.19.1 (one long session never updates). Then compare rounds and Opus share with milestone 1.
 3. Confirm on a computer that `marketplace add ...@stable` installs and keeps following `stable` (not verified yet).
 
 ## Rules that must not regress

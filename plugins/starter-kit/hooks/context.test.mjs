@@ -97,6 +97,14 @@ test("a conductor's MERGED is believed only for a real commit on the main branch
     assert.equal(s.run(CHECK, stop("I'm waiting for the builder's fix report.", { stop_hook_active: true })).stdout.trim(), "", "never sent back twice");
     for (const ok of ["RESULT: BLOCKED\nWHERE: feature/x", "RESULT: NEEDS OWNER\nQUESTION: which colour?", "RESULT: CANNOT DELEGATE"]) assert.equal(s.run(CHECK, stop(ok)).stdout.trim(), "", ok);
     assert.equal(s.run(CHECK, stop("RESULT: MERGED deadbee1", { agent_type: "starter-kit:reviewer" })).stdout.trim(), "", "other agents are not checked");
+    // trial 3, milestone 1: every early stop it made, in its own words, is recognised as waiting (one was missed on 2.18)
+    for (const w of ["I've sent the round-1 findings to the implementer and am waiting for its report.", "Waiting for the implementer to finish round 2.", "The implementer is still working. I'll wait for its report.", "I'm waiting for the implementer's round 2 report; the background timer will wake me.", "Still in progress. I'll keep waiting."]) {
+      assert.match(JSON.parse(s.run(CHECK, stop(w)).stdout).reason, /ends your run/, w);
+    }
+    // trial 3: a true MERGED report with one sentence in front of it (a tool had refused) was sent back and had to be repeated
+    assert.equal(s.run(CHECK, stop(`SubagentHandback refused twice ("the session is not in auto mode"), so here is the final report as plain text:\n\nRESULT: MERGED ${merged}\nWHAT WORKS: x`)).stdout.trim(), "", "a short preface before the RESULT line is fine");
+    assert.match(JSON.parse(s.run(CHECK, stop(`Some preface.\n\nRESULT: MERGED deadbee1`)).stdout).reason, /does not exist/, "a RESULT after a preface is still checked");
+    assert.match(JSON.parse(s.run(CHECK, stop(`a\nb\nc\nd\ne\nf\nRESULT: MERGED ${merged}`)).stdout).reason, /first line must be/, "buried deep in the text it does not count");
     const log = s.flight();
     assert.match(log, /"ev":"conductor","sid":"s","res":"merged"/);
     assert.match(log, /"res":"merged-rejected"/);

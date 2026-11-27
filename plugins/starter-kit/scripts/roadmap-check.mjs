@@ -15,7 +15,7 @@
 // (when a test name is given) really contains that name, or say how it was checked by hand ("manual:").
 // This stops "done" from being a claim: the notes have to match git and the files.
 import { spawnSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
 
 export function checkRoadmap(root) {
@@ -104,13 +104,42 @@ export function checkRoadmap(root) {
     if (m.accepted === "malformed") problems.push(`Milestone ${m.n}: the "Accepted:" line must be "Accepted: pending" or 'Accepted: yes (YYYY-MM-DD) — owner said: "<their own words>"'`);
     if (allDone && m.accepted !== "yes") unaccepted.push({ n: m.n, name: m.name });
   }
-  return { items, ticked, problems, ci, milestones: milestones.map((m) => ({ n: m.n, name: m.name, features: m.features.length, done: m.features.filter((f) => f.done).length, accepted: m.accepted === "yes" })), unaccepted };
+  // A milestone whose only open criteria wait for a GitHub job, written as prose ("NOT VERIFIED ... CI job docker"), would wait
+  // silently forever (trial 3): say how to write them as `→ ci:` so the feature can be ticked and the milestone accepted.
+  const CI_WORDS = /\b(ci|github|workflow|actions?)\b/i;
+  const UNPROVABLE = /not verified|no docker|can'?t be (tested|checked|proven) here|after (the first )?(push|upload)|only on github/i;
+  const jobs = [];
+  const wf = join(root, ".github", "workflows");
+  if (existsSync(wf)) {
+    for (const f of readdirSync(wf).filter((x) => /\.ya?ml$/i.test(x)).sort()) {
+      const text = readFileSync(join(wf, f), "utf8");
+      const block = /^jobs:\s*$([\s\S]*)/m.exec(text)?.[1] ?? "";
+      for (const j of block.matchAll(/^ {2}([\w.-]+):\s*$/gm)) jobs.push(`.github/workflows/${f}::${j[1]}`);
+    }
+  }
+  const waitingOnCi = [];
+  for (const m of milestones) {
+    if (m.accepted === "yes") continue;
+    const open = m.features.filter((f) => !f.done);
+    if (!open.length) continue;
+    const pending = open.flatMap((f) => f.criteria.filter((c) => !c.done).map((c) => ({ feature: f.title.replace(/\s*\[[SML]\].*$/, "").slice(0, 60), text: c.text })));
+    const onlyCi = open.every((f) => f.criteria.some((c) => !c.done) && /merged/i.test(f.title)) && pending.length && pending.every((c) => CI_WORDS.test(c.text) && UNPROVABLE.test(c.text));
+    if (onlyCi) waitingOnCi.push({ milestone: m.n, name: m.name, criteria: pending, jobs });
+  }
+  return { items, ticked, problems, ci, waitingOnCi, milestones: milestones.map((m) => ({ n: m.n, name: m.name, features: m.features.length, done: m.features.filter((f) => f.done).length, accepted: m.accepted === "yes" })), unaccepted };
 }
 
 if (process.argv[1] && basename(process.argv[1]) === "roadmap-check.mjs") {
   const i = process.argv.indexOf("--project");
   const root = resolve(i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : process.cwd());
   const r = checkRoadmap(root);
+  for (const w of r.waitingOnCi ?? []) {
+    console.log(
+      `Milestone ${w.milestone} waits only on criteria that only GitHub can prove (${w.criteria.map((c) => `"${c.text.slice(0, 50)}"`).join(", ")}). ` +
+        `Write each as "- [x] <criterion> → ci: <workflow file>::<job>"${w.jobs.length ? ` (jobs here: ${w.jobs.map((j) => `→ ci: ${j}`).join(", ")})` : " (no GitHub workflow yet: add the job first)"}, ` +
+        `tick the feature with "(merged <commit>)", and the milestone can be accepted now; the launch waits for those jobs to pass on GitHub.`,
+    );
+  }
   if (process.argv.includes("--acceptance")) {
     // Is any finished milestone still waiting for the owner's sign-off? Used before a launch.
     if (r.unaccepted.length) {

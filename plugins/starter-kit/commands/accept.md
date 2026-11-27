@@ -8,7 +8,9 @@ Nothing counts as accepted because the tests pass. The owner has to see it and s
 (`## Milestone N — name` in ROADMAP.md) with an `Accepted:` line.
 
 1. **Find it.** Run `node "${CLAUDE_PLUGIN_ROOT}/scripts/roadmap-check.mjs" --project . --acceptance` to see which finished milestone is waiting. If
-   none is, say so and stop.
+   none is, say so and stop. If it says a milestone waits only on criteria that only GitHub can prove, rewrite those criteria the
+   way it shows (`→ ci: <workflow>::<job>`, the promise unchanged) and tick the feature with its merge commit, then run it again:
+   the owner can accept now, and the launch waits for those jobs to pass.
 2. **Check it against the approved plan.** Run `node "${CLAUDE_PLUGIN_ROOT}/scripts/milestone-gaps.mjs" --project . --milestone <N>`.
    It compares the milestone with ROADMAP.md as first committed and lists DROPPED (an approved feature or criterion gone or
    reworded), SKIPPED (a cited test that never runs), SHARED (one test cited for several criteria) and MANUAL (a high-risk

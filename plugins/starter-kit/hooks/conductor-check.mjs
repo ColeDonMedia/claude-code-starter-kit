@@ -30,13 +30,15 @@ try {
 if (switchedOff(root, cfg, "auto")) process.exit(0);
 
 // A conductor that stops "to wait" for an agent has not written a bad report: it has ended its run too early (trial 3, twice).
-const WAITING = /\b(wait(ing|s)? (for|on|until)|i'?ll (continue|carry on|resume)|(continue|carry on) (when|once)|(when|once|until) (its|the|their) (fix |fixes )?(report|reply|results?) (arrives?|comes? back|is in)|still (working|running))\b/i;
+const WAITING = /\b(wait(ing|s)? (for|on|until)|(keep|kept|keeps) waiting|i'?ll wait|will wake me|(still|is) in progress|i'?ll (continue|carry on|resume)|(continue|carry on) (when|once)|(when|once|until) (its|the|their) (fix |fixes )?(report|reply|results?) (arrives?|comes? back|is in)|still (working|running))\b/i;
 const WAIT_HELP = `You ended your turn to wait, and that ends your run: nothing you are waiting for can reach you afterwards. Do not stop. Wait with node "${join(dirname(fileURLToPath(import.meta.url)), "..", "scripts", "wait-agent.mjs")}" --worktree <WORKTREE> (shell timeout 300000), again until the reply arrives, then carry on with the workflow. Stop only with a RESULT line.`;
 
 // Why the report cannot be believed, or null.
 function problem(report, cwd) {
-  const first = report.split("\n").map((l) => l.replace(/[*`_]/g, "").trim()).find(Boolean) ?? "";
-  const m = /^RESULT:\s*(MERGED\b\s*([0-9a-f]{7,40})?|BLOCKED|NEEDS OWNER|CANNOT DELEGATE)\b/i.exec(first);
+  // The RESULT line should be first, but a sentence or two in front of it (trial 3: "SubagentHandback refused twice, so here is the
+  // final report as plain text:") does not make a true report false. Deeper in the text it does not count.
+  const RESULT = /^RESULT:\s*(MERGED\b\s*([0-9a-f]{7,40})?|BLOCKED|NEEDS OWNER|CANNOT DELEGATE)\b/i;
+  const m = report.split("\n").map((l) => l.replace(/[*`_]/g, "").trim()).filter(Boolean).slice(0, 3).map((l) => RESULT.exec(l)).find(Boolean) ?? null;
   if (!m && WAITING.test(report)) return { kind: "waiting", why: WAIT_HELP, whole: true };
   if (!m) return { kind: "invalid", why: 'the first line must be "RESULT: MERGED <commit>", "RESULT: BLOCKED", "RESULT: NEEDS OWNER" or "RESULT: CANNOT DELEGATE".' };
   const kind = m[1].split(/\s/)[0].toUpperCase() === "MERGED" ? "merged" : m[1].toLowerCase().replace(/\s+/g, "-");

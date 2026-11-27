@@ -166,6 +166,32 @@ test("a milestone cannot be accepted before its features are done", () => {
   }
 });
 
+test("a milestone held back only by criteria GitHub must prove says how to write them, instead of silently waiting (trial 3)", () => {
+  const r = repo();
+  try {
+    r.put(".github/workflows/checks.yml", "name: checks\njobs:\n  checks:\n    runs-on: ubuntu-latest\n  docker:\n    runs-on: ubuntu-latest\n");
+    // Trial 3's shape: the feature is merged, every other criterion is proven, two are written as prose waiting for CI.
+    const ms = `# Roadmap\n## Milestone 1 — Clients see their status\nAccepted: pending — owner said: "Works, accept it"; becomes yes once CI proves the Docker criteria\n` +
+      `- [ ] Skeleton [M] — runs (code merged in ${r.sha}; stays open until the CI docker job proves the last two criteria)\n  - [x] A visitor can sign up → test: test/auth.test.js::signs up a visitor\n` +
+      `  - [ ] Docker image builds and the smoke test passes — NOT VERIFIED (no Docker here; CI job "docker" runs after the first push)\n` +
+      `  - [ ] Restoring into a fresh container works — NOT VERIFIED in a container (CI job "docker")\n`;
+    r.put("ROADMAP.md", ms);
+    const c = checkRoadmap(r.dir);
+    assert.equal(c.waitingOnCi.length, 1);
+    assert.equal(c.waitingOnCi[0].milestone, 1);
+    assert.equal(c.waitingOnCi[0].criteria.length, 2);
+    assert.deepEqual(c.waitingOnCi[0].jobs, [".github/workflows/checks.yml::checks", ".github/workflows/checks.yml::docker"]);
+    const out = spawnSync(process.execPath, [join(dirname(fileURLToPath(import.meta.url)), "roadmap-check.mjs"), "--project", r.dir, "--acceptance"], { encoding: "utf8" }).stdout;
+    assert.match(out, /Milestone 1 waits only on criteria that only GitHub can prove/);
+    assert.match(out, /→ ci: \.github\/workflows\/checks\.yml::docker/);
+    // An open criterion that is real work is not "waiting on CI".
+    r.put("ROADMAP.md", ms.replace("  - [ ] Restoring into", "  - [ ] Owner can export data\n  - [ ] Restoring into"));
+    assert.equal(checkRoadmap(r.dir).waitingOnCi.length, 0);
+  } finally {
+    r.cleanup();
+  }
+});
+
 test("a criterion this computer cannot prove may point at a GitHub job, which must exist", () => {
   const r = repo();
   try {

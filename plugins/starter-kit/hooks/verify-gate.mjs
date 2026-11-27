@@ -86,7 +86,7 @@ if (unapproved.length) {
   process.stderr.write(
     "This project lists check commands that you have not approved on this computer, so none were run:\n" +
       unapproved.map((c) => `- ${c}`).join("\n") +
-      "\nAsk the user ONE plain yes/no question: \"May I automatically run this project's own checks (" +
+      "\nAsk the user ONE plain yes/no question, as a short message of its own (not the last line of a long report, where it gets missed) and before other news: \"May I automatically run this project's own checks (" +
       unapproved.join(", ") +
       ") whenever I finish a change?\" If they say yes, run: node \"" +
       trustScript +

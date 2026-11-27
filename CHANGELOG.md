@@ -4,6 +4,20 @@ What changed in each release of the starter-kit plugin, newest first, in plain w
 repository's history. Every release bumps `version` in `plugins/starter-kit/.claude-plugin/plugin.json`; a test
 fails if this file has no entry for the current version.
 
+## [2.19.1] — 2026-11-27
+Fixes from trial 3's first finished milestone, which ran on 2.17.2 (see [docs/trials.md](docs/trials.md)):
+- **A true "merged" report is no longer sent back for a sentence in front of it.** A tool refused, the builder said so in one line,
+  then gave a correct `RESULT: MERGED` report, and the check made it repeat the whole report. A RESULT line within the first three
+  lines now counts, and is still checked against git.
+- **One more way of saying "I'm waiting" is recognised** ("Still in progress. I'll keep waiting."), so the conductor is told how to
+  wait instead of ending its run. All six of trial 3's wordings are now in the tests.
+- **A milestone held back only by checks GitHub must run now says how to fix it.** The owner said "Works, accept it", but two Docker
+  criteria were written as "NOT VERIFIED, CI will prove it", so the milestone could not be marked accepted and nothing said why.
+  `roadmap-check.mjs` now spots this, names the workflow jobs that can prove them, and says to write them as `→ ci:`. The
+  acceptance step does that and records the owner's acceptance, and the launch still waits for those jobs to pass.
+- **The question about running the project's checks automatically is asked on its own.** In the trial it sat at the end of a long
+  merge report and took three asks over four hours.
+
 ## [2.19.0] — 2026-11-27
 - **A UI checklist, checked by measurement and by eye.** `scripts/ui-checklist.mjs` holds 83 questions grouped by the parts a screen
   has (every screen, buttons and links, lists and tables, detail pages, forms, popups and menus, messages, states, safety, phone,

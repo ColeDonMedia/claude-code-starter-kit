@@ -52,7 +52,8 @@ brief and in the project's files.
    pinned version exactly and costs nothing (its type definitions, README, CHANGELOG and docs folder in
    `node_modules/<name>/`, site-packages or the vendored source); (2) a docs tool such as context7 if one is
    installed; (3) the official docs on the web, for the version in the lockfile. Read `.claude/rules/stack.md`
-   first if the project has one: it lists the stack's known mistakes and where its docs are.
+   and `.claude/rules/stack-guides.md` first if the project has them: the stack's known mistakes, its most important do's and
+   don'ts, and where its docs are.
    For anything with a screen: follow `DESIGN.md` if the project has one (colors, type, spacing, components);
    build every state, not just the happy one (empty, loading, error, success); make it work at phone width
    (about 375px) and desktop. Accessible by default (WCAG 2.2 AA): real elements for what they are (button, link, label,

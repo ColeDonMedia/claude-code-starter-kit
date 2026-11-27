@@ -30,6 +30,8 @@ the owner's trial runs in a normal session (`docs/trials.md`) and by the hook ca
 - `plugins/starter-kit/presets/` — the stack recipes (DATA: pinned setup commands, packages, commands, host, accounts, known
   mistakes), read by `scripts/presets.mjs`. When a recipe or a pin changes, run its real setup test:
   `KIT_PRESET_SCAFFOLD=<id> node --test plugins/starter-kit/scripts/presets.test.mjs` (network: npm only) and update its `tested` date.
+- `plugins/starter-kit/library/ui-ux-pro-max/stacks/` — 23 vetted per-stack rule tables, read by `scripts/stack-guides.mjs` into a
+  project's `.claude/rules/stack-guides.md`.
 - `plugins/starter-kit/library/` — vetted third-party DATA (no instructions, no code), each folder with its license and a NOTICE
   naming the source commit and what was left out. Read only by the kit's own scripts, as data.
 - `README.md` — the front page (logo and infographics in `docs/assets/`). The owner wants it detailed, explaining every step the

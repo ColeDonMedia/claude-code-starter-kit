@@ -4,6 +4,18 @@ What changed in each release of the starter-kit plugin, newest first, in plain w
 repository's history. Every release bumps `version` in `plugins/starter-kit/.claude-plugin/plugin.json`; a test
 fails if this file has no entry for the current version.
 
+## [2.22.0] — 2026-11-27
+- **Stack guidelines for 23 frameworks** (the owner asked for stack-specific knowledge, then to build this from the design project
+  they linked). The per-stack tables of ui-ux-pro-max (MIT, commit `11ca2b3`) are vetted and copied unchanged into
+  `library/ui-ux-pro-max/stacks/`: 1,346 rules for Laravel, Next.js, Nuxt, Svelte, Astro, Angular, React, React Native, Vue,
+  shadcn/ui, HTML and Tailwind, Three.js, Flutter, SwiftUI, Jetpack Compose, JavaFX, PySide6, WPF, WinUI, UWP, Uno and Avalonia.
+  New `scripts/stack-guides.mjs` recognises a project's stacks from its own files (`package.json`, `composer.json`,
+  `pubspec.yaml`, `.csproj`, Swift sources, Gradle, Python manifests) and writes the active Critical and High rules, at most 25
+  per stack with their official docs links, to `.claude/rules/stack-guides.md`, which Claude Code reads every session. Setup,
+  planning and maintenance write or refresh it; the builder reads it first. These rules are about screens and front-end code
+  (Laravel's are Blade, Livewire, forms and escaping), not back-end design such as separating customers' data.
+- The design project's newer version was re-checked: the five design tables are byte-for-byte unchanged.
+
 ## [2.21.0] — 2026-11-27
 Protection against deleting code or data by mistake, taking over half-built apps, and a strict scope for every stage (all asked for by the owner):
 - **Deleting code now asks first** (new safety-guard rule `rm-code`). Before, `rm -rf src` or `Remove-Item -Recurse src` ran without

@@ -4,25 +4,25 @@ Read this, then `IMPROVEMENT-PLAN.md` (the work list, next to this file), the ro
 `CHANGELOG.md` (history). The README is a short front page; topic detail lives in `docs/`.
 Rewrite this file at the end of every session; keep it under 55 lines and true.
 
-## State at version 2.21.0 (2026-11-27)
+## State at version 2.22.0 (2026-11-27)
 - Public repo, MIT, installed from GitHub. Auto-update checks once per 24 hours at session start, in the background; a new
   version takes effect on the session AFTER that. This machine is updated by hand before each trial.
-- `plugins/starter-kit/`: 21 commands, 1 workflow file, 11 agents, 23 hook scripts (`gate.mjs` runs the rest), 59 helper scripts,
-  3 templates, 4 stack recipes in `presets/`, vetted data in `library/`, 612 tests (unit tests; also on GitHub: Windows, macOS, Linux). Hook tests also pass through the gate.
+- `plugins/starter-kit/`: 21 commands, 1 workflow file, 11 agents, 23 hook scripts (`gate.mjs` runs the rest), 60 helper scripts,
+  3 templates, 4 stack recipes in `presets/`, vetted data in `library/`, 618 tests (unit tests; also on GitHub: Windows, macOS, Linux). Hook tests also pass through the gate.
 - LIVE TRIALS (`docs/trials.md`): runs 1-2 (quote builder) gave 2.17.1 and 2.17.2. SessionStart carries NO model field. OWNER RULE: never spend API tokens (no `claude -p`, no npx claude-code runs, no `claude plugin eval`). `CLAUDE.md` says so.
 - Done: Phase 0, Phase M (all but M-14), Phase S (all but S-12). Choices: D1 merged hook runner; D11 Opus for medium, large and
   risky features and D12 never Fable are Claude's choices, NOT the owner's (still open); D13 compact project chats at 300K; D14 Phase S part B built before a trial, old flow as fallback.
-- 2.21.0 pushed. Trial 3 (2.17.2) finished milestone 1 ("Works, accept it"; `docs/trials.md`), now on F-004. GitHub page: owner wants it
+- 2.21.0 pushed; 2.22.0 NOT pushed yet. Trial 3 (2.17.2) finished milestone 1 ("Works, accept it"; `docs/trials.md`), now on F-004. GitHub page: owner wants it
   detailed, no word limit; `docs/every-step.md` is the walkthrough; owner-made infographic `docs/assets/from-idea-to-launch.png` on both.
 
 ## Recent work, and how far it is verified
+- 2.22.0: `stack-guides.mjs` + 23 vetted stack tables (`library/ui-ux-pro-max/stacks/`) -> `.claude/rules/stack-guides.md`. Unit-tested.
 - 2.21.0: safety-guard rule `rm-code` (read-only, `delete-lib.mjs`), `hooks/snapshot-guard.mjs` + `snapshot-lib.mjs`/`snapshot.mjs`
   (about 1 s before risky commands on Windows), spec take-over + `(existing <commit>)`, Scope blocks (`scope.test.mjs`), `cite-check.mjs`. Unit-tested; cite-check tried once live.
 - 2.20.0: stack recipes (OC-7 part; `presets.mjs`; real setup of all four passed here with KIT_PRESET_SCAFFOLD=1, deploy untested,
   D9 host still open), plan offers stack alternatives, installed docs first, one source per number (`dup-check.mjs`, PROJECT.md
   `## One source`), market check + pivots in research. None tried in a live build. dup-check finds real copies in the kit's own hooks.
-- 2.19.1 (trial 3 fixes, see CHANGELOG). 2.19.0: UI checklist (`ui-checklist.mjs`, `ui-check.mjs`, `templates/ui-checkpoint.js`,
-  `.claude/ui.json`); browser proof in `ui-e2e.test.mjs` (`KIT_PLAYWRIGHT_DIR`). Neither tried in a live build.
+- 2.19.1 trial 3 fixes; 2.19.0 UI checklist (`ui-checklist.mjs`, `ui-check.mjs`, `ui-e2e.test.mjs`). Neither tried live.
 - 2.18.0: `user-tester` agent (Sonnet; Opus at critical) walks a finished milestone from ROADMAP.md alone, one Playwright journey
   per criterion under `e2e/journeys/`; run from `/starter-kit:accept` step 3; breaks become fixes naming its branch, merged first.
   `milestone-gaps.mjs` (dropped/reworded vs the first committed ROADMAP.md, skipped, shared, manual-on-high-risk) runs in accept

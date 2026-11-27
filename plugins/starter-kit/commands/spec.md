@@ -204,6 +204,8 @@ On approval, write the project's memory so any later session can pick up with fu
 - `HANDOFF.md` and `CHANGELOG.md`: start them as described in `/starter-kit:init` if they don't exist.
 - `.claude/rules/stack.md` when a recipe was used: `node "${CLAUDE_PLUGIN_ROOT}/scripts/presets.mjs" --write <id> --project .` (the
   stack's known mistakes and where its docs are; Claude Code reads it in every session).
+- `.claude/rules/stack-guides.md`, recipe or not: `node "${CLAUDE_PLUGIN_ROOT}/scripts/stack-guides.mjs" --write --project .` once the
+  first setup has added the stack's files (add `--stack <name>` to write it before then).
 Commit them. Then build the items in order with `/starter-kit:feature`, one at a time: after each merge the records
 are updated (see that command), tell the user in a line or two what now works and how to see it, and carry on to
 the next without being asked. When the last feature of a milestone is merged, run `/starter-kit:accept` before building

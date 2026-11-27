@@ -21,6 +21,9 @@ Taskfile, CI workflow files. From them work out the real commands for: install d
 `npm ci`, `pip install -e .`, `bundle install`; a fresh git worktree has none installed), dev/run,
 tests (run once), typecheck or static analysis, lint, build. Note the test runner and whether the project has a UI.
 An empty folder is fine: write the template with `TODO` commands; `/starter-kit:spec` will choose the stack.
+Then run `node "${CLAUDE_PLUGIN_ROOT}/scripts/stack-guides.mjs" --write --project .`: for a stack it knows (Laravel, Next.js, Svelte,
+Flutter, WPF and 18 more) it writes `.claude/rules/stack-guides.md`, that stack's most important do's and don'ts with their docs
+links, which Claude Code reads in every session. Say which stacks it found, or that it found none.
 
 ## 2. Git
 If the folder is not a git repository, make it one yourself: `git init`, a `.gitignore` suited to the stack,

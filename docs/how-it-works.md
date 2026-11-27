@@ -108,11 +108,13 @@ One script, `scripts/model-route.mjs`, decides before each agent starts, from fa
 | `challenger` | Sonnet | it is checking the plan, the feature is large, or two rounds have failed (a risky feature gets the security reviewer instead) |
 | `investigator` | Sonnet | a first guess about a bug was wrong, the area is risky, or the live site is down |
 | `security-reviewer`, `red-team` | Opus | already there; the security review is never lowered |
+| `conductor` | Sonnet | the feature is large or risky, or the project is `critical` (the agents it starts get their own models) |
+| `ui-reviewer` | Sonnet | never: it judges screens against `DESIGN.md`, the measured checks and the UI checklist |
+| `user-tester` | Sonnet | only for a `critical` project: it follows the plan's steps, so size and risk don't change it |
+| `scout`, `researcher` | Haiku | never: if Haiku isn't enough, the job goes to a stronger agent instead |
 
 A re-check after a fix (a reviewer confirming its own earlier findings on the changed lines) runs on Sonnet, except the security
 reviewer, which stays on Opus, and every agent in a `critical` project.
-| `user-tester` | Sonnet | only for a `critical` project: it follows the plan's steps, so size and risk don't change it |
-| `scout`, `researcher` | Haiku | never: if Haiku isn't enough, the job goes to a stronger agent instead |
 
 - **Enforced, not just advised:** a hook refuses to start a review on a weaker model than its job needs.
 - **More care is easy, less needs you:** `{ "rigor": "critical" }` in `.claude/kit.json` puts every builder and reviewer on Opus.

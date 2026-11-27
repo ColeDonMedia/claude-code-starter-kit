@@ -4,11 +4,12 @@
 
 | Page | What's in it |
 |---|---|
+| [What using it looks like](example.md) | A short example build, the files it adds to your project, usage, and how to switch it off |
 | [How it works](how-it-works.md) | Automatic workflows, plain language, lean mode, branches and worktrees, checks before a turn ends, self-updating |
 | [Safety and security](safety.md) | The guards (commands, secrets, packages, pushes, databases), proof they run, approvals, security at every stage |
-| [Quality](quality.md) | Test-first building, the reviewers, real-browser tests, the red team and mutation testing |
+| [Quality](quality.md) | Test-first building, the reviewers, real-browser tests, the UI checklist, the red team and mutation testing |
 | [Planning, records and memory](planning-and-records.md) | The plan, milestones and acceptance, records that stay true, long builds, maps, trial runs |
-| [Design and accessibility](design-and-accessibility.md) | The style library, picking a look, WCAG 2.2 AA testing |
+| [Design and accessibility](design-and-accessibility.md) | The style library, picking a look, the UI checklist, WCAG 2.2 AA testing |
 | [Speed and scale](speed-and-scale.md) | Sizing an app to its users, load and desktop checks, speed budgets |
 | [Databases](databases.md) | The database guard, safe migrations, rehearsals at real size |
 | [Big codebases](big-codebases.md) | The code index, scoped tests, mapping an existing codebase |

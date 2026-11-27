@@ -23,6 +23,14 @@
    bar) and as CSS variables with a visible focus ring and "reduce motion" rules.
 5. Every later screen follows it; the UI reviewer scores each screen against it, and acceptance asks what feels off.
 
+## Usability: the UI checklist
+
+Looks are only half of a good screen. Every screen is also checked against the kit's UI checklist. Does an inner page have a way
+back? Does a popup have an X and close on Escape? Does a list the plan says will hold 500 items have search, filters, sort and
+paging? Do two buttons do the same job? Does any button label wrap onto two lines? Is anything typed lost after a failed save? It
+is measured in a real browser at every state and answered by eye by the UI reviewer, using the 141 UX rules above for the details.
+How it works: [Quality, the UI checklist](quality.md#the-ui-checklist).
+
 ## Accessibility (WCAG 2.2 AA)
 
 | Piece | What it does |

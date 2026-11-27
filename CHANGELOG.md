@@ -30,6 +30,12 @@ fails if this file has no entry for the current version.
 - New tests: `ui.test.mjs` (12 tests), and `ui-e2e.test.mjs`, which runs the checkpoint in Playwright on a page with every planted
   problem and a page done right. All planted problems are caught and the good page has no false alarms. The browser test runs
   only where `KIT_PLAYWRIGHT_DIR` points at an installed Playwright, so GitHub skips it.
+- **The GitHub page:**
+  - a new [What using it looks like](docs/example.md) page: a short made-up example build, the files the kit adds to a project, usage on your own Claude plan, and how to switch it off or uninstall it
+  - a test badge and a link for reporting problems
+  - the UI checklist on the front page and the design page
+  - a fixed "Which model does what" table: a paragraph had split it, and the conductor and UI reviewer rows were missing
+  - an up-to-date test count
 
 ## [2.18.0] — 2026-11-26
 - **Fixes from the first test run on macOS and Linux.** On Ubuntu, a check command whose tool is missing was reported as failing

@@ -8,8 +8,12 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/ColeDonMedia/claude-code-starter-kit/actions/workflows/tests.yml"><img src="https://github.com/ColeDonMedia/claude-code-starter-kit/actions/workflows/tests.yml/badge.svg?branch=main" alt="Tests"></a></p>
+
+<p align="center">
   <a href="#install">Install</a> ·
   <a href="#how-you-use-it">How you use it</a> ·
+  <a href="docs/example.md">See an example</a> ·
   <a href="#whats-inside">What's inside</a> ·
   <a href="#protection-built-in">Protection</a> ·
   <a href="docs/README.md">Full documentation</a>
@@ -26,6 +30,8 @@
   merged only when the tests pass, so your chat stays small.
 - **Guards your computer and secrets.** Dangerous commands, leaked keys, fake packages and unchecked pushes are stopped, and its
   own security checks need nothing installed.
+- **Checks every screen like an agency would.** A way back from every page, an X on every popup, search on long lists, no
+  duplicate or wrapping buttons: measured in a real browser and checked by eye.
 - **Reviews in proportion.** Only problems that break what you agreed, or let a stranger in, hold a feature back; the rest is
   listed to fix before launch.
 - **Remembers where it left off.** Say "continue" to resume from the last verified step.
@@ -64,7 +70,8 @@ Open a project folder in Claude Code and talk normally.
 | "Where are we?" | Progress, what's next, what it needs from you. |
 | "Ship it" | The full pre-ship scan runs; pushes wait until it passes. |
 
-More in [How it works](docs/how-it-works.md).
+See [a whole example build](docs/example.md), with the files it adds, usage and switching it off. More in
+[How it works](docs/how-it-works.md).
 
 ## What's inside
 
@@ -100,12 +107,12 @@ Claude starts these itself; you can also type them.
 
 | Agent | Model | Job |
 |---|---|---|
-| `conductor` | Sonnet; Opus for large or risky features | Runs one feature's whole build in a fresh context and reports back briefly |
+| `conductor` | Sonnet; Opus for large or risky features | Runs one feature's whole build in a fresh context |
 | `implementer` | Sonnet; Opus for medium, large or risky features | Builds one feature in its own branch and folder |
-| `scout` | Haiku | In big projects, finds the files and lines a job needs; a script checks each pointer |
-| `researcher` | Haiku | Searches and reads the web, returns a short sourced report |
+| `scout` | Haiku | In big projects, finds the files and lines a job needs |
+| `researcher` | Haiku | Researches the web, returns a sourced report |
 | `reviewer` | Opus | Reviews correctness and runs the tests (read-only) |
-| `ui-reviewer` | Sonnet | Looks at the running app at phone and desktop size (read-only) |
+| `ui-reviewer` | Sonnet | Looks at the running app at phone and desktop size; goes through the UI checklist (read-only) |
 | `security-reviewer` | Opus | Hardening review of risky features and before shipping (read-only) |
 | `challenger` | Sonnet; Opus for plans and large features | Tries to prove the work isn't done; checks the plan (read-only) |
 | `investigator` | Sonnet; Opus once a first guess fails | Finds a bug's root cause outside the main conversation (read-only) |
@@ -119,13 +126,13 @@ How models are picked: [which model does what](docs/how-it-works.md#which-model-
 | Guard | Stops |
 |---|---|
 | Safety guard | Commands that wipe drives or history, in Bash and PowerShell; asks before risky ones |
-| Secret guard | API keys, private keys, `.env` files and your private terms leaving in a commit, push or deploy |
-| Package guard | Installing packages that don't exist (AI-invented names attackers register) |
-| Push gate | Pushes, releases and deploys before the full pre-ship scan passes for that exact commit |
+| Secret guard | Keys, `.env` files and your private terms leaving in a commit, push or deploy |
+| Package guard | Installing packages that don't exist (invented names attackers register) |
+| Push gate | Pushes and deploys before the pre-ship scan passes for that exact commit |
 | Database guard | Connecting to any database that isn't on your computer |
-| Model check | A review or security review started on a weaker model than its job needs |
-| File and web guards | Claude's own tools reading your key files, or a key leaving inside a web address; warns about injected orders in pages |
-| Built-in scanners | Known flaws and malware in dependencies, unsafe GitHub workflows, Dockerfiles and Compose files, missing headers on the local app |
+| Model check | A review started on a weaker model than its job needs |
+| File and web guards | Claude reading your key files, or keys leaving in a web address; warns about injected orders in pages |
+| Built-in scanners | Known flaws and malware in dependencies, unsafe workflows, Dockerfiles and Compose files, missing headers |
 
 The guards prove they are running, a crashed guard refuses the command, and a project can't switch them off without your approval.
 Details: [Safety and security](docs/safety.md).
@@ -138,30 +145,26 @@ Details: [Safety and security](docs/safety.md).
 
 ## What's proven and what isn't
 
-- **Proven:** 559 automated tests over the hooks and scripts, including fuzz tests that throw hundreds of disguised attacks at
-  the guards. Every push runs them on Windows, macOS and Linux.
-- **Not yet proven:** a full real-world build from idea to launch. A [trial](docs/trials.md) has built two features of a real app so far.
+- **Proven:** over 570 automated tests over the hooks and scripts, including hundreds of disguised attacks thrown at the guards. Every push runs them on Windows, macOS and Linux.
+- **Not yet proven:** a full real-world build from idea to launch. A [trial](docs/trials.md) has built two features of a real app so far,
+  on Windows. Found a problem? [Open an issue](https://github.com/ColeDonMedia/claude-code-starter-kit/issues).
 
 ## Requirements
 
-- A current Claude Code (very old versions fail with "tool_use ids must be unique").
-- Node.js 18 or newer, and git. Database rehearsals and SQLite schema reading need Node 22.5 or newer.
+- A current Claude Code (very old versions fail with "tool_use ids must be unique"). It runs on your own Claude plan: no API key.
+- Node.js 18 or newer, and git. Database features need Node 22.5 or newer.
 
 ## Documentation
 
-| | |
-|---|---|
-| [How it works](docs/how-it-works.md) | [Safety and security](docs/safety.md) |
-| [Quality and testing](docs/quality.md) | [Planning, records and memory](docs/planning-and-records.md) |
-| [Design and accessibility](docs/design-and-accessibility.md) | [Speed and scale](docs/speed-and-scale.md) |
-| [Databases](docs/databases.md) | [Big codebases](docs/big-codebases.md) |
-| [Launch, operations and legal](docs/launch-and-operations.md) | [Add-ons and vetting](docs/add-ons.md) |
-| [Settings](docs/settings.md) | [Changelog](CHANGELOG.md) |
+[What using it looks like](docs/example.md), [How it works](docs/how-it-works.md), [Safety and security](docs/safety.md),
+[Quality and testing](docs/quality.md), [Planning, records and memory](docs/planning-and-records.md),
+[Design and accessibility](docs/design-and-accessibility.md), [Speed and scale](docs/speed-and-scale.md),
+[Databases](docs/databases.md), [Big codebases](docs/big-codebases.md), [Launch, operations and legal](docs/launch-and-operations.md),
+[Add-ons and vetting](docs/add-ons.md), [Settings](docs/settings.md), [Changelog](CHANGELOG.md).
 
 ## Contributing
 
-> **This is a public repository.** Do not put private details in it: no names, emails, company or client details, personal
-> file paths, keys, tokens, or code from private projects.
+> **Public repository:** no names, emails, client details, personal file paths, keys, tokens or private code.
 
 Run the tests before every change:
 
@@ -169,10 +172,7 @@ Run the tests before every change:
 node --test plugins/starter-kit/hooks/*.test.mjs plugins/starter-kit/scripts/*.test.mjs
 ```
 
-Notes for people working on the kit: [handoff](docs/development/HANDOFF.md) and [improvement plan](docs/development/IMPROVEMENT-PLAN.md).
-
 ## License
 
-MIT. See [LICENSE](LICENSE). The design data in `plugins/starter-kit/library/ui-ux-pro-max/` comes from the MIT-licensed
-ui-ux-pro-max project and keeps its own license file. Other repositories in the [vetting record](docs/vetted.md) keep their own
-licenses; none of their code is copied here.
+MIT. See [LICENSE](LICENSE). The design data in `plugins/starter-kit/library/ui-ux-pro-max/` is MIT-licensed and keeps its
+own license file; no other project's code is copied here ([vetting record](docs/vetted.md)).

@@ -47,8 +47,7 @@ Rewrite this file at the end of every session; keep it under 55 lines and true.
 
 ## Do this first next session
 1. D7 (push policy) open; D2 yes (2026-11-26). Add the infographics (`docs/assets/infographic-*.png`) when the owner sends them.
-2. Trial 3 must start a NEW session to get 2.19.1 (one long session never updates). Then compare rounds and Opus share with milestone 1.
-3. Confirm on a computer that `marketplace add ...@stable` installs and keeps following `stable` (not verified yet).
+2. Trial 3 needs a NEW session to get 2.19.1; then compare rounds and Opus share with milestone 1. 3. Confirm `...@stable` installs and follows `stable`.
 
 ## Rules that must not regress
 - Nothing from a project's own files may run or take effect without the user's approval on this computer (see `CLAUDE.md`).

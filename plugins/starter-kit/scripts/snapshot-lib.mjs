@@ -28,7 +28,10 @@ export function repoRoot(dir) {
   return r.ok ? resolve(r.out) : null;
 }
 
-const stamp = () => new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z").replace("T", "-");
+// Names sort in time order: milliseconds, then a counter for several in the same millisecond, then (for ids) a random tag.
+// Sorting by name, not by git's creation date, which only counts whole seconds.
+let seq = 0;
+const stamp = () => `${new Date().toISOString().replace(/[-:]/g, "").replace(".", "").replace("T", "-")}${String(seq++ % 1000).padStart(3, "0")}`;
 const slug = (s) => String(s).replace(/[^A-Za-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "snapshot";
 
 // Save the working copy. Returns { id, ref, commit } or null when this is not a git project or git refuses.
@@ -69,7 +72,7 @@ export function saveSnapshot(dir, reason, { branches = [], stashes = false } = {
 export function listSnapshots(dir) {
   const root = repoRoot(dir);
   if (!root) return [];
-  const r = git(root, ["for-each-ref", "--sort=-creatordate", "--format=%(refname)%09%(creatordate:iso)%09%(contents:subject)", PREFIX]);
+  const r = git(root, ["for-each-ref", "--sort=-refname", "--format=%(refname)%09%(creatordate:iso)%09%(contents:subject)", PREFIX]);
   if (!r.ok || !r.out) return [];
   return r.out
     .split("\n")
@@ -79,7 +82,7 @@ export function listSnapshots(dir) {
 }
 
 function prune(root) {
-  const all = git(root, ["for-each-ref", "--sort=-creatordate", "--format=%(refname)", PREFIX]).out.split("\n").filter(Boolean);
+  const all = git(root, ["for-each-ref", "--sort=-refname", "--format=%(refname)", PREFIX]).out.split("\n").filter(Boolean);
   const main = all.filter((r) => !/-(branch|stash)-[^/]*$/.test(r));
   const drop = [];
   for (const old of main.slice(KEEP)) {
@@ -148,7 +151,7 @@ export function backupDatabases(dir, hint = []) {
   const base = join(root, ".claude", "backups");
   mkdirSync(base, { recursive: true });
   writeFileSync(join(base, ".gitignore"), "*\n");
-  const dest = join(base, stamp());
+  const dest = join(base, `${stamp()}-${randomBytes(2).toString("hex")}`);
   const copied = [];
   for (const f of files) {
     const rel = relative(root, f);

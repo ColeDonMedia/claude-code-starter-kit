@@ -10,7 +10,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { hookPath } from "../scripts/test-via-gate.mjs";
-import { listSnapshots, restoreSnapshot, saveSnapshot } from "../scripts/snapshot-lib.mjs";
+import { backupDatabases, listSnapshots, restoreSnapshot, saveSnapshot } from "../scripts/snapshot-lib.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const GUARD = hookPath(HERE, "safety-guard.mjs");
@@ -204,6 +204,22 @@ test("the snapshot hook saves before risky commands only, and stays silent", () 
     assert.equal(listSnapshots(dir).length, 0, "no snapshot for safe commands");
     decide(dir, "Remove-Item -Recurse -Force src", "PowerShell", { snapshots: true });
     assert.equal(listSnapshots(dir).length, 1);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("copies and snapshots made in the same second stay separate and in order (fast machines)", () => {
+  const { dir } = makeRepo();
+  try {
+    backupDatabases(dir, ["data/app.db"]);
+    backupDatabases(dir, ["data/app.db"]);
+    assert.equal(readdirSync(join(dir, ".claude", "backups")).filter((f) => f !== ".gitignore").length, 2, "two copies, two folders");
+    for (const n of [1, 2, 3]) {
+      writeFileSync(join(dir, "src", "app.js"), `v${n}\n`);
+      saveSnapshot(dir, `quick ${n}`);
+    }
+    assert.deepEqual(listSnapshots(dir).map((s) => s.reason), ["quick 3", "quick 2", "quick 1"], "newest first, even within one second");
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

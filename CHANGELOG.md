@@ -15,6 +15,10 @@ fails if this file has no entry for the current version.
   planning and maintenance write or refresh it; the builder reads it first. These rules are about screens and front-end code
   (Laravel's are Blade, Livewire, forms and escaping), not back-end design such as separating customers' data.
 - The design project's newer version was re-checked: the five design tables are byte-for-byte unchanged.
+- **Fix (2.21.0 failed its tests on GitHub):** on fast computers, two database copies made in the same second went into one folder,
+  so the first was overwritten, and "keep the newest 20 snapshots" could keep the wrong ones, because both used time to the
+  second. Names now carry milliseconds, a counter and a random tag, and snapshots are sorted by name. The stable channel never
+  received 2.21.0 (its promotion waits for passing tests).
 
 ## [2.21.0] — 2026-11-27
 Protection against deleting code or data by mistake, taking over half-built apps, and a strict scope for every stage (all asked for by the owner):

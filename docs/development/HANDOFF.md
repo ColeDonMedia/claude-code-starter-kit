@@ -12,7 +12,7 @@ Rewrite this file at the end of every session; keep it under 55 lines and true.
 - LIVE TRIALS (`docs/trials.md`): runs 1-2 (quote builder) gave 2.17.1 and 2.17.2. SessionStart carries NO model field. OWNER RULE: never spend API tokens (no `claude -p`, no npx claude-code runs, no `claude plugin eval`). `CLAUDE.md` says so.
 - Done: Phase 0, Phase M (all but M-14), Phase S (all but S-12). Choices: D1 merged hook runner; D11 Opus for medium, large and
   risky features and D12 never Fable are Claude's choices, NOT the owner's (still open); D13 compact project chats at 300K; D14 Phase S part B built before a trial, old flow as fallback.
-- 2.18.0 is pushed (2026-11-26, the owner asked). `stable` was created at 2.17.2's commit; tests.yml moves it once green.
+- 2.18.0 is pushed (2026-11-26, the owner asked). tests.yml is green on all six (third run) and moved `stable` to 2.18.0.
   Trial 3 (a client portal, on 2.17.2) is still running milestone 1.
 
 ## Recent work, and how far it is verified
@@ -35,7 +35,7 @@ Rewrite this file at the end of every session; keep it under 55 lines and true.
 
 ## Not verified (be honest about this)
 - Hooks run live (trials 1-3); trial 3 merged F-001 (6 rounds) and F-002 on 2.17.x. No milestone finished, so
-  acceptance and M-14/S-12 are unproven. macOS and Linux untested; Postgres/MySQL: only the plan parser. Ship marker: prose (P2-2).
+  acceptance and M-14/S-12 are unproven. macOS and Linux pass the unit tests on GitHub, never run live; Postgres/MySQL: only the plan parser. Ship marker: prose (P2-2).
 - Pattern-based screens, not proof: the PowerShell reader, code index, API and migration checks, model-route's risky-word list,
   quiet-lib's lists, and the 2.18.0 fetch guard, code warning and injection warning (miss reworded or novel attacks).
 
@@ -46,8 +46,7 @@ Rewrite this file at the end of every session; keep it under 55 lines and true.
 ## Do this first next session
 1. D7 (push policy) is still open; D2 is yes (2026-11-26).
 2. When trial 3 finishes milestone 1 (F-002 merged 1c4f82c on 2.17.2; F-003 next), read its flight report, log it in `docs/trials.md`.
-3. Read tests.yml's first run (expect path and line-ending failures on macOS/Linux; fix code, not tests) and confirm
-   `marketplace add ...@stable` installs and follows `stable`.
+3. Confirm on a computer that `marketplace add ...@stable` installs and keeps following `stable` (not verified yet).
 
 ## Rules that must not regress
 - Nothing from a project's own files may run or take effect without the user's approval on this computer (see `CLAUDE.md`).

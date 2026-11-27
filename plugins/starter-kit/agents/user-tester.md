@@ -33,7 +33,9 @@ project, so the owner's files are safe. You do not fix anything; you show what w
 3. **Walk them in a real browser.** For each journey write one end-to-end test in the project's own browser tool (Playwright when
    set up) under `e2e/journeys/<milestone>/`, named for what the person does. It opens the running app, does what a person would do
    (find things by their visible label, never a hidden id), and checks what they would see, at the phone (375 px) and desktop
-   (1280 px) sizes. Save a screenshot of each step to `.claude/screens/journeys/`. Run every test. A browser tool of your own (a
+   (1280 px) sizes. Save a screenshot of each step to `.claude/screens/journeys/`: when `e2e/ui-checkpoint.js` exists, import `test`
+   from it and call `checkpoint(page, testInfo, "<step>")` at each step instead, which saves the screenshot and measures the screen
+   for the reviewers. Run every test. A browser tool of your own (a
    browser pane) is a bonus for looking, never a replacement for the tests.
 4. **Sort the results.** A journey that works stays as a passing test. For one that does not, keep the test failing for the right
    reason (it passes once the app does what the plan says) and check it fails on the app, not on your test. Something that works but

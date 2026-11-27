@@ -4,6 +4,33 @@ What changed in each release of the starter-kit plugin, newest first, in plain w
 repository's history. Every release bumps `version` in `plugins/starter-kit/.claude-plugin/plugin.json`; a test
 fails if this file has no entry for the current version.
 
+## [2.19.0] — 2026-11-27
+- **A UI checklist, checked by measurement and by eye.** `scripts/ui-checklist.mjs` holds 83 questions grouped by the parts a screen
+  has (every screen, buttons and links, lists and tables, detail pages, forms, popups and menus, messages, states, safety, phone,
+  account screens, navigation), plus an 8-question whole-app sweep and an 8-question launch polish list. Examples: does an inner page
+  have a way back, does a popup have an X and close on Escape, does a list the plan says will hold 500 items have search, filters,
+  sort and paging, do two buttons do the same job, does a button label wrap onto two lines. Each item either holds the merge (42 of
+  them: dead ends, popups you can't close, lost input) or goes to "Harden before launch", and points at the matching rows of the
+  bundled UX library, which no reviewer used before.
+- **`templates/ui-checkpoint.js`**, copied into `e2e/`: browser tests call `checkpoint(page, testInfo, "<state>")` at every state
+  and `checkEscape()` with a popup open. It saves the screenshot and measures more than 40 things in the real page, including serious
+  accessibility failures in every state, not only on page load. It also watches console and page errors, and offers `STRESS`
+  values for a second run with long names, a long unbroken word, 0, 1 and 300 items and a huge number.
+- **`scripts/ui-check.mjs`** judges the measurements (BLOCKING / Later). It uses the plan's screen list and item counts in
+  `.claude/ui.json`, so "needs search?" is judged against real numbers and not three test rows. It skips the accepted exceptions
+  recorded there with who decided. `--manual --parts` prints the checklist by part, `--sweep` compares screens at milestone
+  acceptance (one action named two ways, mixed date or money formats, Cancel on different sides, shared titles, unmeasured
+  screens), and `--launch` adds the finishing touches (favicon, descriptions, link previews).
+- Wired in at five places:
+  - the plan lists the screens with their expected item counts
+  - the builder reads the items before building, calls the checkpoint at every state, runs once with stress data, and fixes every BLOCKING line
+  - the UI reviewer answers every item per changed screen, with evidence, and its checklist BLOCKS hold the merge on every look (only taste is limited to two rounds)
+  - acceptance runs the sweep
+  - launch runs the polish list and checks the not-found and error pages
+- New tests: `ui.test.mjs` (12 tests), and `ui-e2e.test.mjs`, which runs the checkpoint in Playwright on a page with every planted
+  problem and a page done right. All planted problems are caught and the good page has no false alarms. The browser test runs
+  only where `KIT_PLAYWRIGHT_DIR` points at an installed Playwright, so GitHub skips it.
+
 ## [2.18.0] — 2026-11-26
 - **Fixes from the first test run on macOS and Linux.** On Ubuntu, a check command whose tool is missing was reported as failing
   code (its shell words it "not found"). The add-on scan cut its own output at 64 KB on macOS and Linux. On Windows, a resumed

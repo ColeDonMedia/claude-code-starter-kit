@@ -18,7 +18,8 @@ then stop and report. Do not start the next phase in the same release.
 | M — models and delegation | 2.14.1 (part A), 2.15.0 (part B) | **Done** except M-14 (needs a trial). D11 and D12 were Claude's choices, not the owner's (corrected 2026-11-26: the owner's "do all" approved the work, not these model choices); they stay open for the owner. Absorbed P3-6. Built before the first trial, so there is no before-and-after comparison. |
 | S — savings and a small main conversation | 2.16.0 (part A), 2.17.0 (part B) | **Done** except S-12 (needs a trial). The owner said "do all" (2026-11-25): D13 yes; D14 build now, with the old flow as the automatic fallback. Not run live. |
 | 1 — verifiable | 2.18.0 | P1-1 and P1-2 written (2026-11-26, owner said "Implement": D2 yes), not yet run on GitHub. P1-3 to P1-5 and P1-7 open. When P2-4 moves rule blocks into references, the WCAG list in `scripts/wcag.mjs` is the source for the accessibility reference. |
-| OC — one-click shipping | 2.19.0, 2.20.0 | Not started. Waits for the first live trial (P1-6), whose flight report decides the order inside the phase. Absorbs P2-1, P2-2, P2-3, P2-5 and P4-2. |
+| Owner request | 2.19.0 | **Done** (2026-11-27, the owner said "Add all"): the UI checklist, the measuring checkpoint, the screen list in the plan, stress data, the milestone sweep and the launch polish list (see CHANGELOG). Proven on fixture pages in a real browser, not yet in a live build. |
+| OC — one-click shipping | 2.20.0, 2.21.0 | Not started. Waits for the first live trial (P1-6), whose flight report decides the order inside the phase. Absorbs P2-1, P2-2, P2-3, P2-5 and P4-2. |
 | 2, 3, 4 | — | Not started. What is left of Phase 2 after OC follows it. |
 
 **Order of work, from here:** P1-6 (the first live trial: it now tests Phase M and Phase S together, and its flight report gives

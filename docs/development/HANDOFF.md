@@ -4,18 +4,19 @@ Read this, then `IMPROVEMENT-PLAN.md` (the work list, next to this file), the ro
 `CHANGELOG.md` (history). The README is a short front page; topic detail lives in `docs/`.
 Rewrite this file at the end of every session; keep it under 55 lines and true.
 
-## State at version 2.18.0 (2026-11-26)
+## State at version 2.19.0 (2026-11-27)
 - Public repo, MIT, installed from GitHub. Auto-update checks once per 24 hours at session start, in the background; a new
   version takes effect on the session AFTER that. This machine is updated by hand before each trial.
-- `plugins/starter-kit/`: 21 commands, 1 workflow file, 11 agents, 22 hook scripts (`gate.mjs` runs the rest), 51 helper scripts,
-  2 templates, vetted data in `library/`, 560 tests (unit tests; also on GitHub: Windows, macOS, Linux). Hook tests also pass through the gate.
+- `plugins/starter-kit/`: 21 commands, 1 workflow file, 11 agents, 22 hook scripts (`gate.mjs` runs the rest), 53 helper scripts,
+  3 templates, vetted data in `library/`, 573 tests (unit tests; also on GitHub: Windows, macOS, Linux). Hook tests also pass through the gate.
 - LIVE TRIALS (`docs/trials.md`): runs 1-2 (quote builder) gave 2.17.1 and 2.17.2. SessionStart carries NO model field. OWNER RULE: never spend API tokens (no `claude -p`, no npx claude-code runs, no `claude plugin eval`). `CLAUDE.md` says so.
 - Done: Phase 0, Phase M (all but M-14), Phase S (all but S-12). Choices: D1 merged hook runner; D11 Opus for medium, large and
   risky features and D12 never Fable are Claude's choices, NOT the owner's (still open); D13 compact project chats at 300K; D14 Phase S part B built before a trial, old flow as fallback.
-- 2.18.0 is pushed (2026-11-26, the owner asked). tests.yml is green on all six (third run) and moved `stable` to 2.18.0.
+- 2.18.0 is pushed and `stable` (tests.yml green on all six). 2.19.0 (UI checklist) is committed locally, NOT pushed.
   Trial 3 (a client portal, on 2.17.2) is still running milestone 1.
 
 ## Recent work, and how far it is verified
+- 2.19.0: UI checklist (`ui-checklist.mjs`, `ui-check.mjs`, `templates/ui-checkpoint.js`, `.claude/ui.json`); browser proof in `ui-e2e.test.mjs` (`KIT_PLAYWRIGHT_DIR`). NOT tried in a live build.
 - 2.18.0: `user-tester` agent (Sonnet; Opus at critical) walks a finished milestone from ROADMAP.md alone, one Playwright journey
   per criterion under `e2e/journeys/`; run from `/starter-kit:accept` step 3; breaks become fixes naming its branch, merged first.
   `milestone-gaps.mjs` (dropped/reworded vs the first committed ROADMAP.md, skipped, shared, manual-on-high-risk) runs in accept

@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>React App</title>
+<style>
+  body { font: 16px/1.4 sans-serif; margin: 0; padding: 16px; }
+  .narrow { width: 120px; }
+  .ellipsis { width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; }
+  .cover { position: relative; height: 48px; }
+  .cover .lid { position: absolute; inset: 0; background: rgba(255,255,255,.9); }
+  .off { position: absolute; left: calc(100vw - 40px); width: 160px; }
+  .tiny { font-size: 10px; }
+  input { font-size: 13px; }
+  .modal { position: fixed; top: 20px; left: 10px; right: 10px; height: 2000px; background: #fff; border: 1px solid #000; }
+  td { text-align: left; }
+</style>
+</head>
+<body>
+  <h1 class="ellipsis">Invoice for Maximiliana Alexandra Featherstonehaugh-Worthington</h1>
+  <div class="narrow"><button type="submit" class="primary">Save and send the invoice now</button></div>
+  <button><svg width="16" height="16"><circle cx="8" cy="8" r="6"></circle></svg></button>
+  <button>Save</button>
+  <button>Save</button>
+  <a href="#">More</a>
+  <p>Due: undefined</p>
+  <p>Total: NaN</p>
+  <p class="tiny">Terms and conditions apply</p>
+  <img src="/missing.png" width="40" height="40" alt="logo">
+  <div class="cover"><button id="hidden-btn">Archive</button><div class="lid"></div></div>
+  <button class="off">Export everything</button>
+  <label>Note <input type="text"></label>
+  <ul id="rows"></ul>
+  <table><thead><tr><th>Item</th><th>Qty</th><th>Price</th></tr></thead><tbody>
+    <tr><td>Design</td><td>3</td><td>1200</td></tr>
+    <tr><td>Build</td><td>5</td><td>4000</td></tr>
+    <tr><td>Hosting</td><td>12</td><td>240</td></tr>
+    <tr><td>Support</td><td>2</td><td>300</td></tr>
+    <tr><td>Domain</td><td>1</td><td>20</td></tr>
+  </tbody></table>
+  <button id="del">Delete</button>
+  <div class="modal" id="modal" role="dialog" aria-modal="true" hidden><p>Are you sure?</p><button>OK</button></div>
+  <script>
+    const ul = document.getElementById("rows");
+    for (let i = 1; i <= 60; i++) { const li = document.createElement("li"); li.textContent = "Invoice " + i; ul.appendChild(li); }
+    document.getElementById("del").addEventListener("click", () => { document.getElementById("modal").hidden = false; });
+    console.error("Failed to load invoice totals");
+    setTimeout(() => { throw new Error("totals is not defined"); }, 0);
+  </script>
+</body>
+</html>

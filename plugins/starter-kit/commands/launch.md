@@ -75,6 +75,15 @@ cookie and exposed-file checks, plus any extra scanner already on this computer)
 For the public staging or live address, the owner can check headers at https://developer.mozilla.org/en-US/observatory (Mozilla's
 own site scans it; the address becomes visible to Mozilla, nothing else is sent).
 
+## 6b. Finishing touches
+What separates a finished app from a prototype at first sight. Run the browser tests, then
+`node "${CLAUDE_PLUGIN_ROOT}/scripts/ui-check.mjs" --project . --launch`: it adds the launch checks (favicon, page descriptions, link
+previews) to the whole-app sweep and prints the launch list to go through by hand. Do each item, and check two things on the local
+copy yourself: a mistyped address shows the app's own "page not found" page with a way home, and a forced server error shows a
+friendly "something went wrong" page, never a stack trace or a blank screen (add a browser test for both, calling `checkpoint()`).
+Every BLOCKING line is fixed before launch; also clear the UI items in PROJECT.md `Harden before launch`, or tell the owner which
+are left and why.
+
 ## 7. Costs and limits
 Estimate the monthly cost at the expected traffic from CURRENT pricing pages (say they are estimates and when you checked), set a spending
 alert on every paid service, and note each free-tier limit and what happens when it is reached ("Costs and limits").

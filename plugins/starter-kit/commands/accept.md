@@ -30,6 +30,14 @@ Nothing counts as accepted because the tests pass. The owner has to see it and s
      tests on that branch, then `git merge --no-ff <BRANCH>` so the journeys keep guarding the app. Otherwise leave it unmerged and
      say so. Take its **Confusing** list to the owner in step 5 as things to look at.
    - It reports NOT RUN LIVE: say so in one line and carry on; the owner's try-out is then the only one.
+3b. **Whole-app sweep** (anything with a screen): some problems only show when screens are compared. Run the browser tests, then
+   `node "${CLAUDE_PLUGIN_ROOT}/scripts/ui-check.mjs" --project . --sweep`: it compares every measured screen (the same action named
+   differently, dates or money written two ways, popups with Cancel on different sides, pages sharing a title, plan screens never
+   measured) and prints the sweep list to check by eye across the milestone's screens (same name for the same thing everywhere, the
+   same icon for the same meaning, buttons in the same places, states that look alike). Go through every item. Fix BLOCKING lines
+   and anything that would confuse a first-time user before asking the owner (unticked fixes under the milestone, built with
+   `/starter-kit:feature`); the rest go to PROJECT.md `Harden before launch`. A deliberate difference goes into `.claude/ui.json`
+   `exceptions` with the reason and who decided (`"by": "owner"` only when the owner said so in words, otherwise `"claude"`).
 4. **Make it easy to try.** Start the app (the run command in CLAUDE.md) and give the user the way in (an address to open, a
    command, a file). If it can't be started here, say what is missing.
 5. **Say exactly what to try**, in plain words and in order, taken from the acceptance criteria of that milestone's features:

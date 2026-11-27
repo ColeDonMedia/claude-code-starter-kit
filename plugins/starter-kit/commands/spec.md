@@ -113,6 +113,10 @@ this file, and the ui-reviewer scores each screen against it. The accessibility 
   app gets a **speed budget**: on a mid-range phone on slow 4G the main content shows in 2.5 s, nothing jumps around, a tap answers within 100 ms
   and finishes within a second, and an API answer takes under 200 ms (say which pages and actions matter most, and ask whether anything
   needs to be faster; write them into `.claude/speed.json`). Lists are always paged, and slow work (email, reports, images) runs in the background. Say so in the plan.
+- **Screens** — for anything with a screen, one line per screen: its address, what it is for, the popups it opens, and for every list
+  about how many items a busy user will have after a year (from the scale profile's records per user: "Invoices, /invoices, a list
+  with a delete popup, about 500"). That number decides whether it needs search, filters, sort and paging, so the UI checklist judges
+  against the plan, not against three rows of test data.
 - **Measuring and listening** — how the success goals will be measured once it is live (a privacy-friendly analytics tool, or simple
   counts from the app's own database, so no needless tracking), the few events that matter (sign-up, the core action), and how users
   can reach the owner (an in-app "Report a problem" or "Send feedback" that reaches an inbox the owner reads). Check current options and
@@ -142,6 +146,9 @@ On approval, write the project's memory so any later session can pick up with fu
   next number from `node "${CLAUDE_PLUGIN_ROOT}/scripts/notes-graph.mjs" --project . --next-id D`); record the planning decisions in it now. Give each roadmap
   feature an id (`{#F-001}`) and have it point at the decisions it follows (`[[D-001]]`). A decision that is replaced later gets
   `status: superseded by [[D-nnn]]` (or `status: reversed`) on its old line. Add a `## Map` heading to `PROJECT.md` (one line per folder or key file) as soon as code exists.
+- `.claude/ui.json` (anything with a screen): the Screens list as `{ "screens": [{ "path": "/invoices", "name": "Invoices", "parts":
+  ["list", "dialog", "messages"], "items": 500 }], "exceptions": [] }`. Parts come from `node "${CLAUDE_PLUGIN_ROOT}/scripts/ui-check.mjs" --parts`;
+  `/invoices/:id` matches any one invoice. Every builder and reviewer works from it.
 - `HANDOFF.md` and `CHANGELOG.md`: start them as described in `/starter-kit:init` if they don't exist.
 Commit them. Then build the items in order with `/starter-kit:feature`, one at a time: after each merge the records
 are updated (see that command), tell the user in a line or two what now works and how to see it, and carry on to

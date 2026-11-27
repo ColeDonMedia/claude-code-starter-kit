@@ -45,7 +45,7 @@ Merge into the existing file if there is one; never drop existing entries.
 - For a typed language (TypeScript, Python, Go, Rust, Java, C#), mention in one line that the official marketplace's
   code-intelligence plugin for it cuts file reading; never install it yourself.
 Add these lines to `.gitignore` (skip any already present): `.claude/settings.local.json`,
-`.claude/worktrees/`, `.claude/logs/`, `.claude/last-full-scan`, `.claude/last-verified`, `.claude/last-docs-check`, `.claude/screens/`, `e2e/test-results/`, `playwright-report/`, and the secret files: `.env`, `.env.*`,
+`.claude/worktrees/`, `.claude/logs/`, `.claude/last-full-scan`, `.claude/last-verified`, `.claude/last-docs-check`, `.claude/screens/`, `.claude/ui-results/`, `e2e/test-results/`, `playwright-report/`, and the secret files: `.env`, `.env.*`,
 `*.pem`, `*.key`, `*.p12`, `*.pfx`, `credentials.json`. Then un-ignore only the templates with
 `!.env.example` (they hold no real values). Never put real keys or passwords in a tracked file: store them in
 `.env` (ignored) or the host's secret manager, and read them from the environment in code.
@@ -136,6 +136,11 @@ tests can all pass while the page is broken; this is what catches that.
   dependency), copy `${CLAUDE_PLUGIN_ROOT}/templates/a11y.spec.js` to `e2e/a11y.spec.js` unchanged, and record
   `Accessibility test: <command that runs e2e/a11y.spec.js>` in CLAUDE.md. It checks WCAG 2.2 AA with axe plus a keyboard walk,
   reflow, zoom and motion; `a11y-check.mjs` judges the results. Add `.claude/a11y-results-*.json` to `.gitignore`.
+- UI checkpoint: copy `${CLAUDE_PLUGIN_ROOT}/templates/ui-checkpoint.js` to `e2e/ui-checkpoint.js` unchanged and write the smoke test
+  with it (`import { test, expect, checkpoint } from "./ui-checkpoint.js"`, then `await checkpoint(page, testInfo, "home")`). Every
+  later browser test calls it at each state; `ui-check.mjs` judges what it measured against the kit's UI checklist. Create
+  `.claude/ui.json` as `{ "screens": [], "exceptions": [] }` if it is missing (committed: the plan's screen list and the accepted
+  exceptions), and add `.claude/ui-results/` to `.gitignore`.
 Skip all of this, and write `none` in CLAUDE.md, for projects with no browser UI (a command-line tool, a library, an API only).
 
 ## 9b. Size (every project)

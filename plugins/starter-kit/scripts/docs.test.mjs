@@ -111,6 +111,7 @@ const textFiles = [
   ...readdirSync(join(PLUGIN, "commands")).map((f) => join(PLUGIN, "commands", f)),
   ...workflowFiles,
   ...readdirSync(join(PLUGIN, "agents")).map((f) => join(PLUGIN, "agents", f)),
+  ...readdirSync(join(PLUGIN, "rules")).map((f) => join(PLUGIN, "rules", f)), // the builder's rule sheets, read on demand
   join(PLUGIN, "hooks", "session-start.mjs"),
   join(PLUGIN, "hooks", "docs-gate.mjs"),
   join(PLUGIN, "hooks", "verify-gate.mjs"),

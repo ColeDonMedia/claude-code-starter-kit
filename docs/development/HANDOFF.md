@@ -3,26 +3,29 @@
 Read this, then `IMPROVEMENT-PLAN.md` (open work; finished items are in `PLAN-DONE.md`), the root `CLAUDE.md` (how to work on
 this repo) and `CHANGELOG.md` (history). Rewrite this file at the end of every session; keep it under 55 lines and true.
 
-## State at version 2.25.0 (2026-11-28)
+## State at version 2.26.0 (2026-11-28)
 - Public repo, MIT, installed from GitHub. Auto-update checks once per 24 hours at session start; a new version takes effect on the
   session AFTER that. This machine is updated by hand before each trial.
-- `plugins/starter-kit/`: 21 commands, 4 procedure files, 11 agents, 23 hook scripts (`gate.mjs` runs the rest), 65 helper scripts
-  (new: `shell-lib.mjs`, the one command reader every shell guard uses; `ship-detect.mjs`; `ship-mark.mjs`), 6 pattern cards,
-  4 stack recipes, vetted data in `library/`.
+- `plugins/starter-kit/`: 21 commands, 4 procedure files, 11 agents, 3 rule sheets (`rules/`, read by the builder on demand),
+  23 hook scripts (`gate.mjs` runs the rest), 66 helper scripts, 6 pattern cards, 4 stack recipes, vetted data in `library/`.
 - OWNER RULE: never spend API tokens (no `claude -p`, no npx claude-code runs, no `claude plugin eval`). `CLAUDE.md` says so.
 - RELEASES (D7): push (with the owner's yes) to `candidate`; GitHub tests six setups and only then moves `main` and `stable`.
 - Decisions the owner delegated on 2026-11-27 are recorded as Claude's: D7, D8, D9, D11, D12 (see the plan).
 - Trial 3 (2.17.2, `docs/trials.md`) finished milestone 1 and is on F-004. Its next NEW session is the first live run of 2.18+.
 
 ## Recent work, and how far it is verified
-- 2.25.0 (review that ran the real hooks on Windows; the owner said "do all"): Git Bash `/c/` paths, deletes outside the project
-  (`rm-outside`), pushes and commits the old patterns missed (shared reader), `commit -a` and gist scans, approval script alone,
-  Monitor and `run_in_terminal` guarded, the kit's own files and markers protected, `ship-mark.mjs` writes the pass marker,
-  five more switches need approval, a check that could not run is not a pass, git discard forms ask, a broken safety guard asks.
-  Tests first (`hooks/gaps.test.mjs`, round 7 in both fuzz files; all failed on 2.24.0). Full suite both ways on Windows only.
+- 2.26.0 (the owner asked for the leanest code at a lower token cost): the builder writes a CUT LIST before any code and the
+  reviewer checks the change against it; six lean rules; `lean-check.mjs` (leftovers in added lines, BLOCKING and CHECK, plus the
+  change's WEIGHT); `implementer.md` 2,329 to about 1,880 words by moving area rules into `rules/`; `measured`/`inferred` labels.
+  Unit-tested and run on the kit's own releases. 2.25.0 passed GitHub on all six setups and is on main and stable.
+- 2.25.0 (review that ran the real hooks; the owner said "do all"): twelve guard holes closed, tests first (`hooks/gaps.test.mjs`,
+  round 7 of both fuzz files). One command reader for every shell guard (`shell-lib.mjs`); `ship-mark.mjs` writes the pass marker.
 - 2.24.0: running-cost check. 2.23.0: review of 2.18-2.22. 2.18-2.22: none tried live. 2.17.0 conductor: live in trial 3.
 
 ## Not verified (be honest about this)
+- 2.26.0: whether builds come out leaner or cheaper is unmeasured. Whether the builder reliably reads a rule sheet when told
+  to is untried (if a trial shows it skips them, put the screens rules back). lean-check is pattern matching: it asks about
+  code that describes these patterns (linters, its own source).
 - Everything from 2.18 on is untried in a live build (M-14, S-12, T-1). macOS and Linux pass the unit tests on GitHub only.
 - 2.25.0: that Claude Code sends Monitor and `mcp__*__run_in_terminal` calls to a regex matcher (`^(Monitor|mcp__.+__run_in_terminal)$`)
   is from the docs' matcher rules, not seen live. The Windows-only Git Bash test is skipped on macOS and Linux.
@@ -42,7 +45,7 @@ this repo) and `CHANGELOG.md` (history). Rewrite this file at the end of every s
 
 ## Do this first next session
 1. T-1: start trial 3's next session on this version; compare review rounds and Opus share with milestone 1. In it, run the
-   canary through Monitor once to confirm the new matcher fires.
+   canary through Monitor once, and note the builder's CUT LIST, the WEIGHT lines and whether it opened `rules/screens.md`.
 2. Check the first weekly `recipes` run. 3. Confirm `...@stable` installs and follows stable. 4. V9/V10 from the docs.
 
 ## Rules that must not regress

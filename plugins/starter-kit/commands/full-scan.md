@@ -13,7 +13,8 @@ description: Use before the user pushes, opens a pull request, deploys, releases
 Run the full pre-ship sweep using the commands listed under "Commands" in CLAUDE.md. All seventeen steps below belong to it:
 1. Full test suite (run once, not watch mode).
 2. Typecheck / static analysis.
-3. Lint.
+3. Lint, then `node "${CLAUDE_PLUGIN_ROOT}/scripts/lean-check.mjs" --project . --base <last ship>` (leftovers: debugger statements,
+   focused tests, conflict markers, packages nothing uses). A BLOCKING line blocks; list the CHECK lines for the owner.
 4. Production build / package / compile.
 5. Security checks: run `node "${CLAUDE_PLUGIN_ROOT}/scripts/sec-tools.mjs" --project .` and every RUN line it prints. The first is
    always the kit's own checks, which need nothing installed: every dependency in every language's lockfile against OSV.dev (known

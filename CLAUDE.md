@@ -22,6 +22,8 @@ the owner's trial runs in a normal session (`docs/trials.md`) and by the hook ca
 - `plugins/starter-kit/procedures/` — a command's full procedure, read on demand by whoever runs it (the `conductor` agent in a
   fresh context, or the main conversation as the fallback). The command file stays a short dispatcher. Checked like commands.
 - `plugins/starter-kit/agents/` — subagents. Reviewers are read-only; the implementer and red team work in their own worktrees.
+- `plugins/starter-kit/rules/` — the builder's rule sheets for one area each (screens, speed, security detail). `implementer.md` is
+  loaded for every feature, so it holds only what every feature needs and points to a sheet for the rest (a test caps its length).
 - `plugins/starter-kit/hooks/` — `hooks.json` starts `gate.mjs`, which runs the individual hook scripts in one process
   (`scripts/inprocess.mjs`): guards before shell commands and edits, the session note, the flight recorder, related tests,
   and the stop-time checks. Every hook script is also runnable and tested on its own.

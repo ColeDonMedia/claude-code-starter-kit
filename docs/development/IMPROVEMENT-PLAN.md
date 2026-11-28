@@ -23,6 +23,7 @@ then stop and report. Do not start the next phase in the same release.
 | Owner request | 2.19.0 | **Done** (2026-11-27, the owner said "Add all"): the UI checklist, the measuring checkpoint, the screen list in the plan, stress data, the milestone sweep and the launch polish list (see CHANGELOG). Proven on fixture pages in a real browser, not yet in a live build. |
 | Owner request | 2.24.0 | **Done** (2026-11-27): the running-cost check in planning (every price quoted from the provider's page and checked, the arithmetic by `cost-model.mjs`), re-run at launch and in maintenance. Unit-tested only; never run against real pricing pages in a live plan (T-1). |
 | Review 3 | 2.25.0 | **Done** (2026-11-28, the owner said "do all"): twelve guard holes found by running the real hooks, each a failing test first (see CHANGELOG). E8 is half done: `scripts/ship-mark.mjs` writes the pass marker after re-checking what a script can prove, and the guards refuse any other way; the security review's APPROVE is still the scan's word (OC-5). Open: G-1 below. |
+| Owner request | 2.26.0 | **Done** (2026-11-28): lean code. The builder's cut list, six lean rules, `lean-check.mjs`, the reviewer's check against the cut list, and the first step of OC-11 (the builder's area rules moved into `rules/` sheets read on demand; `implementer.md` 2,329 to about 1,880 words, capped by a test). Unit-tested; unmeasured in a live build (T-1). |
 | OC — one-click shipping | 2.20.0, 2.21.0 | Not started. Waits for the first live trial (P1-6), whose flight report decides the order inside the phase. Absorbs P2-1, P2-2, P2-3, P2-5 and P4-2. |
 | 2, 3, 4 | — | Not started. What is left of Phase 2 after OC follows it. |
 
@@ -628,6 +629,12 @@ roadmap proof rule, milestone acceptance, the vetting workflow. They are small a
   secret, push and package guards still allow on an internal error, by design ("never block by accident"). Decide after a trial
   whether a failed secret or push check should ask instead.
 - **G-3. Instruction weight.** The five largest instruction files total about 12,500 words against the 4,500 target (OC-11).
+  2.26.0 took about 450 off the builder with rule sheets. Next with the same move: `spec.md` (3,275), `init.md` (3,106) and
+  `procedures/feature.md` (2,458), each split into what every run needs and sheets for the rest.
+- **G-4. Lean check in the project's own GitHub checks.** `lean-check.mjs` runs in the kit only. Copying it into `.claude/tools/`
+  like the secret scanner would make GitHub refuse leftovers whoever commits. Decide after a trial shows its CHECK lines are quiet.
+- **G-5. Vendor skills per stack.** `awesome-agent-skills` (vetted as a directory, `docs/vetted.md`) links official skills for
+  the recipes' services (payments, database, sign-in, email, hosting). Vet each one before listing it in `docs/add-ons.md`.
 
 ## Owner decisions (ask once, with the recommendation)
 

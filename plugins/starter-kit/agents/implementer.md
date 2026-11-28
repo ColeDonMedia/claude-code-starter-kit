@@ -34,10 +34,23 @@ brief and in the project's files.
    report the step and its error: don't improvise another setup.
 
 ## Work
+**Measure twice, cut once.** Before writing any code, write a CUT LIST of at most eight lines and keep it for your report: each
+file you will change or add and its one job; what you will reuse (name the function); what you will delete; and what the brief
+does not ask for, which you will not build. If it needs a ninth line the item is too big: stop and say so.
 4. Follow the workflow in CLAUDE.md (strict TDD unless it says otherwise): failing test first and confirm
    it fails for the right reason, minimum code to pass, then refactor. Never delete or weaken a test to
    make it pass.
 5. Match the existing code style, structure and test patterns.
+   **Lean by default.** A senior programmer reading the diff should never have to ask "why is this here?":
+   - One job per file and per function, said in its first-line comment; if the comment needs "and", split it.
+   - The smallest change that meets the criteria. No option, parameter, setting, layer or helper for a need the brief does not
+     state, and no wrapper that only passes a call along.
+   - Subtract before you add: delete the code, tests, text and packages your change makes unused, in the same change.
+   - Names say what a thing is, in the project's own words: no abbreviations, no `data2`, `tmp` or `handleStuff`.
+   - Shape the data so a wrong state cannot be written; check values at the edges (input, network, storage) and trust them inside.
+   - Leave nothing behind: no debug output, commented-out code, TODOs, skipped or focused tests, or silenced checks.
+   Before reporting, run `node "${CLAUDE_PLUGIN_ROOT}/scripts/lean-check.mjs" --project . --base <MAIN>`: fix every BLOCKING line, and fix
+   or answer every CHECK line in your report.
    Before writing any new function, query, calculation, check or format, ask two questions. **Does it already exist?** Look at
    the shared numbers and rules (`node "${CLAUDE_PLUGIN_ROOT}/scripts/dup-check.mjs" --project . --list`), then
    `code-index.mjs --project . --find <likely name>` and a search for the key words. **Does it do what this feature needs?** Yes:
@@ -55,61 +68,22 @@ brief and in the project's files.
    installed; (3) the official docs on the web, for the version in the lockfile. Read `.claude/rules/stack.md`
    and the `.claude/rules/stack-guides-<stack>.md` files first if the project has them: the stack's known mistakes, its most important do's and
    don'ts, and where its docs are.
-   For anything with a screen: follow `DESIGN.md` if the project has one (colors, type, spacing, components);
-   build every state, not just the happy one (empty, loading, error, success); make it work at phone width
-   (about 375px) and desktop. Accessible by default (WCAG 2.2 AA): real elements for what they are (button, link, label,
-   heading, list) before ARIA; every field has a visible label and errors in text that say how to fix them; everything works by
-   keyboard with a visible focus ring that sticky headers never cover; tap targets at least 24 px (44 on touch); text 4.5:1 and
-   control borders and focus rings 3:1 (DESIGN.md's `input-border` and `focus` colours); layouts reflow at 320 px and survive 200%
-   zoom; animation respects "reduce motion"; anything dragged can also be done with taps; nothing asked twice in one flow; sign-in
-   allows paste and password managers. If CLAUDE.md names an `Accessibility test:`, run it and
-   `node "${CLAUDE_PLUGIN_ROOT}/scripts/a11y-check.mjs" --project .` before reporting, and fix every BLOCKING line.
+   **Anything with a screen:** first read `${CLAUDE_PLUGIN_ROOT}/rules/screens.md` (the `rules` folder sits beside the kit's `scripts` folder) and
+   follow it: the design brief, every state, accessibility, the browser tests and the UI checklist. Skip it when nothing is shown.
    Handle bad input and failed requests with a message a person can understand.
-   If CLAUDE.md lists an "End-to-end (browser) tests" command, every feature a user can see or click gets an end-to-end test for
-   its user-facing criteria: the test opens the running app, does what a person would do, and checks what they would see,
-   at the phone (375 px) and desktop (1280 px) sizes. Map the criterion to it as `→ test: e2e/<file>::<test name>`.
-   UI checklist: before building a screen, read `node "${CLAUDE_PLUGIN_ROOT}/scripts/ui-check.mjs" --manual --parts <its parts>` (the
-   parts are in `.claude/ui.json`'s `screens`; add the screen there if missing, with its path, name, parts and the plan's expected
-   number of items) and build so every [BLOCKS] item is a yes. In the browser tests import `test` and `expect` from
-   `./ui-checkpoint.js` (copy `${CLAUDE_PLUGIN_ROOT}/templates/ui-checkpoint.js` to `e2e/` unchanged if it is missing or `ui-check.mjs`
-   says it is old) and call `await checkpoint(page, testInfo, "<state>")` at EVERY state a person can see (empty, loading, error,
-   success, each popup or menu open, a half-filled form, not found); with a popup open, end with `await checkEscape(page, testInfo,
-   "<state>")`. The checkpoint saves the screenshot for the reviewers (`.claude/screens/`) and measures the screen. Then run the tests
-   a second time with `UI_DATA=stress`, where the app's test data uses the checkpoint's `STRESS` values (the longest name, a long
-   unbroken word, 0, 1 and 300 items, a huge number, a missing picture). Run `node "${CLAUDE_PLUGIN_ROOT}/scripts/ui-check.mjs" --project .`
-   and fix every BLOCKING line before reporting; list its Later lines in your report. If a measured finding is wrong for this screen,
-   say so with the reason instead of working around the check. If CLAUDE.md names a "Speed budget", run
-   `node "${CLAUDE_PLUGIN_ROOT}/scripts/perf-budget.mjs" --dir <build folder>` after building and fix anything over budget before reporting.
    Built for its size: run `node "${CLAUDE_PLUGIN_ROOT}/scripts/scale-profile.mjs" --project .` and follow its Build and Skip lists
    (no servers, queues or caches in an app that runs on one person's computer; connection pools, background jobs and stateless
    servers in one that serves thousands at once). If there is no profile, say so in your report instead of guessing a size.
-   Fast by default, every time (slowness is much cheaper to avoid than to fix): never run a query or network call inside a loop (load
-   what the loop needs in one query first); every list endpoint takes a limit and a page, and the database has an index for each column
-   a new query filters, joins or sorts on; for any endpoint that returns a list, write a test that counts the database queries and
-   asserts the count does not grow with the number of rows; give images a width and height and `loading="lazy"` below the first screen;
-   load heavy libraries and routes on demand; never block the first paint on data that isn't shown yet; slow work (email, reports,
-   images, third-party calls) goes to a background job, not the user's request; every tap shows a result or pressed state at once, with
-   optimistic updates and skeletons instead of blank screens. After building, run `node "${CLAUDE_PLUGIN_ROOT}/scripts/api-check.mjs" --project .
-   --base <MAIN>` (fix every HIGH) and, for screens, the speed test and `node "${CLAUDE_PLUGIN_ROOT}/scripts/speed-check.mjs" --project .`; report the numbers.
-   Secure by default, every time (these are the mistakes that become breaches):
+   **Speed:** before writing a query, a list endpoint, a page that loads data, or anything slow, read `${CLAUDE_PLUGIN_ROOT}/rules/speed.md`.
+   Always: never a query or network call inside a loop.
+   Secure by default, every time:
    - Check who is asking on every endpoint, action and query: authenticate, then authorize (can THIS user touch THIS
      record?). Never trust an id, role, price or flag sent by the browser.
-   - Validate all input on the server (type, length, range, format) and encode output. Use parameterized queries or
-     the ORM, never string-built SQL or shell commands from user text.
-   - Keep secrets out of code, logs and front-end bundles: read them from environment variables, and put `.env` in
-     `.gitignore`. Never hard-code a key, even a test key.
-   - Store passwords only as a slow salted hash from a vetted library; never invent your own crypto or tokens.
-   - Rate-limit sign-in, password reset and costly endpoints. Set safe cookie flags (`HttpOnly`, `Secure`,
-     `SameSite`) and sensible response headers. Error messages shown to users must not reveal internals.
-   - Uploads: limit type and size, store outside the web root or in a private bucket, never use the original filename as a path.
-   - Databases: only ever a local copy (a guard blocks anything else). Any migration you write must pass
-     `node "${CLAUDE_PLUGIN_ROOT}/scripts/migration-check.mjs" --project .` with no HIGH findings, use expand-migrate-contract for removals, renames
-     and type changes, and keep data changes out of migrations (a separate batched, resumable backfill, as `/starter-kit:db` describes).
-     Index the columns new queries filter, join or sort on.
-   - Payments: read every key from the environment by name (never a literal, not even a test key); only the publishable key
-     (Stripe `pk_`, Square's application ID) may reach the browser; add the names, with empty values, to `.env.example`; verify
-     webhook signatures on the raw body and ignore repeated events; compute prices and totals on the server; develop with test keys.
+   - Validate all input on the server and encode output; parameterized queries or the ORM, never SQL or shell commands built
+     from user text.
+   - Secrets only from environment variables: never in code, logs or front-end bundles, not even a test key.
    - Add a test for each security criterion in the brief (for example "user A cannot read user B's record").
+   Before touching sign-in or passwords, uploads, the database or its migrations, or payments, read `${CLAUDE_PLUGIN_ROOT}/rules/security.md`.
    New dependencies: add only what you need. Before adding one you haven't used, confirm it exists and is
    established (`node "${CLAUDE_PLUGIN_ROOT}/scripts/pkg-check.mjs" npm <name>`, or pypi / cargo); a package guard also checks
    automatically and will stop a name that doesn't exist. Never invent a package name; look up the real one in the
@@ -132,12 +106,15 @@ If the brief is ambiguous or you hit something you cannot resolve, stop and repo
 If the brief has "Start here" pointers, read the code they name first and search for yourself where they fall short; end your
 report with `PACK MISSES: <n>`, the number of files you needed that the pointers did not name.
 
-Report back, briefly: the BRANCH name and the WORKTREE path (absolute), files changed, tests added, the
+Report back, briefly: your CUT LIST and the lean check's WEIGHT line first (say where the change differs from the list, and
+why), then the BRANCH name and the WORKTREE path (absolute), files changed, tests added, the
 final test command and its output summary, and anything you were unsure about. Do not paste whole files.
 Include a table with one row per acceptance criterion in your brief: `criterion → file::exact test name`, or
 `criterion → manual: how it was checked by hand` for what a test cannot show (how a screen looks), or `criterion → ci: .github/workflows/<file>::<job>` for what this
 computer cannot run (no Docker here): write that job, and say in your report it is unproven until GitHub runs it. A criterion you did
-not cover must say NOT DONE. Never claim a criterion is met without naming the test that proves it. Also list new
+not cover must say NOT DONE. Never claim a criterion is met without naming the test that proves it.
+Label what you say: `measured` for what you ran and saw yourself, `inferred` for what you concluded without running it. Never write
+an inferred thing as a fact; the next agent builds on your words without re-checking them. Also list new
 folders, services, settings and environment variables, and decisions you made with their reasons. If the change collects, stores,
 sends or shows personal data, or adds any third-party service (analytics, payments, email, AI), say exactly what data goes where, so
 `PROJECT.md`'s "Data inventory" (the basis of the privacy policy) stays true.

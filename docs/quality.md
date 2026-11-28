@@ -10,6 +10,28 @@
   and the reviewers approve.
 - `tdd` runs one red → green → refactor cycle for a small change in the current conversation.
 
+## Lean code: measure twice, cut once
+
+The aim is code a senior programmer reads without asking "why is this here?".
+
+- **A cut list before any code.** The builder first writes, in at most eight lines, each file it will touch and that file's one
+  job, what it will reuse, what it will delete, and what it will not build. The reviewer compares the finished change with that
+  list: a file, option, setting, layer or package nobody asked for is sent back.
+- **Six rules the builder follows every time:** one job per file and function; the smallest change that meets the criteria;
+  delete what the change makes unused; names in the project's own words; data shaped so a wrong state cannot be written; nothing
+  left behind.
+- **A script checks for leftovers** (`lean-check.mjs`), on only the lines the change added, in any language:
+  - *Blocks:* a debugger statement, a focused test (`.only`, which silently stops the rest of the suite), a merge-conflict
+    marker, a package added that nothing in the project uses.
+  - *Must be answered:* debug output, a TODO, commented-out code, a skipped test, a silenced type or lint check, an empty catch, a
+    new file nothing refers to, a new file over 400 lines.
+  - It also prints the change's weight (files, lines, tests against code, new packages), so "is this bigger than the job needed?"
+    is asked of a number.
+- The builder runs it before reporting, the reviewer runs it again, and the pre-ship scan runs it over everything since the last
+  release.
+- **Its limit:** it finds litter, not clumsy design. Structure is still judged by the reviewers, and nothing has measured yet
+  whether these rules make the code leaner in a real build.
+
 ## Reviewers
 
 | Reviewer | What it checks |

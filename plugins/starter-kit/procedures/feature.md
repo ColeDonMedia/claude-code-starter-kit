@@ -45,8 +45,8 @@ project's records, so a big project doesn't mean a big brief. Then add:
   each one, follow its rules and write the tests from its "Prove it with tests" list that apply. Give the same paths to the
   reviewer, challenger and security reviewer: a card rule broken or a card test missing for a case the feature has is BLOCKS.
 
-It commits on its own branch and reports the BRANCH name and the WORKTREE path. Keep its agent ID —
-you will need it in step 2.
+It commits on its own branch and reports its CUT LIST (what it planned to touch, written before any code), the BRANCH name and
+the WORKTREE path. Keep its agent ID — you will need it in step 2 — and give the CUT LIST to the reviewer with the brief.
 
 ## 2. Review (subagents)
 Launch the starter-kit `reviewer` agent, plus `ui-reviewer` in parallel if UI files changed, plus the

@@ -338,7 +338,7 @@ passed for that exact commit.**
 |---|---|---|
 | 1 | Every test | any fails |
 | 2 | Type checks | any error |
-| 3 | Lint | any error |
+| 3 | Lint, and the lean check (nothing left behind: debugger statements, focused tests, conflict markers, packages nothing uses) | any error, or any leftover |
 | 4 | Production build | it fails |
 | 5 | Security scanners: every dependency in every language against the OSV.dev database of known flaws and malware, GitHub workflows, Dockerfiles, Compose files, plus `npm audit` | a HIGH finding (or the owner records it as an accepted risk) |
 | 6 | Security reviewer on everything changed since the last ship (Opus) | it doesn't approve |

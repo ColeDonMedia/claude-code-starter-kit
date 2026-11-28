@@ -123,6 +123,10 @@ you to pick. The choice becomes `DESIGN.md`, which every screen follows.
 - a **conductor** agent runs the whole build away from your chat; the build's progress is recorded so a cut-off resumes where it stopped
 - a **builder** works in its own copy of the project, on its own branch, **test first**: one failing test per agreed criterion, then
   the code, committing after every passing test
+- **measure twice, cut once:** before any code the builder writes a short cut list (each file it will touch and its one job, what it
+  reuses, what it deletes, what it will not build). A script then checks the finished change left nothing behind (debugger
+  statements, focused tests, unused packages, commented-out code, TODOs), and the reviewer sends back anything nobody asked for.
+  [How lean code is kept](docs/quality.md#lean-code-measure-twice-cut-once)
 - before writing anything new it asks **"does this already exist, and does it do what this feature needs?"** It reuses it, or
   extends that one function, and never writes a second version beside it. A copy-check finds code it wrote twice before review does
 - when it isn't sure how a library works, it reads **the installed copy first** (exact version, free), then the official docs, never memory

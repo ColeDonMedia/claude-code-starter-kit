@@ -4,6 +4,31 @@ What changed in each release of the starter-kit plugin, newest first, in plain w
 repository's history. Every release bumps `version` in `plugins/starter-kit/.claude-plugin/plugin.json`; a test
 fails if this file has no entry for the current version.
 
+## [2.26.0] — 2026-11-28
+The owner asked for the leanest, cleanest code the kit can produce ("measure twice, cut once") at a lower token cost.
+- **A cut list before any code.** The builder first writes, in at most eight lines, each file it will touch and that file's one
+  job, what it reuses, what it deletes and what it will not build. The reviewer compares the finished change with the list and
+  sends back any file, option, setting, layer or package nobody asked for.
+- **Six lean rules in the builder's instructions:** one job per file and function; the smallest change that meets the criteria;
+  delete what the change makes unused; names in the project's own words; data shaped so a wrong state cannot be written; nothing
+  left behind.
+- **A script checks for leftovers:** `scripts/lean-check.mjs` reads only the lines a change added, in any language.
+  - It blocks on a debugger statement, a focused test (`.only`), a merge-conflict marker, and a package added that nothing uses.
+  - It asks about debug output, TODOs, commented-out code, skipped tests, silenced type or lint checks, empty catches, a new file
+    nothing refers to, and a new file over 400 lines.
+  - It prints the change's weight: files, lines, tests against code, new packages.
+  - The builder runs it before reporting, the reviewer runs it again, and the pre-ship scan runs it with the lint step.
+- **The builder's instructions are a fifth shorter** (2,329 words to about 1,880), with the lean rules included. The rules for
+  screens, speed and security detail moved, word for word, into `rules/` sheets the builder reads only when the work touches that
+  area. The four security rules that apply to every feature stay in its own text. A test caps its length.
+- **Reports say what was measured.** The builder labels what it ran and saw (`measured`) apart from what it concluded (`inferred`).
+- **Two repos vetted** (`docs/vetted.md`): 100x-engineer-skill (three principles reworded, nothing copied; not an add-on) and
+  awesome-agent-skills (a directory of links; nothing to install).
+- Not added, on purpose: executive "persona" agents, a second memory system (the linked notes, code map and context pack already
+  do that job), and a second model as judge.
+- Unit-tested, and run on the kit's own last two releases. Not tried in a live build: nothing has measured yet whether builds
+  come out leaner or cheaper.
+
 ## [2.25.0] — 2026-11-28
 From a review that ran the real hooks against a throwaway project on Windows. The owner asked for all of it ("do all"). Every hole
 below got through before this release; each is now a test that fails on 2.24.0 (`hooks/gaps.test.mjs`, round 7 of both fuzz files).

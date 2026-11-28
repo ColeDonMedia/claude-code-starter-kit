@@ -4,6 +4,26 @@ What changed in each release of the starter-kit plugin, newest first, in plain w
 repository's history. Every release bumps `version` in `plugins/starter-kit/.claude-plugin/plugin.json`; a test
 fails if this file has no entry for the current version.
 
+## [2.24.0] — 2026-11-27
+- **The plan now says what the app will cost to run.** The owner asked for it. It applies to anything hosted, sold in a store or using paid
+  services. `procedures/spec-costs.md` lists every line: the domain and its renewal; hosting and its hidden lines (data sent out,
+  load balancers, IP addresses, NAT, logs); the database; files; email; texts with number rental and carrier registration; sign-in; AI
+  and other APIs; free credits and the bill after them; payment fees; monitoring; store accounts and signing certificates; tools; and
+  what is not counted.
+- **How prices are checked:** researchers on Sonnet quote each price from the provider's own page or official price list. The
+  citation check confirms each quote is on its page.
+- **The arithmetic is done by a script:** `scripts/cost-model.mjs` reads `.claude/costs.json` and the scale profile. It prints:
+  - the minimum to begin and the recommended setup, with headroom
+  - what to invest, and the first year in total
+  - the bill and cost per user at each size up to ten times the expected one, with alternatives side by side
+  - the exact user count at which each plan runs out of room, what to move to, and what that adds a month
+  - break-even, and stale prices (older than 30 days)
+- **No made-up prices:** every price must be the number written in its own quote. `--verify` also fetches every page.
+- **Launch and maintenance:** launch re-runs the check on fresh prices and sets spending alerts at the recommended figure. The
+  monthly check-up updates usage from real numbers and says how close the next upgrade point is.
+- **GitHub page:** a new "What it will cost to run" section.
+- Unit-tested only: no live plan has priced real pages yet.
+
 ## [2.23.0] — 2026-11-27
 From a review of everything added in 2.18 to 2.22. The owner asked for all of it and delegated the open decisions ("defer to you
 on decisions"); each is recorded in the plan as Claude's decision, made at the owner's request.

@@ -93,8 +93,12 @@ Every BLOCKING line is fixed before launch; also clear the UI items in PROJECT.m
 are left and why.
 
 ## 7. Costs and limits
-Estimate the monthly cost at the expected traffic from CURRENT pricing pages (say they are estimates and when you checked), set a spending
-alert on every paid service, and note each free-tier limit and what happens when it is reached ("Costs and limits").
+Check the costs again from CURRENT pricing pages: follow `${CLAUDE_PLUGIN_ROOT}/procedures/spec-costs.md` (re-check every price
+`cost-model.mjs` calls STALE, add whatever the launch set-up added, such as error tracking or uptime checks), and run
+`node "${CLAUDE_PLUGIN_ROOT}/scripts/cost-model.mjs" --project . --verify` until it passes. Tell the owner what changed since the plan.
+Set a spending alert on every paid service, just above the recommended monthly figure, and write into "Costs and limits" the
+estimate, the upgrade points (each as the number to watch: "move the database up at about 2,500 users"), each free-tier limit and
+what happens when it is reached, and the date the prices were checked. Say they are estimates.
 
 ## 7b. Measure and listen
 Set up what the plan promised: the analytics (or counts) behind the success measures, with consent handled as `/starter-kit:legal` decided,
@@ -125,7 +129,7 @@ Restore last tested: YYYY-MM-DD
 ## Common problems
 <symptom — likely cause — what to do>
 ## Costs and limits
-<monthly estimate, alerts, free-tier limits>
+<monthly estimate, alerts, upgrade points, free-tier limits, date the prices were checked>
 ## Accounts
 <which services have accounts and who owns each; never passwords or keys>
 ```

@@ -3,11 +3,11 @@
 Read this, then `IMPROVEMENT-PLAN.md` (open work; finished items are in `PLAN-DONE.md`), the root `CLAUDE.md` (how to work on
 this repo) and `CHANGELOG.md` (history). Rewrite this file at the end of every session; keep it under 55 lines and true.
 
-## State at version 2.23.0 (2026-11-27)
+## State at version 2.24.0 (2026-11-27)
 - Public repo, MIT, installed from GitHub. Auto-update checks once per 24 hours at session start; a new version takes effect on the
   session AFTER that. This machine is updated by hand before each trial.
-- `plugins/starter-kit/`: 21 commands, 3 procedure files (`procedures/`, renamed from `workflows/` because Claude Code now reads a
-  plugin's `workflows/` as dynamic-workflow `.js` scripts), 11 agents, 23 hook scripts (`gate.mjs` runs the rest), 61 helper
+- `plugins/starter-kit/`: 21 commands, 4 procedure files (`procedures/`, renamed from `workflows/` because Claude Code now reads a
+  plugin's `workflows/` as dynamic-workflow `.js` scripts), 11 agents, 23 hook scripts (`gate.mjs` runs the rest), 62 helper
   scripts, 6 pattern cards (`cards/`), 4 stack recipes (`presets/`), vetted data in `library/`. Tests: see the release check below.
 - OWNER RULE: never spend API tokens (no `claude -p`, no npx claude-code runs, no `claude plugin eval`). `CLAUDE.md` says so.
 - RELEASES (D7, 2026-11-27): push (with the owner's yes) to `candidate`; GitHub tests six setups and only then moves `main` and
@@ -18,6 +18,7 @@ this repo) and `CHANGELOG.md` (history). Rewrite this file at the end of every s
 - Trial 3 (2.17.2, `docs/trials.md`) finished milestone 1 and is on F-004. Its next NEW session is the first live run of 2.18+.
 
 ## Recent work, and how far it is verified
+- 2.24.0: running-cost check (`procedures/spec-costs.md`, `cost-model.mjs`; quoted prices, script arithmetic). Unit-tested.
 - 2.23.0 (review of 2.18-2.22): `(existing ...)` only under Milestone 0 and only for commits before the first roadmap; One-source
   entries need a test and "Shown on" files that call the function (NO TEST / NOT USED fail, CHECK lines name likely second
   versions); the guard follows `cd`, asks before moving code out of the project or overwriting a code file (`>`, Set-Content,
@@ -26,13 +27,12 @@ this repo) and `CHANGELOG.md` (history). Rewrite this file at the end of every s
   Milestone 0; planning split (`procedures/spec-takeover.md`, `spec-market.md` with a cheap demand test); session note 493 words;
   stack guides one path-scoped file per stack; setup's three permission levels; pattern cards; recipe containers (never built
   here: no Docker; the weekly `recipes.yml` builds them); flaky-test step in `tests.yml`; README model/effort and Ultracode section.
-- 2.22.0 stack guidelines; 2.21.0 delete protection, snapshots, take-over, Scope blocks, cite-check; 2.20.0 recipes (real setup of
-  all four passed here), stack alternatives, installed docs first, one source, market check. None tried in a live build.
-- 2.18.0-2.19.1: user-tester, milestone gaps, conductor waits, token records, status against scope, worth-it, security hooks and
-  built-in scanners, UI checklist, stable channel. Not verified live. 2.17.0 conductor: live in trial 3.
+- 2.18-2.22 (stack guidelines, delete protection, snapshots, take-over, Scope blocks, cite-check, recipes, one source, market
+  check, user-tester, security hooks, UI checklist, stable channel): none tried live. 2.17.0 conductor: live in trial 3.
 
 ## Not verified (be honest about this)
 - Everything from 2.18 on is untried in a live build (M-14, S-12, T-1). macOS and Linux pass the unit tests on GitHub only.
+- The cost check has never priced real pages: many pricing pages need scripts and will come back UNREACHABLE to cite-check.
 - Recipe containers and the weekly recipe job have not run yet. Database dumps never ran against a real Postgres or MySQL.
 - Whether plugin and kit hooks fire inside dynamic-workflow agents is inferred from the docs, not tested (W-2).
 - Pattern-based screens, not proof: the PowerShell reader, code index, API and migration checks, model-route's risky words,

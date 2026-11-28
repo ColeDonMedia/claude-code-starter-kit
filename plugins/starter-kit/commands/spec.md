@@ -54,7 +54,9 @@ competing or similar products, what every one of them has (table stakes), and wh
 result in the gap check.
 For an app meant to be sold or to win users (not a private tool), also read `${CLAUDE_PLUGIN_ROOT}/procedures/spec-market.md` and
 run the market check it describes: demand, buyers, gaps, a verdict (**build it**, **build it narrower**, **pivot** or **think
-again**) and the cheapest real demand test. If there are no web tools, say so and continue.
+again**) and the cheapest real demand test. For an app that will be hosted, sold in a store or use paid services, also read
+`${CLAUDE_PLUGIN_ROOT}/procedures/spec-costs.md` and run the cost check: every price from the provider's own page, the arithmetic
+by `cost-model.mjs`. If there are no web tools, say so and continue.
 
 ## 4. Choose the stack (new projects only)
 First run `node "${CLAUDE_PLUGIN_ROOT}/scripts/presets.mjs" --match --project .`: the kit has tested recipes for common kinds of
@@ -124,6 +126,8 @@ this file, and the ui-reviewer scores each screen against it. The accessibility 
   what would be hard to copy, the recommended gap features and any pivots, each with its source
 - **Built with** — the recommended stack, one line each, marked "kit recipe: <id>" when it is one; then the alternatives
   with their pros and cons, and "approving the plan keeps the recommendation; name another stack if you want it"
+- **Running costs** (hosted, store or paid-service apps) — from the cost check: the minimum to begin, the recommended setup, what
+  to invest, the bill at each size, when to upgrade each plan, break-even, the alternatives, free-tier limits, the date checked
 - **Numbers and rules** — every number shown to users or used to decide something (monthly income, totals, counts, prices,
   tax, "active customer", "overdue"), each with one plain definition ("monthly income: paid invoices this calendar month,
   refunds subtracted"). Approving the plan approves the definitions; the same number must mean the same thing everywhere.
@@ -175,7 +179,8 @@ On approval, write the project's memory so any later session can pick up with fu
   decisions made in this planning (with the reasons and what was rejected), current state, known problems, next steps,
   plus `## Success measures` and `## Risks` (one line each, as agreed in the plan), and `## One source`: one line per number and
   rule from the plan (`- Monthly income: <file>::<function> — the definition. Shown on: <file>, <file>`), the file and the files
-  that show it filled in as they are built.
+  that show it filled in as they are built. Add `## Costs` (the totals and upgrade points) when the cost check ran, and commit
+  `.claude/costs.json` with the plan.
 - `DECISIONS.md`: append-only, one line per decision with an id (`- <date> — <decision> {#D-001}, because <reason>; rejected: <alternative>`;
   next number from `node "${CLAUDE_PLUGIN_ROOT}/scripts/notes-graph.mjs" --project . --next-id D`); record the planning decisions in it now. Give each roadmap
   feature an id (`{#F-001}`) and have it point at the decisions it follows (`[[D-001]]`). A decision that is replaced later gets

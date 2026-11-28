@@ -42,7 +42,9 @@ and re-read the red team's last findings for anything still open. Rotate any key
   `node "${CLAUDE_PLUGIN_ROOT}/scripts/scale-profile.mjs" --project . --actual usersTotal=<n> usersPeak=<n>`. Past half of the plan, re-run the
   load test (or the desktop check) at the planned size now; past the plan, update the profile with its suggested numbers, re-test, and tell
   the owner in plain words what will need to change before the next doubling.
-- Costs: compare this month's bill or usage with the estimate in RUNBOOK.md and say if it is drifting.
+- Costs: compare this month's bill or usage with the estimate in RUNBOOK.md and say if it is drifting. When `.claude/costs.json`
+  exists, update its usage per user from the real numbers, run `cost-model.mjs --project .` and say which upgrade point is next
+  and how close it is; re-check any price it calls STALE from the provider's page.
 - Expiring things: domain renewal, certificates, API keys with an end date, free trials.
 
 ## 4. Record it

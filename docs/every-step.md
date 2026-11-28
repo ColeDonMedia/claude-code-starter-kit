@@ -113,6 +113,13 @@ correct.
    recommends the feature gaps worth building and, if it is crowded, one to three less crowded directions, all with sources. It's a recommendation; you decide. Claude checks their claims and re-checks prices, legal rules and security advice on
    a stronger model. A **citation check** then opens every cited page and confirms the quoted words are really on it; a claim whose
    quote isn't there is dropped or re-sourced, and a page that won't load is marked unchecked.
+   For anything hosted, sold in a store or using paid services it also runs **the cost check**: every cost the app will have (domain
+   and its renewal, hosting and its hidden lines, database, files, data sent out, email, texts, sign-in, AI and other APIs, free
+   credits and the bill after them, payment fees, monitoring, store accounts and signing certificates, tools), each quoted from the
+   provider's own page. The citation check confirms each quote and that the price used is the number in it, and the kit's calculator
+   (`cost-model.mjs`, from `.claude/costs.json`) works out the minimum to begin, the recommended setup, what to invest, the bill at
+   each size up to ten times the expected one, the user count at which each plan must be upgraded, and break-even. The plan shows
+   them, with the date the prices were checked and what is not counted (taxes, company costs, your time).
 5. **Chooses the technology.** First it checks whether one of the kit's **tested recipes** fits the kind and size of app: a website,
    a web app with sign-in and a database, an API, or a desktop app. A recipe brings the official setup at pinned versions, the
    commands, the host, the accounts and settings you'll need, and the stack's known mistakes. Otherwise it picks something widely used,
@@ -372,7 +379,9 @@ paste a secret into the chat, never writes one into a file, and asks before anyt
 8. **The front door:** domain, HTTPS, redirects, security headers and CORS, checked on the staging address.
 9. **Finishing touches:** favicon, page descriptions and link previews, a friendly "page not found" and "something went wrong" page, and the
    UI items left on the "Harden before launch" list.
-10. **Costs and limits:** a monthly estimate from current price pages, spending alerts, and what happens when each free tier runs out.
+10. **Costs and limits:** the cost check again on today's prices (anything older than 30 days is re-checked, and what changed since
+    the plan is reported), a spending alert on every paid service, the upgrade points as numbers to watch, and what happens when each
+    free tier runs out.
 11. **Measuring and listening:** the numbers behind your success goals, real-user speed, and a "report a problem" link that reaches an inbox
     you read.
 12. **Writes `RUNBOOK.md`:** overview, environments, how to deploy, how to roll back, backups and restore, monitoring, common problems,

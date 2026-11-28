@@ -101,6 +101,9 @@ update proves the guards are running. Updates install themselves once a day, onl
   it is, and a gap competitors would find hard to copy. The plan gives a verdict (build it, build it narrower, pivot, or think again),
   recommends gap features and, if it is crowded, less crowded directions, with sources. **Every citation is checked by a script**:
   it opens the page and confirms the quoted words are really there, so an invented source or a wrong price is dropped
+- **what it will cost to run**, for anything hosted, sold in a store or using paid services: every cost from the domain to text
+  messages, priced from the providers' own pages and checked by a script, with the minimum to begin, the recommended setup, what to
+  invest, the bill at each size and when to upgrade each plan (see [What it will cost to run](#what-it-will-cost-to-run) below)
 - the stack: a **recommended stack plus one or two alternatives, each with plain pros and cons**. Approving the plan keeps the
   recommendation; you can pick another or name your own (any language). For common kinds of app the recommendation is a **tested
   recipe** (see [Stack recipes](#stack-recipes) below)
@@ -144,7 +147,8 @@ security review, browser tests, your acceptance, database changes, records, spee
 push and deploy until that exact commit has passed.
 
 **9. The first launch.** Separate test and live copies, payments in test mode first, automatic deploys, error and uptime alerts,
-a backup that has actually been restored, a practised rollback, HTTPS and security headers, cost estimates, and a `RUNBOOK.md`.
+a backup that has actually been restored, a practised rollback, HTTPS and security headers, the cost check re-run on today's prices
+with a spending alert on every paid service, and a `RUNBOOK.md`.
 It asks for your go-ahead before going live.
 
 **10. After launch.** A monthly check-up (updates, security, backups, speed, costs), outage handling that restores service first, and
@@ -171,6 +175,56 @@ starter's settings, and example code that failed its own lint check. The kit han
 Every recipe is set up from scratch and must pass its own tests, type checks, lint and build in the kit's own test, run whenever a recipe
 changes; each recipe records the date it last passed.
 Deploying to a host is set up at launch and is not part of that test.
+
+## What it will cost to run
+
+Before anything is built, the plan tells you what the app will cost: to start, to run at the size you expect, and at every size after
+that. A model's memory of prices is months old and often wrong, so **no price in this check comes from memory and no total is worked out
+by the model.**
+
+**How the prices are found**
+- Researchers (on Sonnet, because a wrong price costs money) compare two or three real options for each need. For hosting that might be
+  a server host (such as DigitalOcean or AWS), a platform host (such as Vercel) and a serverless host (such as Cloudflare), chosen to fit
+  the stack and the size.
+- Every price is quoted from **the provider's own pricing page**, or from its official machine-readable price list where one exists
+  (AWS and Azure publish theirs without a key).
+- A script opens each page and confirms **the quoted words are on it**. A second check confirms **the price used is the number in
+  the quote**, so a misremembered "$6" can't become "$5". A page that shows prices only after scripts run is marked "checked by hand".
+
+**Every line, including the gritty ones**
+
+| Area | What's counted |
+|---|---|
+| Domain | first-year price **and renewal price** (often higher), privacy for your details, DNS, premium names; https certificates (usually free) |
+| Hosting | the plan's memory, CPU, requests and build minutes; team seats; extra regions; the hidden lines: data sent to users, load balancers, public IP addresses, NAT gateways, logs, snapshots |
+| Database | the plan, storage, backups and point-in-time restore, connection limits, a standby copy when downtime costs money |
+| Files | storage, requests per thousand, data sent out, a CDN for heavy pages |
+| Email | sign-up, reset, receipts and notifications counted per user; marketing email apart; a business inbox if you need one |
+| Texts | price per message in each country, phone-number rental, carrier registration fees (US business texting), sign-in code services |
+| Sign-in, AI and APIs | price per active user; per million AI tokens in and out; maps, search and other APIs; free credits, **when they run out, and the bill after** |
+| Payments | card percentage and fixed fee, international and currency fees, disputes, subscription and tax add-ons, and the merchant-of-record alternative that handles sales tax for you |
+| Running it | error tracking, uptime checks, log retention, off-site backups |
+| Stores and signing | app-store developer accounts, desktop code-signing certificates |
+| Tools | paid plans for the code host, CI minutes past the free amount |
+| Not counted | taxes, company registration, an accountant, insurance and your own time. The plan says so plainly. |
+
+**What you get**, worked out by the kit's own calculator from those prices and the plan's size (`.claude/costs.json`, so it can be
+re-run at any time):
+- **Minimum to begin:** the smallest plans that work for your first users, a month.
+- **Recommended:** the plans that fit the size you expect, with the same headroom the load test uses, and why. Payment fees are shown
+  apart, because they come out of what customers pay.
+- **To invest:** what's paid once (store accounts, certificates), and the first year in total at both sizes.
+- **At each size:** the monthly bill and the cost per user, from your first users to ten times the expected size, with every
+  alternative priced side by side, so you see where one host gets cheaper than another.
+- **When to upgrade:** "at about 2,500 users, move the database to the next plan: $45 more a month". Usage grows with users, so these
+  are exact counts, not guesses.
+- **Break-even:** when what users pay covers the bill, if the app is sold.
+- **Free-tier limits** and what happens at each one (the service stops, or starts charging), the **costs that can grow faster than
+  users** (texts, AI, data sent out) in the risk list, and the **date the prices were checked**.
+
+It is an estimate from today's public prices, never a quote, and the plan says so. At launch the check runs again on fresh prices,
+anything older than 30 days is re-checked, and a spending alert is set on every paid service. The monthly check-up compares the real
+bill with the estimate, updates usage from real numbers, and tells you how close the next upgrade point is.
 
 ## How it saves tokens without cutting corners
 

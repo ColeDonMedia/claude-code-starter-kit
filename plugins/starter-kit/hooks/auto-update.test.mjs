@@ -69,13 +69,22 @@ test("a plugin loaded from a plain folder (development) is never updated", () =>
   }
 });
 
-test("off switches: kit.json autoUpdate:false, kit.json auto:false, KIT_AUTOUPDATE=0", () => {
+test("off switches: kit.json autoUpdate:false, kit.json auto:false (once the owner approved them), KIT_AUTOUPDATE=0", async () => {
+  const lib = await import("../scripts/trust-lib.mjs");
   for (const cfg of [{ autoUpdate: false }, { auto: false }]) {
     const b = box();
     try {
       mkdirSync(join(b.project, ".claude"), { recursive: true });
       writeFileSync(join(b.project, ".claude", "kit.json"), JSON.stringify(cfg));
-      assert.equal(launch(b).stdout, "", JSON.stringify(cfg));
+      // Since 2.25.0 a project file alone cannot stop the kit's fixes from arriving.
+      assert.match(launch(b).stdout, /WOULD UPDATE/, `${JSON.stringify(cfg)} unapproved`);
+      rmSync(join(b.data, "auto-update.stamp"), { force: true });
+      const prev = process.env.KIT_DATA_DIR;
+      process.env.KIT_DATA_DIR = b.data;
+      lib.trustEntries(b.project, lib.entriesOf(cfg));
+      if (prev === undefined) delete process.env.KIT_DATA_DIR;
+      else process.env.KIT_DATA_DIR = prev;
+      assert.equal(launch(b).stdout, "", `${JSON.stringify(cfg)} approved`);
     } finally {
       b.cleanup();
     }

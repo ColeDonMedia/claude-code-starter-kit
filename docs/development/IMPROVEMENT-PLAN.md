@@ -22,6 +22,7 @@ then stop and report. Do not start the next phase in the same release.
 | 1 — verifiable | 2.18.0 | P1-1 and P1-2 written (2026-11-26, owner said "Implement": D2 yes), not yet run on GitHub. P1-3 to P1-5 and P1-7 open. When P2-4 moves rule blocks into references, the WCAG list in `scripts/wcag.mjs` is the source for the accessibility reference. |
 | Owner request | 2.19.0 | **Done** (2026-11-27, the owner said "Add all"): the UI checklist, the measuring checkpoint, the screen list in the plan, stress data, the milestone sweep and the launch polish list (see CHANGELOG). Proven on fixture pages in a real browser, not yet in a live build. |
 | Owner request | 2.24.0 | **Done** (2026-11-27): the running-cost check in planning (every price quoted from the provider's page and checked, the arithmetic by `cost-model.mjs`), re-run at launch and in maintenance. Unit-tested only; never run against real pricing pages in a live plan (T-1). |
+| Review 3 | 2.25.0 | **Done** (2026-11-28, the owner said "do all"): twelve guard holes found by running the real hooks, each a failing test first (see CHANGELOG). E8 is half done: `scripts/ship-mark.mjs` writes the pass marker after re-checking what a script can prove, and the guards refuse any other way; the security review's APPROVE is still the scan's word (OC-5). Open: G-1 below. |
 | OC — one-click shipping | 2.20.0, 2.21.0 | Not started. Waits for the first live trial (P1-6), whose flight report decides the order inside the phase. Absorbs P2-1, P2-2, P2-3, P2-5 and P4-2. |
 | 2, 3, 4 | — | Not started. What is left of Phase 2 after OC follows it. |
 
@@ -616,6 +617,17 @@ roadmap proof rule, milestone acceptance, the vetting workflow. They are small a
   settings code at the top of each hook. Refactor in a quiet release, with the full fuzz suite both ways, never alongside a feature.
 - **T-1. A live trial of 2.18 to 2.23** before more features: trial 3's next session, then compare review rounds and Opus share
   with milestone 1, and measure the token-saving claims on the GitHub page.
+
+## Open items added 2026-11-28 (review 3)
+
+- **G-1. Branch rules on GitHub.** `main`, `stable` and `candidate` reported `protected=false`. Add rules for `main` and `stable`:
+  no force-push, no deletion. These cannot block the promote job's fast-forward push. Requiring the tests check would also stop a
+  direct push to main, but could stop the promote job too; try that only with a test release. A repository setting, so it needs
+  the owner's yes.
+- **G-2. Crash behaviour of the other shell guards.** The safety guard now asks when it fails internally (2.25.0). The db,
+  secret, push and package guards still allow on an internal error, by design ("never block by accident"). Decide after a trial
+  whether a failed secret or push check should ask instead.
+- **G-3. Instruction weight.** The five largest instruction files total about 12,500 words against the 4,500 target (OC-11).
 
 ## Owner decisions (ask once, with the recommendation)
 

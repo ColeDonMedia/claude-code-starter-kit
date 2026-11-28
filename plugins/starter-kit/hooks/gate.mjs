@@ -21,16 +21,19 @@ import { combine, runHook } from "../scripts/inprocess.mjs";
 const HERE = dirname(fileURLToPath(import.meta.url));
 const url = (name) => pathToFileURL(join(HERE, `${name}.mjs`)).href;
 
+// Every tool that runs a shell command: Bash, PowerShell on Windows (until 2.12.1 it skipped every guard), and, since 2.25.0, the
+// Monitor tool (a command whose output streams back) and a terminal connector's run_in_terminal (types into the user's terminal).
+export const isShellTool = (tool, ti = {}) => tool === "Bash" || tool === "PowerShell" || tool === "Monitor" || /^mcp__.+__run_in_terminal$/.test(String(tool ?? "")) || (!tool && typeof ti.command === "string");
+
 export function pipeline(mode, input) {
   const ti = input?.tool_input ?? {};
   const tool = input?.tool_name;
-  // Every shell tool gets every guard: Bash, and PowerShell on Windows (until 2.12.1 PowerShell skipped them all).
-  const isShell = tool === "Bash" || tool === "PowerShell" || (!tool && typeof ti.command === "string");
+  const isShell = isShellTool(tool, ti);
   const isEdit = ["Edit", "Write", "MultiEdit"].includes(tool) || (!tool && typeof ti.file_path === "string" && typeof ti.command !== "string");
   const isAgent = tool === "Agent" || tool === "Task";
   const isOutside = tool === "WebFetch" || tool === "WebSearch" || /^mcp__/.test(String(tool ?? "")); // content written by strangers
   if (mode === "pre") return ["flight-recorder", ...(isShell ? ["safety-guard", "snapshot-guard", "db-guard", "secret-guard", "push-gate", "package-guard"] : isEdit ? ["file-guard", "plan-gate"] : isAgent ? ["agent-route"] : tool === "WebFetch" ? ["fetch-guard"] : [])];
-  if (mode === "post") return ["flight-recorder", ...(isEdit ? ["code-warn", "test-related"] : isShell ? ["quiet-output"] : isOutside ? ["inject-warn"] : [])];
+  if (mode === "post") return ["flight-recorder", ...(isEdit ? ["code-warn", "test-related"] : isShell && !isOutside ? ["quiet-output"] : isOutside ? ["inject-warn"] : [])];
   if (mode === "stop") return ["flight-recorder", "verify-gate", "docs-gate"];
   // A resumed or forked chat already holds the note; session-start then only says what resuming costs, when it is worth saying.
   if (mode === "start") return [...(["startup", "clear", "compact", "resume", "fork", undefined].includes(input?.source) ? ["session-start"] : []), "flight-recorder", ...(input?.source === "startup" ? ["auto-update"] : [])];
@@ -53,7 +56,7 @@ export async function main(mode, only = null) {
   const names = only ?? pipeline(mode, input); // `only` is for tests: run exactly these hooks, whatever the input looks like
   // A shell command that could not be checked is refused (exit 2 blocks it). Everywhere else a broken hook only warns, so a bug
   // can never lock a session; the refusal says how to find out what is wrong.
-  const failClosed = mode === "pre" && (input?.tool_name === "Bash" || input?.tool_name === "PowerShell" || (!input?.tool_name && typeof input?.tool_input?.command === "string"));
+  const failClosed = mode === "pre" && isShellTool(input?.tool_name, input?.tool_input ?? {});
   const results = [];
   let broken = null;
   try {

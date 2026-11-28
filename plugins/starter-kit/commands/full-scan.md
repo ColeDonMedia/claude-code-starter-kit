@@ -2,7 +2,15 @@
 description: Use before the user pushes, opens a pull request, deploys, releases or otherwise ships (a hook blocks `git push` until it has passed). Full pre-ship sweep — entire test suite, typecheck, lint, build, then the security review.
 ---
 
-Run the full pre-ship sweep using the commands listed under "Commands" in CLAUDE.md:
+## Scope
+- **Job:** the pre-ship sweep: every check that must pass before anything leaves this computer.
+- **Starts when:** before any push, pull request, deploy or release (a hook blocks pushes until it passes).
+- **May:** run the full suite, types, lint, build, scanners, security review and the stage checks, and fix what fails.
+- **Must not:** skip or weaken a check, mark it passed by hand, or push.
+- **Done when:** every check passes on the exact commit and the pass is recorded for that commit.
+- **Hands back:** pass or fail per check, in plain words, and anything that needs the owner.
+
+Run the full pre-ship sweep using the commands listed under "Commands" in CLAUDE.md. All seventeen steps below belong to it:
 1. Full test suite (run once, not watch mode).
 2. Typecheck / static analysis.
 3. Lint.
@@ -17,15 +25,6 @@ Run the full pre-ship sweep using the commands listed under "Commands" in CLAUDE
 6. Only once steps 1–5 are green: the starter-kit `security-reviewer` agent on everything changed since
    the last ship, with the `model` and `effort` that `node "${CLAUDE_PLUGIN_ROOT}/scripts/model-route.mjs" --project . --role security-reviewer --mode range`
    prints (if it says capped, put that at the top of the report).
-
-## Scope
-- **Job:** the pre-ship sweep: every check that must pass before anything leaves this computer.
-- **Starts when:** before any push, pull request, deploy or release (a hook blocks pushes until it passes).
-- **May:** run the full suite, types, lint, build, scanners, security review and the stage checks, and fix what fails.
-- **Must not:** skip or weaken a check, mark it passed by hand, or push.
-- **Done when:** every check passes on the exact commit and the pass is recorded for that commit.
-- **Hands back:** pass or fail per check, in plain words, and anything that needs the owner.
-
 7. Launch readiness, only for something that serves real users (a web app, an API, a hosted service) and only the
    first time it ships or when hosting, security settings or access rules changed: have the `security-reviewer`
    run its launch-readiness checklist (HTTPS, security headers, CORS, database access rules, key privileges,
@@ -88,6 +87,7 @@ Rules:
   ADVICE, MEDIUM and `ACCEPTED` lines do not block, but list them for the owner. If anything fails, fix it and re-run the full sweep.
 
 When — and only when — every applicable step is green and security-reviewer returned APPROVE, record it
-so the push gate lets the push through: `git rev-parse HEAD > .claude/last-full-scan`. Never write that
-file on a failing or partial run. If there are uncommitted changes, tell the user the scan covers only
-the committed code at HEAD.
+so the push gate lets the push through: `node "${CLAUDE_PLUGIN_ROOT}/scripts/ship-mark.mjs" --project .`. It re-checks what a
+script can prove (everything committed, the project's checks passing at this commit, no milestone waiting for the owner) and
+writes the marker only then; the guards refuse any other way of writing it. If it says NOT RECORDED, fix what it names and run
+the sweep again. Never run it on a failing or partial run.

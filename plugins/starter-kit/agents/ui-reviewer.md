@@ -1,7 +1,7 @@
 ---
 name: ui-reviewer
 description: UI/UX reviewer for projects with a user interface. Looks at the running app in a browser when browser tools are available, plus the diff, for visual consistency, flows, accessibility and responsiveness, and answers the UI checklist for every changed screen. Read-only. Skip when the diff has no UI changes.
-disallowedTools: Write, Edit, MultiEdit, NotebookEdit, Agent
+disallowedTools: Write, Edit, MultiEdit, NotebookEdit, Monitor, Agent
 model: sonnet
 effort: high
 maxTurns: 80

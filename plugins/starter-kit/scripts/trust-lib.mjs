@@ -39,7 +39,9 @@ function load() {
 
 // Security switches a project's kit.json may set to false. They only count once the user approved them here:
 // otherwise a hostile project could ship a kit.json that turns the protections off.
-export const SECURITY_SWITCHES = ["auto", "guard", "secretGuard", "packageGuard", "autoGate", "dbGuard"];
+// Since 2.25.0 also the stop-time checks, the plan check, snapshots and auto-update, which hooks used to read straight from the
+// project (a project, or Claude itself, could switch them off with one line).
+export const SECURITY_SWITCHES = ["auto", "guard", "secretGuard", "packageGuard", "autoGate", "dbGuard", "verifyGate", "docsGate", "planGate", "snapshots", "autoUpdate"];
 
 // Everything in a project's kit.json that runs a command or loosens a protection, as stable entries.
 export function entriesOf(cfg) {

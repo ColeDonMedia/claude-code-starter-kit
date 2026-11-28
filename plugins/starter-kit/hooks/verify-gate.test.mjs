@@ -192,19 +192,27 @@ test("a check that runs out of time is not treated as a failure", () => {
   }
 });
 
-test("a missing tool is skipped on Linux too, where sh says \"sh: 1: <tool>: not found\" (found by the first GitHub run)", () => {
+// Since 2.25.0 a check that could not run is said once ("could not run", not "failing") and never recorded as passed.
+test("a missing tool is reported once as not run on Linux too, where sh says \"sh: 1: <tool>: not found\" (found by the first GitHub run)", () => {
   const p = project({ verify: ["node -e \"process.stderr.write('sh: 1: definitely-not-a-tool: not found'); process.exit(127)\""] });
   try {
-    assert.equal(stop(p).status, 0);
+    const r = stop(p);
+    assert.equal(r.status, 2);
+    assert.match(r.stderr, /could not run/);
+    assert.doesNotMatch(r.stderr, /checks are failing/);
+    assert.equal(stop(p).status, 0, "said once for the same state of the code");
   } finally {
     p.cleanup();
   }
 });
 
-test("a missing tool is skipped, not reported as failing code", () => {
+test("a missing tool is reported as not run, not as failing code", () => {
   const p = project({ verify: ["definitely-not-a-real-command-xyz --check"] });
   try {
-    assert.equal(stop(p).status, 0);
+    const r = stop(p);
+    assert.equal(r.status, 2);
+    assert.match(r.stderr, /could not run/);
+    assert.doesNotMatch(r.stderr, /checks are failing/);
   } finally {
     p.cleanup();
   }

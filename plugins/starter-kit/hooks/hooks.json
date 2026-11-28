@@ -45,6 +45,12 @@
         ]
       },
       {
+        "matcher": "^(Monitor|mcp__.+__run_in_terminal)$",
+        "hooks": [
+          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/gate.mjs\" pre", "timeout": 120 }
+        ]
+      },
+      {
         "matcher": "WebFetch",
         "hooks": [
           { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/gate.mjs\" pre", "timeout": 20 }

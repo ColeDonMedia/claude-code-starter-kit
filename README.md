@@ -144,7 +144,7 @@ and changes you ask for become roadmap items.
 
 **8. Nothing leaves without the pre-ship scan.** Seventeen checks: tests, types, lint, build, dependency and configuration scanners, a
 security review, browser tests, your acceptance, database changes, records, speed, design, load and accessibility. A hook blocks every
-push and deploy until that exact commit has passed.
+push and deploy until that exact commit has passed. **[All seventeen, with what makes each one block a push](docs/every-step.md#8-before-anything-leaves-your-computer-full-scan).**
 
 **9. The first launch.** Separate test and live copies, payments in test mode first, automatic deploys, error and uptime alerts,
 a backup that has actually been restored, a practised rollback, HTTPS and security headers, the cost check re-run on today's prices

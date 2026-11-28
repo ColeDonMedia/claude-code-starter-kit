@@ -15,7 +15,7 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { isTrusted } from "../scripts/trust-lib.mjs";
+import { isTrusted, switchedOff } from "../scripts/trust-lib.mjs";
 import { remoteDbHosts } from "../scripts/db-lib.mjs";
 
 const done = () => process.exit(0);
@@ -45,7 +45,7 @@ try {
 } catch {
   done();
 }
-if (cfg.auto === false || cfg.verifyGate === false) done();
+if (switchedOff(root, cfg, "auto", "verifyGate")) done(); // counts only once the owner approved it on this computer
 const commands = Array.isArray(cfg.verify) ? cfg.verify.filter((c) => typeof c === "string" && c.trim()) : [];
 if (!commands.length) done();
 
@@ -104,13 +104,17 @@ if (remoteDbHosts(root).length) done();
 const budgetMs = Number(process.env.KIT_VERIFY_BUDGET_MS || 240000);
 const started = Date.now();
 let failure = null;
+const notRun = []; // a check whose tool is missing has not passed (until 2.25.0 it was recorded as a pass)
 for (const cmd of commands) {
   const left = budgetMs - (Date.now() - started);
   if (left <= 0) done(); // out of time: say nothing rather than guess
   const r = spawnSync(cmd, { cwd: root, shell: true, encoding: "utf8", timeout: left, maxBuffer: 64 * 1024 * 1024 });
   if (r.error) done(); // timed out or could not start: not a verdict
   const out = `${r.stdout ?? ""}${r.stderr ?? ""}`;
-  if (/is not recognized as an internal or external command|: command not found|^\S*sh: \d+: .+: not found$|executable file not found/im.test(out)) continue;
+  if (/is not recognized as an internal or external command|: command not found|^\S*sh: \d+: .+: not found$|executable file not found/im.test(out)) {
+    notRun.push({ cmd, line: out.trim().split("\n").find((l) => /not (recognized|found)/i.test(l)) ?? "" });
+    continue;
+  }
   if (r.status !== 0) {
     failure = { cmd, tail: out.trimEnd().split("\n").slice(-40).join("\n") };
     break;
@@ -119,9 +123,20 @@ for (const cmd of commands) {
 
 try {
   mkdirSync(join(root, ".claude"), { recursive: true });
-  writeFileSync(stateFile, JSON.stringify({ fingerprint, head: head.stdout.trim(), ok: !failure, when: new Date().toISOString() }));
+  const ok = failure ? false : notRun.length ? null : true;
+  writeFileSync(stateFile, JSON.stringify({ fingerprint, head: head.stdout.trim(), ok, notRun: notRun.map((n) => n.cmd), when: new Date().toISOString() }));
 } catch {
   /* best effort */
+}
+if (!failure && notRun.length) {
+  // Said once for this state of the code (the saved fingerprint), so it never loops.
+  process.stderr.write(
+    "These project checks could not run, so they have not passed:\n" +
+      notRun.map((n) => `- ${n.cmd}${n.line ? ` (${n.line.trim().slice(0, 160)})` : ""}`).join("\n") +
+      "\nUsually the project's dependencies are not installed here (a fresh worktree has none), or the command in .claude/kit.json is wrong. " +
+      "Install the dependencies or correct the command, and run the checks again. Until they run, report these checks to the user as not run, never as passed.\n",
+  );
+  process.exit(2);
 }
 if (!failure) done();
 

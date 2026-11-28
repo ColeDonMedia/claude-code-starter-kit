@@ -160,3 +160,61 @@ const CODE_SAFE = [
 ];
 test("round 6: deleting, moving or overwriting code always prompts, however it is written", async () => expectAll(CODE_LOSS, "ask"));
 test("round 6: rebuildable folders, notes, appends and new files pass", async () => expectAll(CODE_SAFE, "allow"));
+
+// ---- round 7 (2.25.0): found by a review that ran the real guard against a throwaway project ----
+// Git Bash spells drives as /c/ and WSL as /mnt/c/; both slipped past the drive and system-folder rules.
+const DRIVE_WIPE = [
+  "rm -rf /c/", "rm -rf /c", "rm -rf /c/*", "rm -rf /d/", "rm -rf /c/Users", "rm -rf /c/Users/someone", "rm -rf /c/Windows",
+  "rm -rf '/c/Program Files'", "rm -rf /mnt/c", "rm -rf /mnt/c/Users", "rm -rf /mnt/c/Users/someone", "find /c/Users -delete",
+];
+test("round 7: Git Bash and WSL drive paths (/c/, /mnt/c/) are drives too: wiping one is denied", async () => expectAll(DRIVE_WIPE, "deny"));
+// A folder in the home folder (or anywhere else outside the project) holds the owner's own files, which no code check can see.
+const OUTSIDE_DELETE = [
+  "rm -rf ~/Documents", 'rm -rf "$HOME/Documents"', "rm -rf ${HOME}/Pictures", "rm -rf ~/Desktop/old", "rm -rf /home/someone/photos",
+  "rm -rf /Users/someone/Desktop", "rm -rf C:/Users/someone/Documents", "rm -rf /c/Users/someone/Documents", "rm -rf /srv/data/app",
+  "find ~/Documents -delete", "cd ~ && rm -rf Documents",
+];
+test("round 7: a recursive delete outside the project (home subfolders included) always prompts", async () => expectAll(OUTSIDE_DELETE, "ask"));
+const OUTSIDE_SAFE = ["rm -rf /tmp/my-scratch/build", `rm -rf "${tmpdir().split("\\").join("/")}/kit-scratch-x"`, "rm -rf ~/.npm/_cacache", "rm -rf ~/.cache/ms-playwright", "ls ~/Documents", "du -sh ~/Documents"];
+test("round 7: temp folders, caches and reading outside the project pass", async () => expectAll(OUTSIDE_SAFE, "allow"));
+// git commands that throw away work with no question.
+const GIT_DISCARD = [
+  "git switch -f main", "git switch --discard-changes main", "git switch -C main origin/main", "git checkout -B main origin/main",
+  "git worktree remove --force ../wt", "git worktree remove -f .claude/worktrees/x", "git branch -f main origin/main", "git -C . switch -f main",
+];
+const GIT_OK = ["git switch main", "git switch -c feature/x", "git checkout -b feature/y", "git worktree remove ../wt", "git branch feature/z", "git worktree add ../wt -b f"];
+test("round 7: git switch/checkout/worktree/branch forms that discard work prompt", async () => expectAll(GIT_DISCARD, "ask"));
+test("round 7: ordinary branch and worktree commands pass", async () => expectAll(GIT_OK, "allow"));
+// Copying onto an existing code file replaces it, like `>` does.
+const COPY_OVER = ["cp notes/todo.txt src/app.js", "cp -f notes/todo.txt src/app.js", "cp notes/todo.txt api/server.py"];
+const COPY_OK = ["cp src/app.js src/app.copy.js", "cp src/app.js /tmp/backup.js", "cp -r src /tmp/src-copy"];
+test("round 7: copying onto an existing code file prompts", async () => expectAll(COPY_OVER, "ask"));
+test("round 7: copying to a new file or out to a temp folder passes", async () => expectAll(COPY_OK, "allow"));
+// The approval prompt reads kit.json before the command runs; anything run alongside it can swap the file first.
+const TRUST_COMBINED = [
+  'cp ../other.json .claude/kit.json && node "/kit/scripts/trust.mjs" --project .',
+  'echo {} > .claude/kit.json; node /kit/scripts/trust.mjs --project .',
+  'node /kit/scripts/trust.mjs --project . && git commit -am x',
+  'bash -c "cp x .claude/kit.json && node /kit/scripts/trust.mjs"',
+];
+test("round 7: the approval script run together with anything else is denied", async () => expectAll(TRUST_COMBINED, "deny"));
+test("round 7: the approval script run on its own still asks (never denied, never silent)", async () => {
+  assert.equal(await decide('node "/kit/scripts/trust.mjs" --project .'), "ask");
+  assert.equal(await decide("node /kit/scripts/trust.mjs --project . --list"), "allow");
+});
+// The kit's own files, the plan-gate markers and the pass marker for the pre-ship scan are the kit's, not Claude's.
+const KIT = "~/.claude/plugins/cache/starter-kit-marketplace/starter-kit/2.24.0";
+const MKT = "~/.claude/plugins/marketplaces/starter-kit-marketplace";
+const KIT_WRITE = [
+  `echo x > ${KIT}/hooks/safety-guard.mjs`, `sed -i 's/deny/allow/' ${KIT}/hooks/safety-guard.mjs`, `rm -rf ${KIT}`, `rm -rf ${MKT}`,
+  `cp /tmp/x.json ${MKT}/plugins/starter-kit/hooks/hooks.json`, `rm ~/.claude/plugins/data/starter-kit/new-projects/0a1b2c3d4e5f`,
+  `rm -rf ~/.claude/plugins/data/starter-kit/new-projects`, "git rev-parse HEAD > .claude/last-full-scan", "echo abc > .claude/last-full-scan",
+  "cp /tmp/sha .claude/last-full-scan", `node -e "require('fs').writeFileSync('.claude/last-full-scan','x')"`, "touch .claude/last-full-scan",
+];
+const KIT_READ = [`cat ${KIT}/hooks/safety-guard.mjs`, `ls ${MKT}`, `grep -rn deny ${KIT}/hooks`, "cat .claude/last-full-scan", "ls ~/.claude/plugins/data/starter-kit/new-projects"];
+test("round 7: changing the kit's installed files, its plan markers or the pre-ship pass marker is denied", async () => expectAll(KIT_WRITE, "deny"));
+test("round 7: reading them is never blocked", async () => expectAll(KIT_READ, "allow"));
+// On Windows, Git Bash's /c/... is the same folder as C:/...: a delete or overwrite of the project's code must still prompt.
+const gb = "/" + proj.split("\\").join("/").replace(/^([A-Za-z]):/, (m, d) => d.toLowerCase());
+test("round 7 (Windows): Git Bash paths to the project's own code still prompt", { skip: process.platform !== "win32" }, async () =>
+  expectAll([`rm -rf ${gb}/src`, `cd ${gb} && rm -rf src`, `echo x > ${gb}/src/app.js`], "ask"));

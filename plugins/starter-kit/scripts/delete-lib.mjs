@@ -53,7 +53,7 @@ export function riskOf(command) {
   const c = String(command);
   const branches = [...c.matchAll(/\bgit\s+branch\s+(?:-[a-zA-Z]*D[a-zA-Z]*|--delete\s+--force|--force\s+--delete)\s+([\w./-]+)/g)].map((m) => m[1]);
   const stashes = /\bgit\s+stash\s+(drop|clear)\b/.test(c);
-  const git = /\bgit\s+(reset\s+[^;&|]*--hard|clean\s+[^;&|]*-[a-zA-Z]*f|checkout\s+(--\s|\.\s*$|\.\s|-f\b|--force)|restore\s+(?![^;&|]*--staged)\S|filter-branch|filter-repo)/.test(c);
+  const git = /\bgit\s+(reset\s+[^;&|]*--hard|clean\s+[^;&|]*-[a-zA-Z]*f|checkout\s+(--\s|\.\s*$|\.\s|-f\b|--force)|restore\s+(?![^;&|]*--staged)\S|switch\s+[^;&|]*(-[a-zA-Z]*f\b|--force|--discard-changes)|filter-branch|filter-repo)/.test(c);
   const db = /\b(drop\s+(database|schema|table)|truncate\s+(table\s+)?\w+|delete\s+from\s+\w+(?![\s\S]*\bwhere\b))|migrate\s+reset|db\s+push\b[^;&|]*--force-reset|\bdb:(drop|reset)\b|manage\.py\s+flush|supabase\s+db\s+reset/i.test(c);
   let del = false;
   const rm = /(?:^|[\s;&|(`'"])(?:rm|rmdir|rd|del|erase|remove-item|ri)\s+([^;&|\n]*)/gi;

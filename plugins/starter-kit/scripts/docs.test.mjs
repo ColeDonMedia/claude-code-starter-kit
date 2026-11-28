@@ -200,7 +200,7 @@ test("agent headers are valid YAML, complete, and read-only agents cannot write"
 
 // A subagent can start subagents of its own unless the Agent tool is taken away. A deny-list keeps every tool it does not
 // name, so it must name Agent; and a Haiku agent (the cheapest model, which reads untrusted text) may only read.
-const WRITE_OR_RUN = ["Write", "Edit", "MultiEdit", "NotebookEdit", "Bash", "PowerShell", "Agent"];
+const WRITE_OR_RUN = ["Write", "Edit", "MultiEdit", "NotebookEdit", "Bash", "PowerShell", "Monitor", "Agent"];
 const listOf = (v) => v.split(",").map((s) => s.trim()).filter(Boolean);
 // The one exception is the conductor, which runs a whole feature workflow in its own context and must start the builder and the
 // reviewers. It must use an allow-list, may not run on Haiku, and has no web tools; hooks/agent-route.mjs limits what it may start.

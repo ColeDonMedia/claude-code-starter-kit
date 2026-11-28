@@ -4,6 +4,49 @@ What changed in each release of the starter-kit plugin, newest first, in plain w
 repository's history. Every release bumps `version` in `plugins/starter-kit/.claude-plugin/plugin.json`; a test
 fails if this file has no entry for the current version.
 
+## [2.25.0] — 2026-11-28
+From a review that ran the real hooks against a throwaway project on Windows. The owner asked for all of it ("do all"). Every hole
+below got through before this release; each is now a test that fails on 2.24.0 (`hooks/gaps.test.mjs`, round 7 of both fuzz files).
+- **Deletes outside the project.**
+  - Git Bash's `/c/` and WSL's `/mnt/c/` are now read as drive C:. `rm -rf /c/`, `/c/Users` or `/mnt/c/Users` are refused like
+    `C:\`, and deleting or overwriting the project's own code through a `/c/...` path asks like any other spelling.
+  - A recursive delete of any folder outside the project now asks first (new rule `rm-outside`, "DELETES OUTSIDE THE PROJECT"):
+    `~/Documents`, `$HOME/...`, `C:\Users\<name>\...`, another project. Temp folders and tool caches pass.
+    Before, only the home folder itself was protected.
+- **Pushes and releases written another way.** The push gate and the secret guard now read a command with the safety guard's own
+  reader (`scripts/shell-lib.mjs`, `scripts/ship-detect.mjs`). These forms used to get past both:
+  - a push on a second line, or after `FOO=1`, `time`, `command`, `env` or git's own options
+  - a push inside `bash -c`, `if ...; then`, or written as `git.exe`
+  - `gh repo create --push` and `gh pr merge`
+- **Secrets at commit time.** Every action in one command is scanned, not only the first one recognised:
+  - `git add -A && git commit` in one command
+  - `git commit -am` / `--all`, which also scans the tracked changes the commit takes
+  - `gh gist create <files>`, which scans the files themselves
+- **The approval prompt now matches what is approved.** The approval script must run as a command of its own. Before,
+  `cp other.json .claude/kit.json && node trust.mjs` showed the old list and approved the new one.
+- **Every shell tool is guarded.** The Monitor tool and a terminal connector's `run_in_terminal` now go through every guard (they
+  went through none). The researcher and UI reviewer agents can no longer use Monitor.
+- **The kit protects itself.** From any shell tool and from Claude's file tools, these are now refused:
+  - changing the installed kit
+  - changing or deleting a plan-check marker
+  - writing the pre-ship pass marker by hand
+- **The pre-ship pass is recorded by a script.** `scripts/ship-mark.mjs` writes `.claude/last-full-scan` only after re-checking
+  three things: everything is committed, the project's checks pass at that commit, and no milestone is waiting for the owner.
+  The security review's approval still rests on the scan itself.
+- **Off-switches need the owner's approval.** `verifyGate`, `docsGate`, `planGate`, `snapshots` and `autoUpdate` now count only
+  once approved on this computer, like the guards' switches. Before, one line in the project file was enough. `snapshots` could
+  never be approved at all, which was a bug.
+- **A check that could not run is no longer a pass.** When a check's tool is missing, the end-of-turn check now says so once, and
+  records "not run" instead of "passed".
+- **More git commands ask first:** `git switch --force` / `--discard-changes`, moving a branch (`switch -C`, `checkout -B`,
+  `branch -f`) and `git worktree remove --force`. Copying a file onto an existing code file asks too.
+- **A broken safety guard asks.** Before, an internal error in the safety guard allowed every command, `rm -rf /` included.
+- **Docs:** the GitHub page links to the table of the seventeen pre-ship checks, and `full-scan` opens with its Scope block.
+- **Behaviour change for existing projects:** a project that turned off `verifyGate`, `docsGate` or `planGate` by editing
+  `kit.json` gets those checks back until the owner approves the switch.
+- Verified locally on Windows only: the full suite passes both ways, and `claude plugin validate` passes. macOS and Linux run on
+  GitHub. Not tried in a live session.
+
 ## [2.24.0] — 2026-11-27
 - **The plan now says what the app will cost to run.** The owner asked for it. It applies to anything hosted, sold in a store or using paid
   services. `procedures/spec-costs.md` lists every line: the domain and its renewal; hosting and its hidden lines (data sent out,

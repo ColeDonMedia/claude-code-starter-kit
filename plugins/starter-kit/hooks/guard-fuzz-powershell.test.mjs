@@ -117,3 +117,20 @@ const PS_CODE_SAFE = [
 ];
 test("PowerShell: deleting, moving or overwriting code always prompts (all guards)", async () => expectAll(PS_CODE_LOSS, "ask", [GATE, "pre"]));
 test("PowerShell: rebuildable folders, notes, appends and new files pass (all guards)", async () => expectAll(PS_CODE_SAFE, "allow", [GATE, "pre"]));
+
+// Round 7 (2.25.0): folders outside the project, copying over code, the kit's own files and the pre-ship pass marker.
+const PS_OUTSIDE = [
+  "Remove-Item -Recurse -Force $env:USERPROFILE\\Documents", "Remove-Item -Recurse -Force ~\\Desktop", "Remove-Item -Recurse -Force C:\\Users\\someone\\Documents",
+  "Remove-Item -Recurse -Force D:\\Photos", "Copy-Item notes\\todo.txt -Destination src\\app.js", "Copy-Item notes\\todo.txt src\\app.js -Force",
+  "git switch -f main", "git worktree remove --force ..\\wt",
+];
+const PS_KIT = [
+  "Set-Content .claude\\last-full-scan abc", "git rev-parse HEAD | Out-File .claude\\last-full-scan", "git rev-parse HEAD > .claude\\last-full-scan",
+  "Remove-Item -Recurse -Force $env:USERPROFILE\\.claude\\plugins\\cache\\starter-kit-marketplace",
+  "Set-Content ~\\.claude\\plugins\\marketplaces\\starter-kit-marketplace\\plugins\\starter-kit\\hooks\\hooks.json '{}'",
+  "Remove-Item ~\\.claude\\plugins\\data\\starter-kit\\new-projects\\0a1b2c3d4e5f",
+];
+const PS_OUTSIDE_SAFE = ["Remove-Item -Recurse -Force $env:TEMP\\kit-scratch", "Get-ChildItem ~\\Documents", "Get-Content .claude\\last-full-scan"];
+test("round 7, PowerShell: deletes outside the project, copying over code and discarding git work prompt", async () => expectAll(PS_OUTSIDE, "ask", [GATE, "pre"]));
+test("round 7, PowerShell: the kit's own files, plan markers and pre-ship pass marker cannot be changed", async () => expectAll(PS_KIT, "deny", [GATE, "pre"]));
+test("round 7, PowerShell: temp folders and reading pass", async () => expectAll(PS_OUTSIDE_SAFE, "allow", [GATE, "pre"]));

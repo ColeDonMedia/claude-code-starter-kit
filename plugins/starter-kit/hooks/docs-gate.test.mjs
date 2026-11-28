@@ -120,14 +120,27 @@ test("an unproven roadmap tick blocks, with the reason, and the problem is repor
   }
 });
 
-test("never blocks twice in one turn, and respects the switches", () => {
+test("never blocks twice in one turn, and respects the switches", async () => {
   const p = project();
   try {
     p.put("src/a.js", "1\n");
     p.commit("a");
     assert.equal(stop(p, { stop_hook_active: true }).status, 0);
+    // Since 2.25.0 the switch counts only once the owner approved it on this computer (a project file alone is ignored).
+    const data = realpathSync(mkdtempSync(join(tmpdir(), "docs-trust-")));
+    const run = () => spawnSync("node", [GATE], { input: "{}", encoding: "utf8", env: { ...process.env, CLAUDE_PROJECT_DIR: p.dir, KIT_DATA_DIR: data } });
     p.put(".claude/kit.json", JSON.stringify({ docsGate: false }));
-    assert.equal(stop(p).status, 0);
+    rmSync(join(p.dir, ".claude", "last-docs-check"), { force: true });
+    assert.equal(run().status, 2, "an unapproved switch is ignored");
+    rmSync(join(p.dir, ".claude", "last-docs-check"), { force: true });
+    const prev = process.env.KIT_DATA_DIR;
+    process.env.KIT_DATA_DIR = data;
+    const { trustEntries, entriesOf } = await import("../scripts/trust-lib.mjs");
+    trustEntries(p.dir, entriesOf({ docsGate: false }));
+    if (prev === undefined) delete process.env.KIT_DATA_DIR;
+    else process.env.KIT_DATA_DIR = prev;
+    assert.equal(run().status, 0, "the owner's approved switch");
+    rmSync(data, { recursive: true, force: true });
   } finally {
     p.cleanup();
   }

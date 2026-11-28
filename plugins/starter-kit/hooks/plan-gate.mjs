@@ -27,7 +27,7 @@ try {
 } catch {
   /* unreadable: the gate stays on */
 }
-if (cfg.planGate === false || switchedOff(root, cfg, "auto")) process.exit(0);
+if (switchedOff(root, cfg, "auto", "planGate")) process.exit(0); // counts only once the owner approved it on this computer
 
 const rel = relative(root, resolve(input.cwd || root, file)).replace(/\\/g, "/");
 if (!rel || rel.startsWith("..") || isAbsolute(rel)) process.exit(0); // not this project's file

@@ -2,8 +2,10 @@
 
 [← Back to the README](../README.md) · [All documentation](README.md)
 
-Every guard below watches both shell tools: Bash and, on Windows, PowerShell (read the PowerShell way: backtick escapes, script
-blocks, `$( )` inside strings, here-strings, `-EncodedCommand`).
+Every guard below watches every tool that runs a shell command: Bash, PowerShell on Windows (read the PowerShell way: backtick
+escapes, script blocks, `$( )` inside strings, here-strings, `-EncodedCommand`), the Monitor tool, and a terminal connector's
+`run_in_terminal`. All of them read a command with the same reader, so a push on a second line, after `FOO=1`, `time` or
+`command`, inside `bash -c`, or written as `git.exe` is still a push. Git Bash's `/c/...` and WSL's `/mnt/c/...` are read as drive C:.
 
 ## Safety guard: dangerous commands
 
@@ -15,7 +17,14 @@ blocks, `$( )` inside strings, here-strings, `-EncodedCommand`).
   or `rmSync`/`rmtree` in a one-line script) of a folder or file that holds code. The question starts with "DELETES CODE" and
   names the files, so it stands out on a phone. It also asks before moving code out of the project ("MOVES CODE") and before
   replacing an existing code file with `>`, Set-Content, Out-File, Clear-Content or a move onto it ("OVERWRITES CODE"). It follows
-  `cd` within a command, so `cd src && rm -rf lib` is caught.
+  `cd` within a command, so `cd src && rm -rf lib` is caught. Copying a file onto an existing code file asks too.
+- **Asks before deleting outside the project** (rule `rm-outside`): a recursive delete of any folder that is not part of this
+  project, such as `~/Documents` or another project, asks first ("DELETES OUTSIDE THE PROJECT"), because no code check can see
+  your own files. Temp folders and tool caches (`.npm`, `.cache`, ...) pass.
+- **Asks before git throws work away** in the less obvious ways too: `git switch --force` or `--discard-changes`, moving an
+  existing branch (`git switch -C`, `git checkout -B`, `git branch -f`), and `git worktree remove --force`.
+- **Refuses changes to the kit itself:** its installed files, the plan-check markers and the pre-ship pass marker
+  (`.claude/last-full-scan`, written only by the kit's `ship-mark.mjs` after it re-checks), from any shell tool or Claude's file tools.
 - **Lets through** ordinary work: `rm -rf node_modules` and other rebuildable folders (`dist`, `build`, `.svelte-kit`, `coverage`,
   ...), untracked scratch that holds no code, and any text that only *mentions* a dangerous command (a commit message, an `echo`, a
   search).
@@ -127,7 +136,11 @@ Opengrep or Semgrep (code patterns). It never asks you to install one.
 ## Push gate: nothing ships unchecked
 
 - Pushes, pull requests, releases, `npm publish`, `docker push` and deploy commands (`vercel --prod`, `fly deploy` and others)
-  are blocked until the full pre-ship scan has passed for that exact commit. A new commit means a new scan.
+  are blocked until the full pre-ship scan has passed for that exact commit. A new commit means a new scan. So are
+  `gh pr merge` and `gh repo create --push`. [The seventeen checks](every-step.md#8-before-anything-leaves-your-computer-full-scan).
+- The pass is recorded by the kit's `ship-mark.mjs`, which first re-checks what a script can prove: everything is committed, the
+  project's own checks pass at that commit, and no finished milestone is waiting for you. Claude cannot write the record by hand.
+  What a script cannot prove (the security reviewer's approval) still rests on the scan itself.
 
 ## Model check: reviews on the right model
 
@@ -149,6 +162,10 @@ settings, and hosting platforms' database tools are refused. Details: [Databases
   permission prompt that lists the exact commands.
 - The approvals are stored outside the project (`~/.claude/plugins/data/starter-kit/trusted.json`). Changing the file in any way
   from a shell or Claude's file tools is refused, and changing a command voids its approval.
+- Since 2.25.0 this covers every off-switch a protection reads: the guards, the end-of-turn checks (`verifyGate`, `docsGate`),
+  the plan check (`planGate`), snapshots and auto-update. The approval script must run as a command of its own, so the list you
+  are shown is the list that gets approved. (`relatedTests: false`, `flightLog: false` and `quietOutput: false` only make the kit
+  do less background work and still take effect at once.)
 
 ## Security at every stage
 

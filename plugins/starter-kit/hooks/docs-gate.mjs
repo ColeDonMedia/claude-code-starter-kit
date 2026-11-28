@@ -16,6 +16,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { checkRoadmap } from "../scripts/roadmap-check.mjs";
+import { switchedOff } from "../scripts/trust-lib.mjs";
 
 const done = () => process.exit(0);
 let raw = "";
@@ -43,7 +44,7 @@ try {
 } catch {
   done();
 }
-if (cfg.auto === false || cfg.docsGate === false) done();
+if (switchedOff(root, cfg, "auto", "docsGate")) done(); // counts only once the owner approved it on this computer
 
 const git = (...a) => spawnSync("git", a, { cwd: root, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
 if (git("rev-parse", "--is-inside-work-tree").status !== 0) done();

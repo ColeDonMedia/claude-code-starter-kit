@@ -162,7 +162,11 @@ test("the starter-kit plugin itself scans clean of HIGH findings", () => {
 test("the safety guard stays passive: only reads files, no network, no process spawning, no writes", () => {
   const src = readFileSync(join(HERE, "..", "hooks", "safety-guard.mjs"), "utf8");
   const imports = [...src.matchAll(/^import .* from "(.+)";$/gm)].map((m) => m[1]).sort();
-  assert.deepEqual(imports, ["../scripts/delete-lib.mjs", "../scripts/trust-lib.mjs", "node:fs", "node:path"]);
+  assert.deepEqual(imports, ["../scripts/delete-lib.mjs", "../scripts/shell-lib.mjs", "../scripts/trust-lib.mjs", "node:fs", "node:os", "node:path", "node:url"]);
+  // the shared command reader (2.25.0) is pure text work: it may import nothing but path helpers
+  const reader = readFileSync(join(HERE, "shell-lib.mjs"), "utf8");
+  assert.deepEqual([...reader.matchAll(/^import .* from "(.+)";$/gm)].map((m) => m[1]), ["node:path"]);
+  assert.doesNotMatch(reader, /\b(fetch|spawn|spawnSync|exec|execSync|readFileSync|writeFile|writeFileSync|appendFile|unlink|rmSync)\s*\(/);
   // the shared "what is code" list may only read folders
   const del = readFileSync(join(HERE, "delete-lib.mjs"), "utf8");
   assert.deepEqual([...del.matchAll(/^import .* from "(.+)";$/gm)].map((m) => m[1]).sort(), ["node:fs", "node:path"]);

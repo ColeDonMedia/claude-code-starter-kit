@@ -12,16 +12,21 @@
 //                                    { "auto": false }                        turns off everything automatic
 // Rule ids: rm-root, rm-wide, force-push-protected, force-push, push-delete, reset-hard,
 //           clean, discard-changes, branch-D, stash-drop, rewrite-history, disk-write, chmod-root, fork-bomb,
-//           sql-drop, db-reset, pipe-to-shell, secret-read, rm-code
+//           sql-drop, db-reset, pipe-to-shell, secret-read, rm-code, rm-outside, branch-reset, worktree-force
+// Never allowable: trust-store, trust-commands, kit-files, plan-marker, ship-marker (they protect the approvals and the kit itself).
+// rm-outside: a recursive delete outside the project (temp folders and tool caches pass), since 2.25.0.
 // rm-code: a recursive delete (rm -r, Remove-Item -Recurse, rd /s, find -delete, rmSync/rmtree in inline code) of a folder or
 // file that holds code asks first; so do moving code out of the project and overwriting an existing code file (`>`,
 // Set-Content, Out-File, a move onto it). `cd` earlier in the same command is followed. Rebuildable folders (node_modules, dist, build ...), folders with no code and paths that
 // don't exist pass. This guard only reads; the snapshot hook (snapshot-guard.mjs) saves the way back before risky commands.
 // Any parse problem or unknown input allows the command: this hook must never get in the way by accident.
 import { existsSync, readFileSync } from "node:fs";
-import { basename, join, posix, relative, resolve } from "node:path";
+import { homedir, tmpdir } from "node:os";
+import { basename, dirname, join, posix, relative, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { codeFilesAt, isCodeFile, REBUILDABLE } from "../scripts/delete-lib.mjs";
 import { entriesOf, switchedOff, approvedAllows } from "../scripts/trust-lib.mjs";
+import { commandWord, gitSubcommand, nativePath, parse as parseShell, SHELLS } from "../scripts/shell-lib.mjs";
 
 let raw = "";
 for await (const chunk of process.stdin) raw += chunk;
@@ -35,7 +40,8 @@ const command = input?.tool_input?.command;
 if (typeof command !== "string" || !command.trim()) process.exit(0);
 // PowerShell reads a command differently from Bash (see parse); commands nested inside one (`bash -c`, `powershell -c`,
 // `cmd /c`) are read in their own shell's way.
-let ps = input?.tool_name === "PowerShell";
+// A terminal connector types into the user's own shell: PowerShell on Windows.
+let ps = input?.tool_name === "PowerShell" || (process.platform === "win32" && /^mcp__.+__run_in_terminal$/.test(String(input?.tool_name ?? "")));
 const inMode = (mode, fn) => {
   const prev = ps;
   ps = mode;
@@ -64,106 +70,10 @@ const guardOff = switchedOff(root, cfg, "auto", "guard");
 const allowed = approvedAllows(root, cfg);
 const NEVER_ALLOWED = new Set(["trust-commands", "trust-store"]);
 
-// ---------- read the command like a shell ----------
-function parse(cmd) {
-  const segs = [];
-  let tokens = [];
-  let cur = "";
-  let has = false;
-  let quote = null;
-  let pipeIn = false;
-  const endToken = () => {
-    if (has) tokens.push(cur);
-    cur = "";
-    has = false;
-  };
-  const endSeg = (nextPipe) => {
-    endToken();
-    if (tokens.length) segs.push({ tokens, pipeIn });
-    tokens = [];
-    pipeIn = nextPipe;
-  };
-  for (let i = 0; i < cmd.length; i++) {
-    const c = cmd[i];
-    if (quote) {
-      if (c === quote) quote = null;
-      else if (ps && quote === '"' && c === "`" && i + 1 < cmd.length) cur += cmd[++i]; // PowerShell escapes with a backtick
-      else if (!ps && quote === '"' && c === "\\" && (cmd[i + 1] === '"' || cmd[i + 1] === "\\")) {
-        cur += cmd[++i]; // in PowerShell a backslash is a plain character: "C:\" is the string C:\
-      } else cur += c;
-      continue;
-    }
-    if (ps && c === "`") {
-      // PowerShell: a backtick escapes the next character, and a backtick at the end of a line continues the command
-      const n = cmd[i + 1];
-      if (n === "\r" || n === "\n") {
-        i += n === "\r" && cmd[i + 2] === "\n" ? 2 : 1;
-        endToken();
-      } else if (n !== undefined) {
-        cur += n;
-        has = true;
-        i++;
-      }
-      continue;
-    }
-    if (ps && (c === "{" || c === "}")) {
-      endSeg(false); // a script block: its contents are commands too
-      continue;
-    }
-    if (c === "'" || c === '"') {
-      quote = c;
-      has = true;
-    } else if (c === "|" && cmd[i + 1] === "|") {
-      endSeg(false);
-      i++;
-    } else if (c === "|") endSeg(true);
-    else if (c === "&" && cmd[i + 1] === "&") {
-      endSeg(false);
-      i++;
-    } else if (c === "&" && (cmd[i + 1] === ">" || cmd[i - 1] === ">")) cur += c;
-    else if (c === ";" || c === "&" || c === "\n" || c === "(" || c === ")" || c === "`") endSeg(false);
-    else if (c === " " || c === "\t" || c === "\r") endToken();
-    else {
-      cur += c;
-      has = true;
-    }
-  }
-  endSeg(false);
-  return segs;
-}
-
-const WRAPPERS = new Set(["sudo", "doas", "env", "command", "nohup", "time", "nice", "exec", "builtin", "stdbuf"]);
-const SHELLS = new Set(["bash", "sh", "zsh", "dash", "ksh", "fish", "pwsh", "powershell", "cmd"]);
+// The command reader is shared with the push gate and the secret guard (scripts/shell-lib.mjs).
+const parse = (cmd) => parseShell(cmd, ps);
 const INTERPRETERS = new Set([...SHELLS, "python", "python3", "perl", "ruby", "node", "iex", "invoke-expression"]);
 const DOWNLOADERS = new Set(["curl", "wget", "iwr", "irm", "invoke-webrequest", "invoke-restmethod"]);
-
-// Shell grammar words that can sit in front of a command (`{ rm -rf /; }`, `if x; then rm -rf /; fi`).
-const RESERVED = new Set(["{", "}", "!", "then", "do", "else", "elif", "if", "while", "until"]);
-// Options of each wrapper that take a value (so the value isn't mistaken for the command). `sudo -n` takes none.
-const WRAPPER_VALUE_OPTS = {
-  sudo: ["-u", "-g", "-C", "-p", "-r", "-t", "-U", "-h", "-D", "-R"],
-  doas: ["-u", "-C"],
-  env: ["-u", "-C", "-S"],
-  nice: ["-n"],
-  exec: ["-a"],
-  stdbuf: ["-i", "-o", "-e"],
-};
-
-function commandWord(tokens) {
-  let i = 0;
-  while (i < tokens.length) {
-    const t = tokens[i];
-    if (/^[A-Za-z_][A-Za-z0-9_]*=/.test(t) || RESERVED.has(t)) i++;
-    else if (WRAPPERS.has(t.toLowerCase())) {
-      const wrapper = t.toLowerCase();
-      i++;
-      while (i < tokens.length && tokens[i].startsWith("-")) i += (WRAPPER_VALUE_OPTS[wrapper] ?? []).includes(tokens[i]) ? 2 : 1;
-    } else break;
-  }
-  if (i >= tokens.length) return { cmd: "", args: [] };
-  const cmd = basename(tokens[i].replace(/\\/g, "/")).toLowerCase().replace(/\.(exe|cmd|bat|ps1)$/, "");
-  return { cmd, args: tokens.slice(i + 1) };
-}
 
 // ---------- classification helpers ----------
 const ROOTY = [
@@ -178,12 +88,49 @@ const ROOTY = [
 ];
 
 // `//`, `/./`, `/../` and `~/./` are all the same folder as `/` and `~/`: compare the real path, not the spelling.
+// Git Bash's /c/... and WSL's /mnt/c/... are drive C: (until 2.25.0 `rm -rf /c/` passed): they are compared as c:/...
 function normTarget(t) {
-  if (/^(\/|~|\$HOME|\$\{HOME\})/.test(t) && !/^[a-z]:/i.test(t)) {
-    const n = posix.normalize(t.replace(/\\/g, "/"));
-    return n.length > 1 ? n : n; // "/" stays "/"
-  }
+  t = t.replace(/^["']|["']$/g, "");
+  if (/^(\/|~|\$HOME|\$\{HOME\})/.test(t) && !/^[a-z]:/i.test(t)) return nativePath(posix.normalize(t.replace(/\\/g, "/")));
   return t;
+}
+
+// ---------- where a path really is ----------
+const HOME = homedir().replace(/\\/g, "/");
+const isWin = process.platform === "win32";
+// A path as this computer's file system knows it, with the home folder and temp folder spellings filled in. null when it
+// can't be known here (a variable, or relative to a folder an earlier `cd $X` left unknown).
+function absPath(raw) {
+  let t = String(raw).replace(/^["']|["']$/g, "").replace(/\\/g, "/");
+  t = t.replace(/^(~|\$HOME|\$\{HOME\}|\$env:USERPROFILE|%USERPROFILE%)(?=$|\/)/i, HOME);
+  t = t.replace(/^(\$env:TEMP|\$env:TMP|%TEMP%|%TMP%|\$TMPDIR|\$\{TMPDIR\})(?=$|\/)/i, tmpdir().replace(/\\/g, "/"));
+  if (/[$`%]/.test(t)) return null;
+  if (isWin) t = nativePath(t);
+  const absolute = /^([a-z]:)?\//i.test(t);
+  if (!absolute && here === null) return null;
+  // A Windows path read on another system is a place outside any project there; keep it as written.
+  if (!isWin && /^[a-z]:\//i.test(t)) return t;
+  return resolve(absolute ? t : join(here ?? cwd, t));
+}
+function insideFolder(abs, folder) {
+  const rel = relative(folder, abs);
+  return !rel.startsWith("..") && !/^[a-z]:/i.test(rel) && !rel.startsWith("/") && !rel.startsWith("\\");
+}
+const TEMP_DIRS = [tmpdir(), process.env.TEMP, process.env.TMP, process.env.TMPDIR, "/tmp", "/var/tmp", "/private/tmp", "/private/var/folders"].filter(Boolean).map((d) => resolve(d));
+// Tool caches anywhere: deleting one costs a re-download, never the owner's own files.
+const CACHE_DIRS = new Set([".cache", ".npm", ".pnpm-store", ".yarn", ".gradle", ".m2", ".nuget", ".bun", ".deno", "caches", "_cacache", "ms-playwright", "pip-cache", "go-build"]);
+// Recursive deletes outside the project: the owner's own folders (Documents, photos, other projects) hold things no code
+// check can see, so every one asks; temp folders and tool caches pass.
+function checkOutside(raw) {
+  const abs = absPath(raw.replace(/[\\/]+\*?$/, ""));
+  if (!abs) return;
+  if (isWin || !/^[a-z]:\//i.test(abs)) {
+    if (insideFolder(abs, root)) return;
+    if (TEMP_DIRS.some((d) => insideFolder(abs, d))) return;
+  }
+  const parts = abs.replace(/\\/g, "/").split("/");
+  if (parts.some((p) => CACHE_DIRS.has(p.toLowerCase())) || REBUILDABLE.has(parts[parts.length - 1])) return;
+  add("ask", "rm-outside", `DELETES OUTSIDE THE PROJECT: "${raw}" is not part of this project and may hold the owner's own files`);
 }
 const WIDE = /^(\*|\.|\.\/|\.\/\*|\.\.|\.\.\/|\.\*|\.\\|\.\\\*)$/;
 const PROTECTED_BRANCH = /^(main|master|trunk|develop|production|prod|release\/.+)$/;
@@ -198,12 +145,17 @@ const add = (level, id, reason) => {
 function checkRm(cmd, args) {
   const recursive = args.some((a) => /^-[a-zA-Z]*[rR][a-zA-Z]*$/.test(a) || a === "--recursive" || /^\/s$/i.test(a) || /^-recurse$/i.test(a));
   if (!recursive) return;
-  const targets = args.filter((a) => !a.startsWith("-") && !/^\/[a-z]$/i.test(a));
+  // `/s` and `/q` are switches only for Windows' own rd and del; for rm, `/c` is Git Bash's drive C:.
+  const cmdExe = ["rd", "rmdir", "del", "erase"].includes(cmd);
+  const targets = args.filter((a) => !a.startsWith("-") && !(cmdExe && /^\/[a-z]$/i.test(a)));
   for (const raw of targets) {
     const t = normTarget(raw);
     if (ROOTY.some((re) => re.test(t))) add("deny", "rm-root", `\`${cmd} -r\` on "${raw}" would wipe a system, home or drive folder`);
     else if (WIDE.test(t)) add("ask", "rm-wide", `\`${cmd} -r\` on "${raw}" deletes everything in the current folder`);
-    else checkCodeDelete(raw);
+    else {
+      checkOutside(raw);
+      checkCodeDelete(raw);
+    }
   }
 }
 
@@ -220,19 +172,22 @@ function checkFind(args) {
   const pattern = ni >= 0 ? String(args[ni + 1] ?? "").replace(/^["']|["']$/g, "") : undefined;
   for (const r of roots) {
     if (ROOTY.some((re) => re.test(normTarget(r)))) add("deny", "rm-root", `\`find ${r} ... delete\` would wipe a system, home or drive folder`);
-    else checkCodeDelete(r === "." || r === "./" ? "." : r, pattern);
+    else {
+      checkOutside(r);
+      checkCodeDelete(r === "." || r === "./" ? "." : r, pattern);
+    }
   }
 }
 
 // ---------- deleting code ----------
 // Asks before a delete takes code with it. namePattern: find's -name glob, when one is given.
 function checkCodeDelete(raw, namePattern) {
-  if (/[$`%]|^~/.test(raw)) return; // variables and home paths can't be resolved here (home and system folders are handled above)
   const t = raw.replace(/^["']|["']$/g, "").replace(/[\\/]+\*?$/, "");
   if (!t || /[*?]/.test(t) || REBUILDABLE.has(basename(t.replace(/\\/g, "/")))) return;
   const glob = namePattern ? new RegExp(`^${namePattern.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*").replace(/\?/g, ".")}$`, "i") : null;
-  if (here === null && !/^([a-z]:)?[\\/]/i.test(t)) return; // relative to a folder that can't be known here
-  const files = codeFilesAt(resolve(here ?? cwd, t.replace(/\\/g, "/"))).filter((f) => !glob || glob.test(basename(f)));
+  const abs = absPath(t); // home and temp spellings filled in; Git Bash's /c/... read as C:/...
+  if (!abs) return;
+  const files = codeFilesAt(abs).filter((f) => !glob || glob.test(basename(f)));
   if (files.length) add("ask", "rm-code", `DELETES CODE: "${raw}" holds ${files.length >= 50 ? "50 or more" : files.length} code file${files.length === 1 ? "" : "s"} (${files.slice(0, 3).join(", ")}${files.length > 3 ? ", ..." : ""})`);
 }
 
@@ -242,23 +197,31 @@ function checkMove(cmd, args) {
   const di = args.findIndex((a) => /^-(destination|d)$/i.test(a));
   const plain = args.filter((a, i) => !a.startsWith("-") && !(di >= 0 && i === di + 1));
   const dest = di >= 0 ? args[di + 1] : plain.pop();
-  if (!dest || /[$`%*?]/.test(dest)) return;
-  const at = (p) => resolve(here, p.replace(/^["']|["']$/g, "").replace(/\\/g, "/"));
-  const home = /^~([\\/]|$)/.test(dest); // the home folder is outside every project
-  const destAbs = home ? null : at(dest);
-  const rel = home ? ".." : relative(root, destAbs);
-  const outside = rel.startsWith("..") || /^[a-z]:/i.test(rel) || rel.startsWith("/");
+  if (!dest || /[*?]/.test(dest)) return;
+  const destAbs = absPath(dest);
+  if (!destAbs) return;
+  const outside = (!isWin && /^[a-z]:\//i.test(destAbs)) || !insideFolder(destAbs, root);
   for (const src of plain) {
-    if (/[$`%*?]|^~/.test(src)) continue;
-    if (!outside && isCodeFile(destAbs) && existsSync(at(src))) add("ask", "rm-code", `OVERWRITES CODE: moving "${src}" onto "${dest}" replaces that file`);
-    const files = codeFilesAt(at(src));
+    if (/[*?]/.test(src)) continue;
+    const srcAbs = absPath(src);
+    if (!srcAbs) continue;
+    if (!outside && isCodeFile(destAbs) && existsSync(srcAbs)) add("ask", "rm-code", `OVERWRITES CODE: moving "${src}" onto "${dest}" replaces that file`);
+    const files = codeFilesAt(srcAbs);
     if (files.length && outside) add("ask", "rm-code", `MOVES CODE out of the project: "${src}" (${files.slice(0, 3).join(", ")}) to "${dest}"`);
   }
 }
-// `> file`, Set-Content, Out-File, Clear-Content: replaces a whole existing code file.
+// `> file`, Set-Content, Out-File, Clear-Content, a copy onto it: replaces a whole existing code file.
 function checkOverwrite(target, how) {
-  if (!target || /[$`%*?]|^~|^\/dev\/|^nul$/i.test(target) || here === null) return;
-  if (isCodeFile(resolve(here, target.replace(/^["']|["']$/g, "").replace(/\\/g, "/")))) add("ask", "rm-code", `OVERWRITES CODE: ${how} replaces all of "${target}"`);
+  if (!target || /[*?]|^\/dev\/|^nul$/i.test(target)) return;
+  const abs = absPath(target);
+  if (abs && isCodeFile(abs)) add("ask", "rm-code", `OVERWRITES CODE: ${how} replaces all of "${target}"`);
+}
+// cp / Copy-Item onto an existing code file.
+function checkCopy(cmd, args) {
+  const di = args.findIndex((a) => /^-(destination|d)$/i.test(a));
+  const plain = args.filter((a, i) => !a.startsWith("-") && !(di >= 0 && i === di + 1));
+  const dest = di >= 0 ? args[di + 1] : plain.length >= 2 ? plain[plain.length - 1] : null;
+  if (dest) checkOverwrite(dest, `copying onto it (${cmd})`);
 }
 
 const ATTACK_TOOLS = new Set(["nmap", "masscan", "zmap", "sqlmap", "hydra", "medusa", "nikto", "gobuster", "dirb", "dirbuster", "ffuf", "wfuzz", "feroxbuster", "nuclei", "wpscan", "msfconsole", "msfvenom", "zap-cli", "zap.sh", "zaproxy", "arachni", "w3af", "commix", "xsstrike", "dalfox", "amass", "subfinder", "enum4linux", "responder", "ettercap", "aircrack-ng", "john", "hashcat"]);
@@ -296,10 +259,7 @@ function touchesSecretFile(args) {
 }
 
 function checkGit(args) {
-  let i = 0;
-  while (i < args.length && args[i].startsWith("-")) i += ["-C", "-c"].includes(args[i]) ? 2 : 1;
-  const sub = args[i];
-  const rest = args.slice(i + 1);
+  const { sub, rest } = gitSubcommand(args);
   const flags = rest.filter((a) => a.startsWith("-"));
   const plain = rest.filter((a) => !a.startsWith("-"));
   const hasShort = (ch) => flags.some((f) => /^-[a-zA-Z]+$/.test(f) && f.includes(ch));
@@ -318,6 +278,9 @@ function checkGit(args) {
   else if (sub === "restore" && !flags.includes("--staged") && !hasShort("S") && plain.length) add("ask", "discard-changes", "git restore discards uncommitted changes in those files");
   else if (sub === "branch" && (hasShort("D") || (flags.includes("--delete") && flags.includes("--force")))) add("ask", "branch-D", "git branch -D deletes a branch even if it is unmerged");
   else if (sub === "stash" && ["drop", "clear"].includes(plain[0])) add("ask", "stash-drop", "dropping stashes loses saved work");
+  else if (sub === "switch" && (hasShort("f") || flags.includes("--force") || flags.includes("--discard-changes"))) add("ask", "discard-changes", "git switch --force discards uncommitted changes");
+  else if ((sub === "switch" && (hasShort("C") || flags.includes("--force-create"))) || (sub === "checkout" && hasShort("B")) || (sub === "branch" && (hasShort("f") || flags.includes("--force")))) add("ask", "branch-reset", "moves an existing branch to another commit; commits only on that branch can be lost");
+  else if (sub === "worktree" && plain[0] === "remove" && (hasShort("f") || flags.includes("--force"))) add("ask", "worktree-force", "git worktree remove --force throws away that worktree's uncommitted work");
   else if (["filter-branch", "filter-repo"].includes(sub)) add("ask", "rewrite-history", "rewrites the whole git history");
   else if ((sub === "reflog" && flags.some((f) => f.startsWith("--expire"))) || (sub === "gc" && flags.some((f) => f.startsWith("--prune=now")))) add("ask", "rewrite-history", "permanently removes recoverable git history");
 }
@@ -336,27 +299,38 @@ const TRUST_ANY_ARG = new Set([
 const TRUST_DEST = new Set(["cp", "copy", "copy-item", "cpi", "install", "rsync", "scp", "xcopy", "robocopy"]);
 const CODE_WRITES = /writeFile|appendFile|createWriteStream|copyFile|rename|unlink|rmSync|\brm\s*\(|truncate|open\s*\([^)]*,\s*["'][wax+]|os\.remove|os\.unlink|shutil\.(copy|move)|\.write_text|\.write_bytes|\.unlink\(|File\.(Write|Append|Delete|Copy|Move)|Set-Content|Out-File|Add-Content|Remove-Item/i;
 
-function writesTrustStore(text, segs) {
-  if (!TRUST.test(text)) return false;
+// The same protection for the kit's own files (2.25.0): the installed plugin (a changed guard is a guard switched off), the
+// plan-check markers (deleting one switches the plan check off for that project) and the pre-ship pass marker (only
+// scripts/ship-mark.mjs, which re-checks first, may write it).
+const PROTECTED = [
+  { re: TRUST, id: "trust-store", why: "the approval list can only be changed with the trust script, which asks the user" },
+  { re: /plugins[\\/](cache|marketplaces)[\\/]starter-kit-marketplace/i, id: "kit-files", why: "these are the starter kit's own installed files; only an update may change them" },
+  { re: /starter-kit[\\/]new-projects/i, id: "plan-marker", why: "the plan-check markers belong to the kit; removing one switches the plan check off" },
+  { re: /last-full-scan/i, id: "ship-marker", why: `the pre-ship pass marker is written only by the kit's ship-mark script, after it re-checks (node "${join(dirname(fileURLToPath(import.meta.url)), "..", "scripts", "ship-mark.mjs")}" --project .)` },
+];
+for (const p of PROTECTED) NEVER_ALLOWED.add(p.id);
+
+function writesProtected(text, segs, re) {
+  if (!re.test(text)) return false;
   // a redirect into it: `> …/trusted.json`, `>>trusted.json`, `>| x`, dd's `of=`
-  if (/>\|?\s*["']?[^\s;|&"'<>]*trusted\.json/i.test(text) || /\bof=["']?[^\s;|&"']*trusted\.json/i.test(text)) return true;
+  if (new RegExp(`>\\|?\\s*["']?[^\\s;|&"'<>]*(?:${re.source})`, "i").test(text) || new RegExp(`\\bof=["']?[^\\s;|&"']*(?:${re.source})`, "i").test(text)) return true;
   for (const seg of segs) {
     const { cmd, args } = commandWord(seg.tokens);
-    if (!cmd || !args.some((a) => TRUST.test(a))) continue;
+    if (!cmd || !args.some((a) => re.test(a))) continue;
     if (TRUST_ANY_ARG.has(cmd)) return true;
     if ((cmd === "sed" || cmd === "perl") && args.some((a) => /^-[a-z]*i/i.test(a) || a === "--in-place")) return true;
     if (TRUST_DEST.has(cmd)) {
       const d = args.findIndex((a) => /^-(destination|dest)$/i.test(a));
       const plain = args.filter((a) => !a.startsWith("-"));
-      if ((d >= 0 && TRUST.test(args[d + 1] ?? "")) || TRUST.test(plain[plain.length - 1] ?? "")) return true;
+      if ((d >= 0 && re.test(args[d + 1] ?? "")) || re.test(plain[plain.length - 1] ?? "")) return true;
     }
-    if (["node", "nodejs", "python", "python3", "py", "perl", "ruby", "deno", "bun", "php"].includes(cmd) && args.some((a) => TRUST.test(a) && CODE_WRITES.test(a))) return true;
+    if (["node", "nodejs", "python", "python3", "py", "perl", "ruby", "deno", "bun", "php"].includes(cmd) && args.some((a) => re.test(a) && CODE_WRITES.test(a))) return true;
   }
   return false;
 }
 
 function inspectCode(code, depth) {
-  if (TRUST.test(code) && CODE_WRITES.test(code)) add("deny", "trust-store", "code that changes the approval list, which only the trust script may do (it asks the user)");
+  for (const p of PROTECTED) if (p.re.test(code) && CODE_WRITES.test(code)) add("deny", p.id, `code that changes protected files: ${p.why}`);
   for (const m of code.matchAll(/(?:rmtree|rmSync|rmdirSync|removeSync|remove_all|unlinkSync)\(\s*(["'])((?:(?!\1).)*)\1/g)) {
     const t = normTarget(m[2]);
     if (ROOTY.some((re) => re.test(t))) add("deny", "rm-root", `inline code deletes "${m[2]}", a system, home or drive folder`);
@@ -466,7 +440,15 @@ function analyze(text, depth = 0) {
   text = stripHeredocs(text, depth);
   if (ps) text = prepPowerShell(text, depth);
   // The approval list is the user's: nothing may change it except the trust script, which asks. Reading it is fine.
-  if (writesTrustStore(text, parse(text))) add("deny", "trust-store", "the approval list can only be changed with the trust script, which asks the user");
+  const allSegs = parse(text);
+  for (const p of PROTECTED) if (writesProtected(text, allSegs, p.re)) add("deny", p.id, p.why);
+  // The approval prompt lists what kit.json says before the command runs; anything run with it could change the file first
+  // (2.25.0: `cp other.json .claude/kit.json && node trust.mjs` showed one list and approved another).
+  const runsTrust = allSegs.some((s) => {
+    const w = commandWord(s.tokens);
+    return w.cmd === "node" && w.args.some((a) => /(^|[\\/])trust\.mjs$/i.test(a)) && !w.args.includes("--list");
+  });
+  if (runsTrust && (depth > 0 || allSegs.length > 1)) add("deny", "trust-commands", "the approval script must run on its own, as a command of its own, so the list the owner is shown is the list that gets approved");
   if (/:\(\)\s*\{\s*:\s*\|\s*:\s*&\s*\}\s*;\s*:/.test(text)) add("deny", "fork-bomb", "fork bomb");
   if (
     /\b(bash|sh|zsh)\s+<\(\s*(curl|wget)\b/.test(text) ||
@@ -563,8 +545,10 @@ function analyze(text, depth = 0) {
     } else if (["rm", "rmdir", "rd", "del", "erase", "remove-item", "ri"].includes(cmd)) checkRm(cmd, args);
     else if (["cd", "chdir", "pushd", "set-location", "sl"].includes(cmd)) {
       const to = args.filter((a) => !a.startsWith("-"))[0];
-      if (to) here = /[$`%]|^~/.test(to) || here === null ? null : resolve(here, to.replace(/^["']|["']$/g, "").replace(/\\/g, "/"));
+      // `cd ~` and Git Bash's `cd /c/...` are followed too; a folder named by a variable leaves `here` unknown.
+      here = to === "-" ? null : to ? absPath(to) : HOME;
     } else if (["mv", "move", "move-item", "mi", "ren", "rename", "rename-item", "rni"].includes(cmd)) checkMove(cmd, args);
+    else if (["cp", "copy", "copy-item", "cpi"].includes(cmd)) checkCopy(cmd, args);
     else if (["set-content", "sc", "out-file", "clear-content", "clc"].includes(cmd)) {
       const pi = args.findIndex((a) => /^-(path|literalpath|filepath)$/i.test(a));
       checkOverwrite(pi >= 0 ? args[pi + 1] : args.find((a) => !a.startsWith("-")), cmd);
@@ -593,11 +577,16 @@ function analyze(text, depth = 0) {
   });
 }
 
+// A bug in this guard must never turn into "allow everything" (2.25.0: a broken import once let `rm -rf /` through silently).
+// Anything it could not read is put to the user instead, with what it was able to find so far.
+let readError = null;
 try {
+  if (process.env.KIT_TEST_GUARD_FAULT === "1") throw new Error("test fault");
   analyze(command);
-} catch {
-  process.exit(0);
+} catch (e) {
+  readError = String(e?.message ?? e).split("\n")[0].slice(0, 120);
 }
+if (readError && !findings.some((f) => f.level === "deny")) findings.push({ level: "ask", id: "unreadable", reason: `the starter-kit safety guard hit an error reading this command (${readError}), so it could not check it` });
 if (!findings.length) process.exit(0);
 
 const deny = findings.filter((f) => f.level === "deny");

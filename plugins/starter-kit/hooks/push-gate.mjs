@@ -9,6 +9,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { switchedOff } from "../scripts/trust-lib.mjs";
+import { shipActions } from "../scripts/ship-detect.mjs";
 
 let raw = "";
 for await (const chunk of process.stdin) raw += chunk;
@@ -39,7 +40,12 @@ const SHIPPING = [
   String.raw`(heroku|render)\s+(deploy|releases:create)`,
 ].map((p) => `(${p})`);
 const PUSH = new RegExp(`${START}(${SHIPPING.join("|")})\\b`);
-if (!PUSH.test(command) || /--dry-run/.test(command)) process.exit(0);
+// Read the way a shell reads it too (2.25.0): `git status\ngit push`, `FOO=1 git push`, `time git push`, `bash -c "git push"`,
+// `git.exe push`, `gh repo create --push` and `gh pr merge` all got through the pattern alone.
+const ps = input?.tool_name === "PowerShell" || (process.platform === "win32" && /run_in_terminal$/.test(String(input?.tool_name ?? "")));
+const act = shipActions(command, ps);
+const shipping = act.push || act.pr || act.deploy || (PUSH.test(command) && !/--dry-run/.test(command));
+if (!shipping) process.exit(0);
 
 const root = resolve(process.env.CLAUDE_PROJECT_DIR || input.cwd || process.cwd());
 const read = (p) => {

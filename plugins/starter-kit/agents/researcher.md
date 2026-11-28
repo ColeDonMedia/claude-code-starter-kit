@@ -1,7 +1,7 @@
 ---
 name: researcher
 description: Web researcher. Runs many searches, reads primary sources, cross-checks claims and returns a short sourced report, so web pages never fill the main conversation. Used by /starter-kit:research and /starter-kit:spec.
-disallowedTools: Write, Edit, MultiEdit, NotebookEdit, Bash, PowerShell, Agent
+disallowedTools: Write, Edit, MultiEdit, NotebookEdit, Bash, PowerShell, Monitor, Agent
 model: haiku
 effort: medium
 maxTurns: 60

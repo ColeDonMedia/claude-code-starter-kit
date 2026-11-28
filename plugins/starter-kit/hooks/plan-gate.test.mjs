@@ -27,7 +27,10 @@ function sandbox() {
     return r.stdout.trim() ? JSON.parse(r.stdout).hookSpecificOutput.permissionDecision : "allow";
   };
   const startEmpty = () => run(SESSION, { hook_event_name: "SessionStart", source: "startup" });
-  return { dir, put, write, startEmpty, done: () => [dir, data].forEach((d) => rmSync(d, { recursive: true, force: true })) };
+  // Approves switches the way the trust script does, in this sandbox's own data folder.
+  const approve = (cfg) =>
+    spawnSync(process.execPath, ["--input-type=module", "-e", `const t = await import(${JSON.stringify(new URL("../scripts/trust-lib.mjs", import.meta.url).href)}); t.trustEntries(${JSON.stringify(dir)}, t.entriesOf(${JSON.stringify(cfg)}));`], { env, encoding: "utf8" });
+  return { dir, put, write, startEmpty, approve, done: () => [dir, data].forEach((d) => rmSync(d, { recursive: true, force: true })) };
 }
 
 test("a project born in an empty folder gets no app code until a plan exists; setup, records and test config are fine", () => {
@@ -59,7 +62,9 @@ test("existing projects, other folders and the owner's own switch are never bloc
     t.startEmpty();
     assert.equal(t.write(join(tmpdir(), "elsewhere.js")), "allow", "a file outside the project is not this gate's business");
     t.put(".claude/kit.json", JSON.stringify({ planGate: false }));
-    assert.equal(t.write("src/app.js"), "allow", "the owner's own switch");
+    assert.equal(t.write("src/app.js"), "deny", "since 2.25.0 a switch in the project file alone is ignored");
+    t.approve({ planGate: false });
+    assert.equal(t.write("src/app.js"), "allow", "the owner's own switch, approved on this computer");
   } finally {
     t.done();
   }

@@ -21,6 +21,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { switchedOff as isSwitchedOff } from "../scripts/trust-lib.mjs";
 
 const MARKETPLACE = "starter-kit-marketplace";
 const PLUGIN = `starter-kit@${MARKETPLACE}`;
@@ -86,7 +87,8 @@ try {
   const p = join(projectDir, ".claude", "kit.json");
   if (existsSync(p)) {
     const cfg = JSON.parse(readFileSync(p, "utf8"));
-    switchedOff = cfg.autoUpdate === false || cfg.auto === false;
+    // counts only once the owner approved it on this computer: a project must not stop the kit's fixes reaching it
+    switchedOff = isSwitchedOff(projectDir, cfg, "autoUpdate", "auto");
   }
 } catch {
   /* ignore bad json */

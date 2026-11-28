@@ -13,7 +13,9 @@ blocks, `$( )` inside strings, here-strings, `-EncodedCommand`).
   other branches, `curl | sh`, `DROP TABLE`, database resets, printing `.env` or SSH keys, hidden `-EncodedCommand` payloads.
 - **Asks before deleting code** (rule `rm-code`): any recursive delete (`rm -r`, `Remove-Item -Recurse`, `rd /s`, `find -delete`,
   or `rmSync`/`rmtree` in a one-line script) of a folder or file that holds code. The question starts with "DELETES CODE" and
-  names the files, so it stands out on a phone.
+  names the files, so it stands out on a phone. It also asks before moving code out of the project ("MOVES CODE") and before
+  replacing an existing code file with `>`, Set-Content, Out-File, Clear-Content or a move onto it ("OVERWRITES CODE"). It follows
+  `cd` within a command, so `cd src && rm -rf lib` is caught.
 - **Lets through** ordinary work: `rm -rf node_modules` and other rebuildable folders (`dist`, `build`, `.svelte-kit`, `coverage`,
   ...), untracked scratch that holds no code, and any text that only *mentions* a dangerous command (a commit message, an `echo`, a
   search).
@@ -24,8 +26,10 @@ branch, rewriting history, destructive SQL, a database reset), it saves:
 - **A snapshot of the work as it is**, unsaved and new files included, under `refs/kit-snapshots/` in the project's own git. It is
   built separately, so your branch, staged files and working copy are untouched. Ignored files (`.env`, packages, build output) are
   never in it, and these refs are never pushed. A branch about to be deleted and every stash entry are kept with it.
-- **A copy of each local SQLite database file**, in `.claude/backups/<time>/` (a folder that keeps itself out of git). A database
-  server can't be copied this way, so the question says to make a dump first.
+- **A copy of each local SQLite database file**, in `.claude/backups/<time>/` (a folder that keeps itself out of git), and a dump
+  of a local Postgres or MySQL database the command names, when `pg_dump` or `mysqldump` is installed. Anything else gets the
+  advice to make a dump first.
+- Single code files deleted or overwritten get a snapshot too, without a question (they are recoverable from it).
 
 The newest 20 snapshots and 10 database copies are kept. Claude lists and restores them with `scripts/snapshot.mjs` (`--list`,
 `--restore <id> [--path <file or folder>]`). A restore first saves the state it replaces, and it deletes nothing.

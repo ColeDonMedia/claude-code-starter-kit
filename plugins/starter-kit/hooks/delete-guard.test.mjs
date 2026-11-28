@@ -162,7 +162,7 @@ test("before destructive SQL or a database reset, the local database file is cop
     assert.equal(readFileSync(join(backups, runs[0], "data", "app.db"), "utf8"), "SQLITE FAKE CONTENT");
     assert.equal(readFileSync(join(backups, ".gitignore"), "utf8").trim(), "*", "the backups folder ignores itself");
     const r = decide(dir, "npx prisma migrate reset", "Bash", { snapshots: true });
-    assert.match(r.reason, /local database file\) is saved first/);
+    assert.match(r.reason, /copy or dump of any local database\) is saved first/);
     assert.equal(readdirSync(backups).filter((f) => f !== ".gitignore").length, 2);
   } finally {
     rmSync(dir, { recursive: true, force: true });
@@ -220,6 +220,29 @@ test("copies and snapshots made in the same second stay separate and in order (f
       saveSnapshot(dir, `quick ${n}`);
     }
     assert.deepEqual(listSnapshots(dir).map((s) => s.reason), ["quick 3", "quick 2", "quick 1"], "newest first, even within one second");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("a local Postgres or MySQL database named in a destructive command is dumped first; one elsewhere never is", async () => {
+  const { dumpPlans, dumpLocalDatabases } = await import("../scripts/snapshot-lib.mjs");
+  assert.deepEqual(dumpPlans("psql postgres://app:pw@localhost:5432/shop -c 'DROP TABLE orders'").map((p) => [p.tool, p.name]), [["pg_dump", "shop"]]);
+  assert.deepEqual(dumpPlans("psql -h 127.0.0.1 -U app -d shop -c 'TRUNCATE orders'").map((p) => [p.tool, p.name]), [["pg_dump", "shop"]]);
+  assert.deepEqual(dumpPlans("mysql -u root -psecret shop -e 'DROP TABLE orders'").map((p) => [p.tool, p.name]), [["mysqldump", "shop"]]);
+  assert.deepEqual(dumpPlans("mysql://root:pw@localhost/shop").map((p) => p.tool), ["mysqldump"]);
+  assert.deepEqual(dumpPlans("psql postgres://app:pw@db.example.com/shop -c 'DROP TABLE x'"), [], "never a database on another computer");
+  assert.deepEqual(dumpPlans("psql -h db.example.com -d shop"), []);
+  const { dir } = makeRepo();
+  try {
+    const calls = [];
+    const fake = (tool, args) => (calls.push([tool, ...args]), { status: 0, stdout: "-- dump of shop\nCREATE TABLE orders();\n" });
+    const files = dumpLocalDatabases(dir, "psql postgres://app:pw@localhost/shop -c 'DROP TABLE orders'", fake);
+    assert.equal(files.length, 1);
+    assert.match(readFileSync(join(dir, files[0]), "utf8"), /CREATE TABLE orders/);
+    assert.equal(calls[0][0], "pg_dump");
+    const missing = dumpLocalDatabases(dir, "psql -d shop -c 'DROP TABLE x'", () => ({ status: null, error: new Error("ENOENT") }));
+    assert.deepEqual(missing, [], "no dump tool installed: nothing written, nothing fails");
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

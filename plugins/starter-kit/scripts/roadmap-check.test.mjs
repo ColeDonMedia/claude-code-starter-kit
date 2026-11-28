@@ -222,3 +222,27 @@ test("work that existed before the kit is ticked with (existing <commit>), with 
     r.cleanup();
   }
 });
+
+test("(existing <commit>) counts only under Milestone 0, and only for work from before the roadmap was committed", () => {
+  const r = repo();
+  try {
+    const proof = "  - [x] A visitor can sign up → test: test/auth.test.js::signs up a visitor\n";
+    // outside Milestone 0: refused
+    r.put("ROADMAP.md", `## Milestone 1 — accounts\nAccepted: pending\n- [x] Sign in — accounts (existing ${r.sha})\n${proof}`);
+    assert.match(checkRoadmap(r.dir).problems.join("\n"), /outside "## Milestone 0/);
+    // Milestone 0, commit before the roadmap: fine
+    r.put("ROADMAP.md", `## Milestone 0 — what already works\nAccepted: pending\n- [x] Sign in — accounts (existing ${r.sha})\n${proof}`);
+    r.g("add", "-A");
+    r.g("commit", "-q", "-m", "take over: roadmap");
+    assert.deepEqual(checkRoadmap(r.dir).problems, []);
+    // new work afterwards dressed up as "existing": refused
+    r.put("src/new.js", "export const x = 1;\n");
+    r.g("add", "-A");
+    r.g("commit", "-q", "-m", "new feature");
+    const later = r.g("rev-parse", "--short", "HEAD").stdout.trim();
+    r.put("ROADMAP.md", `## Milestone 0 — what already works\nAccepted: pending\n- [x] Sign in — accounts (existing ${later})\n${proof}`);
+    assert.match(checkRoadmap(r.dir).problems.join("\n"), /newer than the first roadmap/);
+  } finally {
+    r.cleanup();
+  }
+});

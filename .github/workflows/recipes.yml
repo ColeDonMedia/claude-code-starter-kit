@@ -1,0 +1,32 @@
+# Weekly check of the kit's stack recipes (plugins/starter-kit/presets/): lists pinned tools and packages that have newer
+# releases, then sets every recipe up from scratch, runs its own checks, and builds its container (Docker is on GitHub's Linux
+# machines, not on every owner's computer). Free for a public repository, no tokens, no secrets. Network: the npm registry and
+# Docker Hub's official Node image only. A failure here means a recipe needs attention before the next release, nothing more.
+name: recipes
+on:
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  recipes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - run: git config --global user.name "ci" && git config --global user.email "ci@example.com"
+      - name: newer releases than the recipes pin
+        run: node plugins/starter-kit/scripts/presets.mjs --versions
+      - name: system libraries the browser tests need
+        run: npx --yes playwright@1.65.1 install-deps chromium
+      - name: every recipe set up from scratch, its own checks, and its container built
+        run: node --test --test-timeout=4200000 --test-name-pattern="sets up for real" plugins/starter-kit/scripts/presets.test.mjs
+        env:
+          KIT_PRESET_SCAFFOLD: "1"
+          KIT_PRESET_DOCKER: "1"

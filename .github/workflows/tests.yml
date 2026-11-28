@@ -36,12 +36,23 @@ jobs:
         run: node --test plugins/starter-kit/hooks/*.test.mjs
         env:
           KIT_VIA_GATE: "1"
+      # 2.21.0 shipped a test that passed on a slow computer and failed on fast ones. Every test file this push adds or changes
+      # runs three more times here, so a test that passes only by luck or timing fails before anyone receives the release.
+      - name: new and changed tests, three more times
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          base="$BEFORE"
+          if [ -z "$base" ] || ! git cat-file -e "$base^{commit}" 2>/dev/null; then base=$(git rev-parse HEAD~1); fi
+          files=$(git diff --name-only --diff-filter=AM "$base" HEAD -- 'plugins/starter-kit/*/*.test.mjs' | tr '\n' ' ')
+          if [ -n "$files" ]; then for i in 1 2 3; do node --test $files || exit 1; done; else echo "no test files changed"; fi
 
-  # Moves the "stable" branch to this commit only when every test above passed on a push to main. Computers that install the kit
-  # from the stable channel (see the README) therefore never receive a commit that failed on any operating system.
+  # Releases are pushed to the "candidate" branch (decision D7). Only when every test above passed does this move "main" (which
+  # most computers update from) and "stable" to that commit, so no computer receives a release that failed on any system. A
+  # direct push to main still moves stable only after passing. Fast-forward only: it never overwrites newer work on main.
   promote:
     needs: tests
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/candidate' || github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -50,4 +61,6 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+      - if: github.ref == 'refs/heads/candidate'
+        run: git push origin "HEAD:refs/heads/main"
       - run: git push origin "HEAD:refs/heads/stable"

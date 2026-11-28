@@ -117,18 +117,18 @@ const parts = [
     "- Question, explanation, docs, config -> just do it. Unsure which workflow -> take the lighter path.\n" +
     "- New app, big/vague feature, or code with no ROADMAP.md -> /starter-kit:spec (existing code: its take-over part), then build it; changed requirements: say what it adds or delays first.\n" +
     "- Big or unfamiliar codebase, or an area with no rules file -> /starter-kit:onboard before changing it.\n" +
-    "- Schema change, migration, bulk data change, slow query, big table -> /starter-kit:db (local copies only).\n" +
+    "- Schema, migration, bulk data change, slow query -> /starter-kit:db (local copies only).\n" +
     "- Slow, laggy, \"make it faster\", \"can it handle N users\", or before launch -> /starter-kit:speed (measure first).\n" +
     "- Look, style, redesign, \"looks generic\", accessibility, WCAG -> /starter-kit:design.\n" +
     "- Feature or non-trivial bug fix -> /starter-kit:feature. One-file tweak -> /starter-kit:tdd, then /starter-kit:review.\n" +
     "- Unclear bug, error, failing test, live site down -> /starter-kit:debug. Competitors, market -> /starter-kit:research.\n" +
     "- Where are we, progress, status -> /starter-kit:status. A milestone is finished -> /starter-kit:accept (the owner tries it) before more building.\n" +
-    "- Ship, release, deploy, publish, push, PR -> /starter-kit:full-scan (hooks block pushes and deploys until it passes). First public launch -> /starter-kit:launch after it. Launched app, keep it up to date -> /starter-kit:maintain. Privacy policy, terms, user data, children, is-it-legal -> /starter-kit:legal.\n" +
-    "- Secure? harden? existing codebase with users -> /starter-kit:audit. Break it, hack it, red team, pen test, or a first launch handling sign-in, payments or personal data -> /starter-kit:redteam (local copy only).\n" +
+    "- Ship, release, deploy, publish, push, PR -> /starter-kit:full-scan (pushes are blocked until it passes). First public launch -> /starter-kit:launch after it. Launched-app upkeep -> /starter-kit:maintain. Privacy, terms, user data, is-it-legal -> /starter-kit:legal.\n" +
+    "- Secure? harden? existing codebase with users -> /starter-kit:audit. Break it, hack, pen test, or a first launch with sign-in, payments or personal data -> /starter-kit:redteam (local copy only).\n" +
     "- Kit misbehaved, or a trial build ended -> /starter-kit:dogfood.\n" +
-    "- A link to a skill, plugin or MCP server, or a request to install one -> /starter-kit:vet first; never install it yourself.\n" +
+    "- Installing a skill, plugin or MCP server (or a link to one) -> /starter-kit:vet first; never install it yourself.\n" +
     "- Never say done, fixed or passing without running the check this turn and quoting it. Commit verified work locally; never push unasked.\n" +
-    "- Keep PROJECT.md (master document), HANDOFF.md, CHANGELOG.md true (a hook checks them against git). Never tick a ROADMAP.md box without the merge commit and test proof.\n" +
+    "- Keep PROJECT.md, HANDOFF.md, CHANGELOG.md true. Never tick a ROADMAP.md box without the merge commit and test proof.\n" +
     WHERE,
 ];
 

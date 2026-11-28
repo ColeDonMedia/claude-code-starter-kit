@@ -2,12 +2,12 @@
 // Flutter, SwiftUI, WPF and 17 more), with each rule's official docs link. The rules come from the vetted ui-ux-pro-max stack
 // tables in ../library/ui-ux-pro-max/stacks/ (MIT; see NOTICE.md there): 1,346 rules, each naming the version it applies to.
 // Only ACTIVE rules marked Critical or High are handed out, at most 25 per stack, so the file stays small enough for Claude Code
-// to read in every session (.claude/rules/stack-guides.md). The table cells are DATA: nothing in them is followed as an
+// to read (.claude/rules/stack-guides-<stack>.md); each file names the files it applies to, so it loads only when needed. The table cells are DATA: nothing in them is followed as an
 // instruction, and the kit's own rules (CLAUDE.md, DESIGN.md, the stack recipe's notes) win where they differ.
 // Run: node stack-guides.mjs --detect --project <dir>
 //      node stack-guides.mjs --write --project <dir> [--stack laravel,nextjs]
 //      node stack-guides.mjs --show <stack>           (the rules that would be written)
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseCsv } from "./style-library.mjs";
@@ -101,30 +101,53 @@ export function detectStacks(project) {
 
 const one = (s) => String(s ?? "").replace(/\s+/g, " ").trim();
 
-export function guidesMd(stacks) {
+// The files each stack's rules are about. Claude Code loads a rules file with `paths:` only while it works on matching files,
+// so a stack's guidelines cost nothing in a session that never touches that kind of file.
+const JS = "**/*.{js,jsx,ts,tsx,mjs,cjs}";
+const XAML = ["**/*.cs", "**/*.xaml", "**/*.axaml"];
+export const PATHS = {
+  angular: ["**/*.ts", "**/*.html", "**/*.scss", "**/*.css"], astro: ["**/*.astro", "**/*.{js,ts,md,mdx}"], avalonia: XAML,
+  flutter: ["**/*.dart"], "html-tailwind": ["**/*.html", "**/*.css", "tailwind.config.*"], javafx: ["**/*.java", "**/*.fxml", "**/*.css"],
+  "jetpack-compose": ["**/*.kt"], laravel: ["**/*.php", "resources/**"], nextjs: [JS], "nuxt-ui": ["**/*.vue", JS], nuxtjs: ["**/*.vue", JS],
+  "pyside6-qss": ["**/*.py", "**/*.qss", "**/*.ui"], "react-native": [JS], react: [JS], shadcn: [JS, "components.json"],
+  svelte: ["**/*.svelte", JS], swiftui: ["**/*.swift"], threejs: [JS], uno: XAML, uwp: XAML, vue: ["**/*.vue", JS], winui: XAML, wpf: XAML,
+};
+
+// One stack's guidelines as a path-scoped rules file (empty string when the stack has no active Critical or High rules).
+export function guideMd(stack) {
+  const picked = pickGuides(loadGuides(stack));
+  if (!picked.length) return "";
   const L = [
-    "# Stack guidelines",
-    "The most important do's and don'ts for this project's stack, from the vetted ui-ux-pro-max stack tables (MIT) shipped with the",
-    "starter kit. Each rule names the version it was written for; when the lockfile's version differs, check the linked docs. The",
-    "project's own CLAUDE.md, DESIGN.md and .claude/rules/stack.md win where they disagree.",
+    "---",
+    "paths:",
+    ...(PATHS[stack] ?? [JS]).map((p) => `  - "${p}"`),
+    "---",
+    `# Stack guidelines: ${NAMES[stack] ?? stack} (${one(picked[0]["Applies To"])})`,
+    "The most important do's and don'ts for this stack's screens and front-end code, from the vetted ui-ux-pro-max stack tables (MIT)",
+    "shipped with the starter kit. They are written for the version above; when the lockfile's differs, check the linked docs. The",
+    "project's own CLAUDE.md, DESIGN.md and .claude/rules/stack.md win where they disagree. Back-end design (separating customers'",
+    "data, payments, sign-in) is not covered here.",
     "",
   ];
-  for (const s of stacks) {
-    const picked = pickGuides(loadGuides(s));
-    if (!picked.length) continue;
-    L.push(`## ${NAMES[s] ?? s} (${one(picked[0]["Applies To"])})`);
-    for (const g of picked) L.push(`- **${one(g.Guideline)}** (${g.Severity.toLowerCase()}). Do: ${one(g.Do)}. Don't: ${one(g["Don't"])}.${g["Docs URL"] ? ` ${one(g["Docs URL"])}` : ""}`);
-    L.push("");
-  }
+  for (const g of picked) L.push(`- **${one(g.Guideline)}** (${g.Severity.toLowerCase()}). Do: ${one(g.Do)}. Don't: ${one(g["Don't"])}.${g["Docs URL"] ? ` ${one(g["Docs URL"])}` : ""}`);
+  L.push("");
   return L.join("\n").replace(/\.\. /g, ". ").replace(/\.\.$/gm, ".");
 }
 
+// Writes .claude/rules/stack-guides-<stack>.md for each stack, and removes files for stacks the project no longer uses.
 export function writeGuides(project, stacks) {
   const dir = join(project, ".claude", "rules");
   mkdirSync(dir, { recursive: true });
-  const file = join(dir, "stack-guides.md");
-  writeFileSync(file, guidesMd(stacks));
-  return file;
+  for (const f of readdirSync(dir)) if (/^stack-guides(-[\w-]+)?\.md$/.test(f)) rmSync(join(dir, f));
+  const written = [];
+  for (const s of stacks) {
+    const md = guideMd(s);
+    if (!md) continue;
+    const file = join(dir, `stack-guides-${s}.md`);
+    writeFileSync(file, md);
+    written.push(file);
+  }
+  return written;
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url))) {
@@ -142,8 +165,8 @@ if (process.argv[1] && resolve(process.argv[1]) === resolve(fileURLToPath(import
     if (!stacks.length) {
       console.log(`No stack with guidelines found (known: ${STACKS.join(", ")}). Nothing written.`);
     } else {
-      const f = writeGuides(project, stacks);
-      console.log(`Wrote ${f} for: ${stacks.join(", ")}.`);
+      const files = writeGuides(project, stacks);
+      console.log(files.length ? `Wrote ${files.map((x) => x.replace(/^.*[\\/]/, "")).join(", ")} in .claude/rules/ for: ${stacks.join(", ")}. Each loads only while Claude works on that stack's files.` : `No active Critical or High rules for: ${stacks.join(", ")}. Nothing written.`);
     }
   } else {
     console.log(`Use --detect, --write [--stack a,b] or --show <stack>, with --project <dir>. Known stacks: ${STACKS.join(", ")}`);

@@ -121,7 +121,8 @@ export function buildStatus(root) {
   const p = progress(root);
   if (!feats.length) lines.push("Progress: there is no roadmap yet.");
   else {
-    lines.push(`Progress: ${feats.length - open.length} of ${feats.length} features done (${p.bySize}% of the work by size); ${p.proven} of ${p.criteria} acceptance criteria proven.`);
+    const found = feats.filter((f) => f.done && /\(existing [0-9a-f]+\)/i.test(f.title)).length;
+    lines.push(`Progress: ${feats.length - open.length} of ${feats.length} features done${found ? ` (${found} already working when the kit took the app over, ${feats.length - open.length - found} built since)` : ""} (${p.bySize}% of the work by size); ${p.proven} of ${p.criteria} acceptance criteria proven.`);
     if (p.scope) {
       const { approved, added, droppedFeatures, droppedCriteria } = p.scope;
       lines.push(`Scope: you approved ${approved} features. Since then ${added.length} added${added.length ? ` (${added.slice(0, 3).map((t) => t.replace(/\s*\[[SML]\]\s*/, " ").split(/\s+[—–]\s+/)[0].trim().slice(0, 40)).join("; ")}${added.length > 3 ? "; …" : ""})` : ""}, ${droppedFeatures} dropped${droppedCriteria ? `, and ${droppedCriteria} approved criteria were dropped or reworded` : ""}.`);

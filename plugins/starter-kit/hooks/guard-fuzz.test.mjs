@@ -138,3 +138,25 @@ const TRUST_READ = [
 ];
 test("round 5: anything that changes, moves or deletes the approval list is denied", async () => expectAll(TRUST_WRITE, "deny"));
 test("round 5: reading or mentioning the approval list is never blocked", async () => expectAll(TRUST_READ, "allow"));
+
+// ---- round 6: deleting, moving or overwriting code (rule rm-code) ----
+// A small project with code, a rebuildable folder and a notes folder, in the fuzz project folder.
+import { mkdirSync as mkdirFixture, writeFileSync as writeFixture } from "node:fs";
+for (const [f, t] of Object.entries({ "src/app.js": "export {}", "src/lib/money.js": "export {}", "api/server.py": "x = 1", "build/out.js": "x", "notes/todo.txt": "x" })) {
+  mkdirFixture(dirname(join(proj, f)), { recursive: true });
+  writeFixture(join(proj, f), t);
+}
+const CODE_LOSS = [
+  "rm -rf src", "rm -r src/lib", "rm -rf ./src/", "rm -rf src/*", "rm -rf api", "sudo rm -rf src", "ls && rm -rf src", "bash -c 'rm -rf src'",
+  "cd src && rm -rf lib", "cd src; rm -rf lib", "find src -delete", "find . -name '*.py' -delete", "find src -exec rm -rf {} +",
+  `node -e "require('fs').rmSync('src',{recursive:true})"`, `python3 -c "import shutil; shutil.rmtree('api')"`,
+  "mv src /tmp/old-src", "mv src ../elsewhere", "mv api ~/backup-api", "echo '' > src/app.js", "cat other.txt > src/app.js", "printf x >src/app.js",
+  "cd src && echo x > app.js", "mv notes/todo.txt src/app.js",
+];
+const CODE_SAFE = [
+  "rm -rf build", "rm -rf notes", "rm -rf node_modules dist", "rm -rf no-such-dir", "echo x >> src/app.js", "npm test > test-output.log",
+  "npm test 2>&1", "echo x > /dev/null", "mv src/app.js src/main.js", "mv notes /tmp/old-notes", "cd src && ls", "cd build && rm -rf .cache",
+  "echo hi > new-file.js",
+];
+test("round 6: deleting, moving or overwriting code always prompts, however it is written", async () => expectAll(CODE_LOSS, "ask"));
+test("round 6: rebuildable folders, notes, appends and new files pass", async () => expectAll(CODE_SAFE, "allow"));

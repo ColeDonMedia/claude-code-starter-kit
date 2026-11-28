@@ -1,6 +1,5 @@
 // Per-stack guidelines: the vetted ui-ux-pro-max stack tables load, a project's stacks are recognised from its own files, only
-// active Critical and High rules are handed out, and they are written to .claude/rules/stack-guides.md where Claude Code reads
-// them every session. Run: node --test plugins/starter-kit/scripts/stack-guides.test.mjs
+// active Critical and High rules are handed out, one rules file per stack that Claude Code loads only for that stack's files. Run: node --test plugins/starter-kit/scripts/stack-guides.test.mjs
 import test from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
@@ -8,7 +7,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { STACKS, detectStacks, guidesMd, loadGuides, pickGuides, writeGuides } from "./stack-guides.mjs";
+import { PATHS, STACKS, detectStacks, guideMd, loadGuides, pickGuides, writeGuides } from "./stack-guides.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PLUGIN = join(HERE, "..");
@@ -65,19 +64,25 @@ test("a project's stacks are recognised from its own files", () => {
   }
 });
 
-test("the guides are written to .claude/rules/stack-guides.md with the docs link for each rule, short enough to load every session", () => {
-  const dir = project({ "composer.json": { require: { "laravel/framework": "^12.0" } } });
+test("each stack gets its own rules file that loads only for that stack's files, with the docs link for each rule", () => {
+  const dir = project({ "composer.json": { require: { "laravel/framework": "^12.0" } }, ".claude/rules/stack-guides.md": "old combined file", ".claude/rules/stack.md": "recipe notes" });
   try {
-    const f = writeGuides(dir, detectStacks(dir));
-    assert.equal(f, join(dir, ".claude", "rules", "stack-guides.md"));
-    const md = readFileSync(f, "utf8");
-    assert.match(md, /^# Stack guidelines/m);
-    assert.match(md, /## Laravel/);
+    const files = writeGuides(dir, ["laravel", "vue"]);
+    assert.deepEqual(files.map((f) => f.replace(/^.*[\\/]/, "")).sort(), ["stack-guides-laravel.md", "stack-guides-vue.md"]);
+    const md = readFileSync(files.find((f) => f.endsWith("laravel.md")), "utf8");
+    assert.match(md, /^---\npaths:\n  - "\*\*\/\*\.php"/, "loads only for PHP and resources files");
+    assert.match(md, /^# Stack guidelines: Laravel/m);
     assert.match(md, /Do: .+ Don't: /);
     assert.match(md, /https:\/\/laravel\.com\//);
     assert.match(md, /ui-ux-pro-max/, "says where the rules came from");
-    assert.ok(md.split(/\s+/).length < 2500, `${md.split(/\s+/).length} words`);
-    assert.doesNotMatch(guidesMd([]), /##/);
+    assert.match(md, /Back-end design .* is not covered here/s, "says what it doesn't cover");
+    assert.ok(md.split(/\s+/).length < 1200, `${md.split(/\s+/).length} words`);
+    assert.ok(!existsSync(join(dir, ".claude", "rules", "stack-guides.md")), "the old combined file is replaced");
+    assert.ok(existsSync(join(dir, ".claude", "rules", "stack.md")), "the recipe's notes are left alone");
+    for (const st of STACKS) assert.ok(Array.isArray(PATHS[st]) && PATHS[st].length, `${st} has file patterns`);
+    assert.equal(guideMd("uwp"), "", "a stack with no Critical or High rules gets no file");
+    writeGuides(dir, ["laravel"]);
+    assert.ok(!existsSync(join(dir, ".claude", "rules", "stack-guides-vue.md")), "a stack no longer used loses its file");
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -88,10 +93,10 @@ test("the command line detects, writes, and says when nothing matched", () => {
   try {
     const r = spawnSync(process.execPath, [CLI, "--write", "--project", dir], { encoding: "utf8" });
     assert.match(r.stdout, /No stack with guidelines found/);
-    assert.ok(!existsSync(join(dir, ".claude", "rules", "stack-guides.md")));
+    assert.ok(!existsSync(join(dir, ".claude", "rules", "stack-guides-laravel.md")));
     const s = spawnSync(process.execPath, [CLI, "--write", "--stack", "laravel", "--project", dir], { encoding: "utf8" });
-    assert.match(s.stdout, /laravel/);
-    assert.ok(existsSync(join(dir, ".claude", "rules", "stack-guides.md")));
+    assert.match(s.stdout, /stack-guides-laravel\.md/);
+    assert.ok(existsSync(join(dir, ".claude", "rules", "stack-guides-laravel.md")));
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -102,5 +107,23 @@ test("setup, planning, the builder and maintenance use the stack guides", () => 
   assert.match(read("commands/init.md"), /stack-guides\.mjs" --write --project \./);
   assert.match(read("commands/spec.md"), /stack-guides\.mjs" --write --project \./);
   assert.match(read("commands/maintain.md"), /stack-guides\.mjs" --write --project \./);
-  assert.match(read("agents/implementer.md"), /\.claude\/rules\/stack-guides\.md/);
+  assert.match(read("agents/implementer.md"), /\.claude\/rules\/stack-guides-<stack>\.md/);
+});
+
+// Bundled third-party data is loaded into sessions, so every file is checked on every test run, not only when it was vetted:
+// no text aimed at an AI, no hidden or direction-changing characters.
+test("no bundled data file carries instructions for an AI or hidden characters", async () => {
+  const { readdirSync, statSync } = await import("node:fs");
+  const walk = (d) => readdirSync(d).flatMap((n) => (statSync(join(d, n)).isDirectory() ? walk(join(d, n)) : [join(d, n)]));
+  const files = walk(join(PLUGIN, "library")).concat(walk(join(PLUGIN, "presets"))).filter((f) => /\.(csv|json|md)$/i.test(f) && !/NOTICE\.md$/.test(f));
+  assert.ok(files.length > 25, `${files.length} files`);
+  const AI = /\b(ignore (all|any|previous|prior|the above) (instructions|rules)|you are (an? )?(ai|assistant|claude|language model)|system prompt|disregard (the|all|previous|any)|do not tell the user|new instructions:|<\/?(system|instructions?)>)/i;
+  const HIDDEN = /[​-‏‪-‮⁠-⁤﻿­]/;
+  const bad = [];
+  for (const f of files) {
+    const t = readFileSync(f, "utf8");
+    if (AI.test(t)) bad.push(`${f}: ${t.match(AI)[0]}`);
+    if (HIDDEN.test(t)) bad.push(`${f}: hidden or direction-changing character`);
+  }
+  assert.deepEqual(bad, []);
 });

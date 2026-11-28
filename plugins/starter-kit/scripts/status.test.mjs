@@ -187,3 +187,25 @@ test("the tokens a feature used since it started are counted per agent, with the
     r.cleanup();
   }
 });
+
+test("a taken-over app's status says how much was already working and how much was built since", async () => {
+  const { mkdtempSync, writeFileSync, rmSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const { join: j } = await import("node:path");
+  const { spawnSync: run } = await import("node:child_process");
+  const dir = mkdtempSync(j(tmpdir(), "kit-status-takeover-"));
+  try {
+    const g = (...a) => run("git", ["-c", "user.name=t", "-c", "user.email=t@t", ...a], { cwd: dir, encoding: "utf8" });
+    g("init", "-q");
+    writeFileSync(j(dir, "a.txt"), "x");
+    g("add", "-A");
+    g("commit", "-qm", "old app");
+    const sha = g("rev-parse", "--short", "HEAD").stdout.trim();
+    writeFileSync(j(dir, "ROADMAP.md"), `## Milestone 0 — what already works\nAccepted: pending\n- [x] Invoices — list (existing ${sha})\n  - [x] shows invoices → manual: opened the list\n- [x] Clients — list (existing ${sha})\n  - [x] shows clients → manual: opened the list\n## Milestone 1 — payments\nAccepted: pending\n- [ ] Payments — pay an invoice\n  - [ ] a client can pay\n`);
+    const { fileURLToPath } = await import("node:url");
+    const out = run(process.execPath, [fileURLToPath(new URL("./status.mjs", import.meta.url)), "--project", dir], { encoding: "utf8" }).stdout;
+    assert.match(out, /2 of 3 features done \(2 already working when the kit took the app over, 0 built since\)/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

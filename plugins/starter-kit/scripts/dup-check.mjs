@@ -92,7 +92,8 @@ export function addedLines(project, base) {
   return out;
 }
 
-// The "## One source" entries of PROJECT.md: [{ what, file, name, line }].
+// The "## One source" entries of PROJECT.md: [{ what, file, name, shownOn: [files] }]. An entry is one line:
+//   - Monthly income: src/lib/metrics.ts::monthlyIncome — paid invoices this month, refunds subtracted. Shown on: src/routes/a.ts, src/routes/b.ts
 export function readRegistry(project) {
   const f = join(project, "PROJECT.md");
   if (!existsSync(f)) return [];
@@ -101,19 +102,58 @@ export function readRegistry(project) {
   if (!sec) return [];
   return sec[1]
     .split("\n")
-    .map((l) => l.match(/^\s*-\s*(.+?):\s*`?([^`\s:]+)::([\w$.]+)`?/))
-    .filter(Boolean)
-    .map((m) => ({ what: m[1].trim(), file: m[2], name: m[3] }));
+    .map((l) => [l, l.match(/^\s*-\s*(.+?):\s*`?([^`\s:]+)::([\w$.]+)`?/)])
+    .filter(([, m]) => m)
+    .map(([l, m]) => {
+      const shown = l.match(/shown on:\s*(.+)$/i)?.[1] ?? "";
+      return { what: m[1].trim(), file: m[2], name: m[3], shownOn: shown.split(/[,;]\s*/).map((x) => x.replace(/[`.\s]+$/g, "").replace(/^`/, "").trim()).filter(Boolean) };
+    });
 }
 
-export function checkRegistry(project, entries = readRegistry(project)) {
+const mentions = (text, name) => new RegExp(`(?<![\\w$])${name.replace(/\$/g, "\\$")}(?![\\w$])`).test(text);
+// The words of a function name, as a pattern that finds the same idea written another way: monthlyIncome -> monthly income,
+// monthly_income, MONTHLY-INCOME, "Monthly income".
+export function conceptPattern(name) {
+  const words = name.split(".").pop().replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/[_$-]+/g, " ").trim().toLowerCase().split(/\s+/).filter((w) => w.length > 1);
+  if (words.length < 2) return null; // one word ("total") is too common to mean the same idea
+  return new RegExp(words.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("[\\s_-]?"), "i");
+}
+
+// Checks each entry: the function exists, a test calls it, every file listed under "Shown on" uses it, and (as CHECK lines,
+// not failures) any other source file that names the same idea without calling the function, which is how one number ends up
+// worked out twice.
+export function checkRegistry(project, entries = readRegistry(project), files = null) {
   const problems = [];
+  const checks = [];
+  const all = files ?? listFiles(project).map((p) => [p, readFileSync(join(project, p), "utf8")]);
+  const tests = all.filter(([p]) => TEST_FILE.test(p));
+  const source = all.filter(([p]) => !TEST_FILE.test(p));
   for (const e of entries) {
+    const short = e.name.split(".").pop();
     const f = join(project, e.file);
-    if (!existsSync(f)) problems.push(`STALE: "${e.what}" points at ${e.file}, which does not exist.`);
-    else if (!new RegExp(`\\b${e.name.split(".").pop().replace(/\$/g, "\\$")}\\b`).test(readFileSync(f, "utf8"))) problems.push(`STALE: "${e.what}" points at ${e.file}::${e.name}, which is not in that file.`);
+    if (!existsSync(f)) {
+      problems.push(`STALE: "${e.what}" points at ${e.file}, which does not exist.`);
+      continue;
+    }
+    if (!mentions(readFileSync(f, "utf8"), short)) {
+      problems.push(`STALE: "${e.what}" points at ${e.file}::${e.name}, which is not in that file.`);
+      continue;
+    }
+    if (!tests.some(([, t]) => mentions(t, short))) problems.push(`NO TEST: "${e.what}" (${e.name}) is not called by any test file; give the one definition a test.`);
+    for (const s of e.shownOn) {
+      const p = join(project, s);
+      if (!existsSync(p)) problems.push(`NOT FOUND: "${e.what}" is shown on ${s}, which does not exist.`);
+      else if (!mentions(readFileSync(p, "utf8"), short)) problems.push(`NOT USED: ${s} shows "${e.what}" but never uses ${e.name}; it must call the one function, not work it out again.`);
+    }
+    const idea = conceptPattern(e.name);
+    if (idea) {
+      for (const [p, t] of source) {
+        if (p === e.file.replace(/\\/g, "/") || mentions(t, short)) continue;
+        if (idea.test(t)) checks.push(`CHECK: ${p} mentions "${e.what}" but doesn't use ${e.name}: is it worked out a second way, or shown with a value that doesn't come from it?`);
+      }
+    }
   }
-  return problems;
+  return { problems, checks };
 }
 
 export function run(project, { base, size = 6 } = {}) {
@@ -126,7 +166,8 @@ export function run(project, { base, size = 6 } = {}) {
     const isNew = (p) => [...Array(p.to - p.from + 1).keys()].some((i) => added.get(p.file)?.has(p.from + i));
     copies = copies.filter((c) => c.places.some(isNew)).map((c) => ({ ...c, added: c.places.filter(isNew) }));
   }
-  return { copies, registry: readRegistry(project), problems: checkRegistry(project) };
+  const reg = checkRegistry(project, readRegistry(project), files.concat(listFiles(project).filter((f) => TEST_FILE.test(f)).map((f) => [f, readFileSync(join(project, f), "utf8")])));
+  return { copies, registry: readRegistry(project), problems: reg.problems, checks: reg.checks };
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url))) {
@@ -135,7 +176,7 @@ if (process.argv[1] && resolve(process.argv[1]) === resolve(fileURLToPath(import
   const project = resolve(val("--project") ?? ".");
   if (a.includes("--list")) {
     const reg = readRegistry(project);
-    console.log(reg.length ? reg.map((e) => `- ${e.what}: ${e.file}::${e.name}`).join("\n") : "No \"## One source\" list in PROJECT.md yet.");
+    console.log(reg.length ? reg.map((e) => `- ${e.what}: ${e.file}::${e.name}${e.shownOn.length ? ` (shown on ${e.shownOn.join(", ")})` : ""}`).join("\n") : "No \"## One source\" list in PROJECT.md yet.");
     process.exit(0);
   }
   const r = run(project, { base: val("--base"), size: Number(val("--lines") ?? 6) });
@@ -144,6 +185,7 @@ if (process.argv[1] && resolve(process.argv[1]) === resolve(fileURLToPath(import
     console.log(`DUPLICATE: ${where}${c.added ? ` (added: ${c.added.map((p) => p.file).join(", ")})` : ""}`);
   }
   for (const p of r.problems) console.log(p);
+  for (const c of r.checks) console.log(c);
   if (!r.copies.length && !r.problems.length) console.log(`No copied code${val("--base") ? " added" : ""}; ${r.registry.length} shared numbers and rules listed, all found.`);
   else console.log("Each DUPLICATE is one thing written twice: move it into one function (and list it under ## One source in PROJECT.md if it is a number or rule), then call it from both places.");
   process.exit(r.copies.length || r.problems.length ? 1 : 0);

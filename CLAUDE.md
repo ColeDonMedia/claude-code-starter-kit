@@ -19,7 +19,7 @@ the owner's trial runs in a normal session (`docs/trials.md`) and by the hook ca
 # Layout
 - `.claude-plugin/marketplace.json` — marketplace manifest; `plugins/starter-kit/.claude-plugin/plugin.json` — plugin manifest.
 - `plugins/starter-kit/commands/` — the workflows Claude picks by itself (their descriptions are loaded every session: keep each to two sentences).
-- `plugins/starter-kit/workflows/` — a command's full procedure, read on demand by whoever runs it (the `conductor` agent in a
+- `plugins/starter-kit/procedures/` — a command's full procedure, read on demand by whoever runs it (the `conductor` agent in a
   fresh context, or the main conversation as the fallback). The command file stays a short dispatcher. Checked like commands.
 - `plugins/starter-kit/agents/` — subagents. Reviewers are read-only; the implementer and red team work in their own worktrees.
 - `plugins/starter-kit/hooks/` — `hooks.json` starts `gate.mjs`, which runs the individual hook scripts in one process
@@ -30,8 +30,11 @@ the owner's trial runs in a normal session (`docs/trials.md`) and by the hook ca
 - `plugins/starter-kit/presets/` — the stack recipes (DATA: pinned setup commands, packages, commands, host, accounts, known
   mistakes), read by `scripts/presets.mjs`. When a recipe or a pin changes, run its real setup test:
   `KIT_PRESET_SCAFFOLD=<id> node --test plugins/starter-kit/scripts/presets.test.mjs` (network: npm only) and update its `tested` date.
+- `plugins/starter-kit/cards/` — pattern cards (checklists with the tests that prove them), matched to a feature by `scripts/cards.mjs`.
+- `plugins/starter-kit/workflows/` must hold only Claude Code dynamic-workflow `.js` scripts (none yet); the kit's instruction
+  files live in `procedures/` (a test enforces it).
 - `plugins/starter-kit/library/ui-ux-pro-max/stacks/` — 23 vetted per-stack rule tables, read by `scripts/stack-guides.mjs` into a
-  project's `.claude/rules/stack-guides.md`.
+  project's `.claude/rules/stack-guides-<stack>.md` (each loads only for that stack's files).
 - `plugins/starter-kit/library/` — vetted third-party DATA (no instructions, no code), each folder with its license and a NOTICE
   naming the source commit and what was left out. Read only by the kit's own scripts, as data.
 - `README.md` — the front page (logo and infographics in `docs/assets/`). The owner wants it detailed, explaining every step the
@@ -71,5 +74,7 @@ the owner's trial runs in a normal session (`docs/trials.md`) and by the hook ca
 - Hooks: never call `process.exit` inside a `try` that has a `catch` (the merged runner could not stop there; a test enforces it).
 - EVERY RELEASE: bump `version` in plugin.json (machines only update when it changes), add a `CHANGELOG.md` entry, rewrite
   `docs/development/HANDOFF.md` (what is verified and what is not), tick the tasks done in `docs/development/IMPROVEMENT-PLAN.md`,
-  run all tests both ways, run `claude plugin validate plugins/starter-kit`, then push. `scripts/docs.test.mjs` fails if the
+  run all tests both ways, run `claude plugin validate plugins/starter-kit`, then (with the owner's yes) push to the candidate
+  branch, never straight to main: `git push origin HEAD:candidate`. GitHub tests it on all six setups and only then moves main
+  and stable to it (decision D7). Watch that run; a failure means nobody received the release, so fix it and push again. `scripts/docs.test.mjs` fails if the
   changelog or handoff don't match the version, a command or agent is undocumented, or a link in the docs is broken.

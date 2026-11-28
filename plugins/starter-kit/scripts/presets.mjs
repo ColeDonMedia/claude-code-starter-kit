@@ -16,6 +16,7 @@
 //      node presets.mjs --fill-env <id> --project <dir>     (.env from .env.example; empty *SECRET values get random ones)
 //      node presets.mjs --write <id> --project <dir>        (writes .claude/rules/stack.md: known mistakes + where the docs are)
 //      node presets.mjs --versions [<id>]                   (network: releases newer than the pinned ones on npm)
+//      node presets.mjs --container <id> --project <dir>     (writes the recipe's Dockerfile and .dockerignore; never overwrites)
 //      node presets.mjs                                     (checks every recipe is complete)
 import { randomBytes } from "node:crypto";
 import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
@@ -80,6 +81,12 @@ export function validate(p) {
   need(Array.isArray(p.notes) && p.notes.length >= 3 && p.notes.length <= 15, "needs 3 to 15 notes");
   need(Array.isArray(p.docs) && p.docs.length > 0 && p.docs.every((d) => d.name && /^https:\/\//.test(d.url ?? "") && d.local), "docs need name, https url and local path");
   need(typeof p.tested === "string" && /^\d{4}-\d{2}-\d{2}$/.test(p.tested), "needs 'tested' (date the full setup last passed)");
+  if (p.container) {
+    need(typeof p.container.why === "string" && typeof p.container.run === "string", "container needs why and run");
+    need(Array.isArray(p.container.files?.Dockerfile) && p.container.files.Dockerfile.some((l) => /^FROM node:\d+/.test(l)), "container needs a Dockerfile from a pinned Node major");
+    need(!p.container.files.Dockerfile.some((l) => /:latest\b|ARG .*(SECRET|PASSWORD|TOKEN)/i.test(l)), "Dockerfile must not use :latest or pass secrets at build time");
+    need((p.container.files[".dockerignore"] ?? []).includes(".env"), ".dockerignore must keep .env out of the image");
+  }
   return out;
 }
 
@@ -127,6 +134,7 @@ export function show(p) {
   L.push("", "Commands for CLAUDE.md:");
   for (const [k, v] of Object.entries(p.commands)) L.push(`- ${k}: ${v}`);
   L.push("", `Host: ${p.host.name}. ${p.host.deploy}${p.host.preview ? ` Preview copies: ${p.host.preview}` : ""}`);
+  if (p.container) L.push(`Container (at launch, for any host that runs containers): node "${kitPath("{kit}")}/presets.mjs" --container ${p.id} --project . writes the Dockerfile and .dockerignore; run it with: ${p.container.run}`);
   L.push("", "Accounts the owner will need:");
   for (const a of p.accounts) L.push(`- ${a.name} (${a.when}): ${a.why}`);
   if (p.settings.length) {
@@ -193,6 +201,20 @@ export function fillEnv(p, project) {
   });
   writeFileSync(file, text);
   return { file, filled };
+}
+
+// The recipe's container files (Dockerfile, .dockerignore), for hosts that run containers. Never overwrites a file.
+export function writeContainer(p, project) {
+  const out = { written: [], kept: [] };
+  for (const [name, lines] of Object.entries(p.container?.files ?? {})) {
+    const f = join(project, name);
+    if (existsSync(f)) out.kept.push(name);
+    else {
+      writeFileSync(f, lines.join("\n") + "\n");
+      out.written.push(name);
+    }
+  }
+  return out;
 }
 
 // The project's stack notes, which Claude Code reads from .claude/rules/ in every session.
@@ -282,6 +304,13 @@ if (process.argv[1] && resolve(process.argv[1]) === resolve(fileURLToPath(import
   } else if (val("--fill-env")) {
     const r = fillEnv(byId(val("--fill-env")), project);
     console.log(r.filled.length ? `Filled ${r.filled.join(", ")} in .env (values not shown; .env is never committed).` : "Nothing to fill in .env.");
+  } else if (val("--container")) {
+    const p = byId(val("--container"));
+    if (!p.container) console.log(`The ${p.id} recipe has no container files (its host doesn't need one).`);
+    else {
+      const r = writeContainer(p, project);
+      console.log(`Wrote ${r.written.join(", ") || "nothing"}.${r.kept.length ? ` Kept the project's own: ${r.kept.join(", ")}.` : ""}`);
+    }
   } else if (val("--write")) {
     console.log(`Wrote ${writeRules(byId(val("--write")), project)}`);
   } else if (a.includes("--versions")) {

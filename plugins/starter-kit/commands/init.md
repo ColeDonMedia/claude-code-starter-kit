@@ -10,7 +10,7 @@ yourself and report in plain words.
 - **Job:** set the project up for the kit: commands, rules, permissions, checks, records.
 - **Starts when:** the session note says the project isn't set up.
 - **May:** read the project, write `CLAUDE.md`, `.claude/settings.json`, `.claude/kit.json`, git hooks, workflows and the record files.
-- **Must not:** guess a command (write TODO), change app code, push, or ask more than the one yes/no about permissions.
+- **Must not:** guess a command (write TODO), change app code, push, or ask more than the one question about permissions.
 - **Done when:** install, run, test and build commands are known or marked TODO, and the files above exist.
 - **Hands back:** what was found and set up, in plain words.
 
@@ -22,8 +22,8 @@ Taskfile, CI workflow files. From them work out the real commands for: install d
 tests (run once), typecheck or static analysis, lint, build. Note the test runner and whether the project has a UI.
 An empty folder is fine: write the template with `TODO` commands; `/starter-kit:spec` will choose the stack.
 Then run `node "${CLAUDE_PLUGIN_ROOT}/scripts/stack-guides.mjs" --write --project .`: for a stack it knows (Laravel, Next.js, Svelte,
-Flutter, WPF and 18 more) it writes `.claude/rules/stack-guides.md`, that stack's most important do's and don'ts with their docs
-links, which Claude Code reads in every session. Say which stacks it found, or that it found none.
+Flutter, WPF and 18 more) it writes `.claude/rules/stack-guides-<stack>.md`, that stack's most important do's and don'ts with their docs
+links, which Claude Code loads only while it works on that stack's files. Say which stacks it found, or that it found none.
 
 ## 2. Git
 If the folder is not a git repository, make it one yourself: `git init`, a `.gitignore` suited to the stack,
@@ -49,10 +49,20 @@ Merge into the existing file if there is one; never drop existing entries.
 - `"autoCompactWindow": 300000` (add without asking; it only changes when long chats here are summarised, not what runs): long
   chats compact at 300,000 tokens instead of near a million, so every message stops re-sending a huge history. Mention it in one
   line. Keep a value that is already there.
-- allow: this lets commands run without a permission prompt, so ask the user ONE plain yes/no question first
-  ("May I run this project's own test and build commands without asking each time?"), listing the commands:
-  the install, test, typecheck, lint and build commands you found (as `Bash(<command>:*)`), plus
-  `Bash(git status:*)`, `Bash(git diff:*)`, `Bash(git log:*)`. Add them only if the user says yes.
+- allow: this lets commands run without a permission prompt, so ask the user ONE plain question first, with three answers,
+  the first recommended:
+  1. **"Ask me only before risky actions" (recommended).** Everyday work runs without asking: the project's install, test,
+     typecheck, lint and build commands (as `Bash(<command>:*)`), the kit's own scripts (`Bash(node "${CLAUDE_PLUGIN_ROOT}/scripts/*":*)`,
+     with the real folder), and git's local steps: `Bash(git status:*)`, `Bash(git diff:*)`, `Bash(git log:*)`, `Bash(git show:*)`,
+     `Bash(git add:*)`, `Bash(git commit:*)`, `Bash(git switch:*)`, `Bash(git worktree:*)`, `Bash(git merge:*)`, `Bash(git branch:*)`,
+     `Bash(git rev-parse:*)`, `Bash(git ls-files:*)`, plus the same for PowerShell where the user has it. Pushing, installing new
+     packages and everything else still asks. The kit's guards still question every risky command even when it is allowed (deleting
+     code, hard resets, dropping a branch or stash, destructive SQL, pushes before the pre-ship scan), and a snapshot is saved first,
+     so a wrong "yes" can be undone. Tell the user that in one line.
+  2. **"Only tests and builds"**: the project's install, test, typecheck, lint and build commands plus `git status`, `git diff`,
+     `git log`.
+  3. **"Ask me every time"**: no allow entries.
+  Add only what the user chose. Never add `Bash(*)`, `Bash(git push:*)`, `Bash(rm:*)` or any rule that allows every command.
 - For a typed language (TypeScript, Python, Go, Rust, Java, C#), mention in one line that the official marketplace's
   code-intelligence plugin for it cuts file reading; never install it yourself.
 Add these lines to `.gitignore` (skip any already present): `.claude/settings.local.json`,
@@ -80,11 +90,11 @@ plain sentence that it is public history risk, and that the key must be rotated.
 
 ## 6. Approve what this project may run automatically
 The checks, the related-tests runner and any switch above come from a file inside the project, so they run only
-after the user approves them on this computer. Ask the user ONE plain yes/no question that covers this and the
-permission question in step 4 together: "May I run this project's own tests and checks without asking each time
-(<the commands>)?" If they say yes, run `node "${CLAUDE_PLUGIN_ROOT}/scripts/trust.mjs" --project .` (Claude Code
-then shows them a permission prompt listing the exact commands, which is their real approval). If they say no, skip
-it: the project works, only the automatic checks stay off, and you don't ask again this session.
+after the user approves them on this computer. Ask this together with the permission question in step 4, as ONE question:
+"How much should I ask before running things here? 1. Only before risky actions (recommended) 2. Only tests and builds run
+freely 3. Ask every time", listing the project's commands. For answer 1 or 2, run `node "${CLAUDE_PLUGIN_ROOT}/scripts/trust.mjs" --project .`
+(Claude Code then shows them a permission prompt listing the exact commands, which is their real approval). For answer 3 skip it:
+the project works, only the automatic checks stay off, and you don't ask again this session.
 
 
 ## 7. Guard every commit (any tool, not only Claude)

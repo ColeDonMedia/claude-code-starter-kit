@@ -37,6 +37,13 @@ export function checkRoadmap(root) {
     if (!m) problems.push(`"${name}" is ticked but has no "(merged <commit>)" proof`);
     else if (git("cat-file", "-e", `${m[1]}^{commit}`).status !== 0) problems.push(`"${name}" names merge commit ${m[1]}, which does not exist`);
     else if (git("merge-base", "--is-ancestor", m[1], "HEAD").status !== 0) problems.push(`"${name}" names commit ${m[1]}, which is not part of the current history`);
+    else if (/\(existing /i.test(current.title)) {
+      // "existing" is only for what the app already had when the kit took it over: Milestone 0, and a commit from before the
+      // roadmap was first committed. Anything built since needs its real merge proof.
+      if (!current.ms || current.ms.n !== 0) problems.push(`"${name}" uses "(existing ...)" outside "## Milestone 0 — what already works"; work built since needs "(merged <commit>)"`);
+      const first = git("log", "--diff-filter=A", "--format=%H", "--", "ROADMAP.md").stdout.trim().split(/\r?\n/).filter(Boolean).pop();
+      if (first && git("merge-base", "--is-ancestor", m[1], first).status !== 0) problems.push(`"${name}" says it existed at ${m[1]}, but that commit is newer than the first roadmap; only work from before the take-over is "existing"`);
+    }
     if (!current.criteria.length) problems.push(`"${name}" is ticked but lists no acceptance criteria`);
     for (const c of current.criteria) {
       const cn = c.text.replace(/\s*(→|->)\s*(test|manual|ci):.*$/i, "").slice(0, 70);
@@ -93,7 +100,7 @@ export function checkRoadmap(root) {
     if (top) {
       finish();
       items++;
-      current = { title: top[2].trim(), done: top[1] !== " ", criteria: [] };
+      current = { title: top[2].trim(), done: top[1] !== " ", criteria: [], ms };
       if (ms) ms.features.push(current);
     } else if (sub && current) current.criteria.push({ done: sub[1] !== " ", text: sub[2].trim() });
   }

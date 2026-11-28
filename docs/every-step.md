@@ -57,8 +57,9 @@ You never type a command. Claude picks each workflow from what you say and tells
 
 **When:** you open a folder the kit hasn't set up, even an empty one. Claude runs this by itself, without asking.
 
-**What you see:** a few lines saying what kind of project this is and what was set up, and **one yes/no question**: may it run the
-project's own tests and checks without asking each time.
+**What you see:** a few lines saying what kind of project this is and what was set up, and **one question** with three answers:
+ask only before risky actions (recommended: everyday work, local git and the project's own commands run freely, while the guards
+still question every risky command and a snapshot is saved first), let only tests and builds run freely, or ask every time.
 
 **What Claude does, in order:**
 1. **Works out the project's tools** by reading its files (`package.json`, `pyproject.toml`, `go.mod`, `Cargo.toml` and the like):
@@ -209,6 +210,8 @@ Details: [Which model does what](how-it-works.md#which-model-does-what).
   reason, then the least code that passes, then a tidy-up. It never weakens or deletes a test to make it pass.
 - If the feature is "set up from a recipe", it runs the recipe's steps exactly as written, in a fresh empty folder, copies the result in
   without touching the project's own files, and checks the tests and build pass before any feature code.
+- **Pattern cards:** when the feature touches separating customers' data, payments, sign-in, roles, background jobs or email, the
+  builder and reviewers get that card: a short checklist with the tests that prove it. A broken card rule blocks the merge.
 - It never guesses a library's API from memory. It reads **the installed copy first** (its types, README and changelog match the exact
   version and cost nothing), then a docs tool if one is installed, then the official docs for the version in the lockfile.
 - Before writing anything new, it asks **"does this already exist, and does it do what this feature needs?"** It checks the One-source

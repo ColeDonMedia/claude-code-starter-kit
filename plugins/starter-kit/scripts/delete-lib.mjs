@@ -38,6 +38,15 @@ export function codeFilesAt(abs, limit = 50) {
   return out;
 }
 
+// An existing file (not a folder) with a code extension.
+export function isCodeFile(abs) {
+  try {
+    return statSync(abs).isFile() && CODE_EXT.test(abs);
+  } catch {
+    return false;
+  }
+}
+
 // A quick look at a shell command: could it destroy work? Used by the snapshot hook to decide when to save a snapshot first
 // (saving one too many is harmless; the safety guard decides what to ask). Returns { risky, db, branches, stashes }.
 export function riskOf(command) {
@@ -50,10 +59,19 @@ export function riskOf(command) {
   const rm = /(?:^|[\s;&|(`'"])(?:rm|rmdir|rd|del|erase|remove-item|ri)\s+([^;&|\n]*)/gi;
   for (const m of c.matchAll(rm)) {
     const args = m[1].split(/\s+/).filter(Boolean);
-    if (!args.some((a) => /^-[a-zA-Z]*[rR][a-zA-Z]*$/.test(a) || /^--recursive$|^\/s$|^-recurse$/i.test(a))) continue;
     const targets = args.filter((a) => !a.startsWith("-") && !/^\/[a-z]$/i.test(a)).map((a) => a.replace(/^["']|["']$/g, "").replace(/[\\/]+\*?$/, ""));
-    if (targets.some((t) => !REBUILDABLE.has(basename(t.replace(/\\/g, "/"))))) del = true;
+    const recursive = args.some((a) => /^-[a-zA-Z]*[rR][a-zA-Z]*$/.test(a) || /^--recursive$|^\/s$|^-recurse$/i.test(a));
+    // a folder that isn't rebuildable, or any single code file (unsaved edits in it would be lost)
+    if (recursive ? targets.some((t) => !REBUILDABLE.has(basename(t.replace(/\\/g, "/")))) : targets.some((t) => CODE_EXT.test(t))) del = true;
   }
-  if (/\bfind\s[^;&|]*-delete\b|\bfind\s[^;&|]*-exec\s+rm\b|\b(rmtree|rmSync|rmdirSync|removeSync|remove_all)\(/.test(c)) del = true;
+  if (/\bfind\s[^;&|]*-delete\b|\bfind\s[^;&|]*-exec\s+rm\b|\b(rmtree|rmSync|rmdirSync|removeSync|remove_all|unlinkSync)\(/.test(c)) del = true;
+  // `> file.js`, Set-Content / Out-File onto a code file: the old contents are replaced
+  for (const m of c.matchAll(/(?:^|[^>&\d])1?>\|?\s*["']?([^\s;&|"'<>]+)/g)) if (CODE_EXT.test(m[1]) && !/^\/dev\//.test(m[1])) del = true;
+  if (/\b(set-content|out-file|clear-content|sc|clc)\b[^;&|\n]*\.(m?[jt]sx?|svelte|vue|py|rb|go|rs|java|php|cs|sql|html?|css)\b/i.test(c)) del = true;
+  // moving something out of the project (an absolute, home, parent or temp destination)
+  for (const m of c.matchAll(/(?:^|[\s;&|(])(?:mv|move|move-item|mi)\s+([^;&|\n]*)/gi)) {
+    const parts = m[1].split(/\s+/).filter((a) => a && !a.startsWith("-"));
+    if (parts.length >= 2 && /^["']?(\/|~|\.\.|[a-z]:|\$env:temp|\$tmpdir|%temp%)/i.test(parts[parts.length - 1])) del = true;
+  }
   return { risky: del || git || db || stashes || branches.length > 0, db, branches, stashes };
 }

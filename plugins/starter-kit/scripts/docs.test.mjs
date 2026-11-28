@@ -105,8 +105,8 @@ test("every hook is registered, and every registered hook exists", () => {
 // ---- no dead references: the instructions must only point at things that exist ----
 const commandNames = readdirSync(join(PLUGIN, "commands")).map((f) => f.replace(/\.md$/, ""));
 const agentNames = readdirSync(join(PLUGIN, "agents")).map((f) => f.replace(/\.md$/, ""));
-// workflows/ holds a command's full procedure, read on demand by whoever runs it (the conductor, or the main conversation)
-const workflowFiles = readdirSync(join(PLUGIN, "workflows")).map((f) => join(PLUGIN, "workflows", f));
+// procedures/ holds a command's full procedure, read on demand by whoever runs it (the conductor, or the main conversation)
+const workflowFiles = readdirSync(join(PLUGIN, "procedures")).map((f) => join(PLUGIN, "procedures", f));
 const textFiles = [
   ...readdirSync(join(PLUGIN, "commands")).map((f) => join(PLUGIN, "commands", f)),
   ...workflowFiles,
@@ -127,7 +127,7 @@ test("every script that a command or agent tells Claude to run really exists", (
 });
 
 test("commands and agents name the kit's files only through ${CLAUDE_PLUGIN_ROOT}, never an undefined placeholder", () => {
-  for (const f of textFiles.filter((x) => /[\\/](commands|agents|workflows)[\\/]/.test(x))) {
+  for (const f of textFiles.filter((x) => /[\\/](commands|agents|procedures)[\\/]/.test(x))) {
     const t = readFileSync(f, "utf8");
     for (const bad of ["<SCRIPTS>", "<plugin>"]) assert.ok(!t.includes(bad), `${f.replace(REPO, "")} still uses ${bad}`);
     for (const m of t.matchAll(/\$\{CLAUDE_PLUGIN_ROOT\}\/([a-z]+)\//g)) assert.ok(existsSync(join(PLUGIN, m[1])), `${f.replace(REPO, "")} points at ${m[1]}/, which the plugin does not have`);
@@ -160,7 +160,7 @@ test("every /starter-kit:command that anything mentions really exists", () => {
 });
 
 test("every agent that a command launches really exists, and the routing table can reach every workflow command", () => {
-  for (const f of textFiles.filter((x) => /[\\/](commands|workflows)[\\/]/.test(x))) {
+  for (const f of textFiles.filter((x) => /[\\/](commands|procedures)[\\/]/.test(x))) {
     for (const m of readFileSync(f, "utf8").matchAll(/`(researcher|reviewer|ui-reviewer|security-reviewer|implementer|red-team|challenger|[a-z-]+)` agent/g)) {
       assert.ok(agentNames.includes(m[1]), `${f.replace(REPO, "")} launches the "${m[1]}" agent, which does not exist`);
     }
@@ -242,24 +242,24 @@ test("every workflow that launches a routed agent asks model-route.mjs first, an
     const t = readFileSync(f, "utf8");
     if (routed.test(t)) assert.match(t, /scripts\/model-route\.mjs/, `${f.replace(PLUGIN, "")} launches a kit agent without asking model-route.mjs which model`);
   }
-  const feature = readFileSync(join(PLUGIN, "workflows", "feature.md"), "utf8");
+  const feature = readFileSync(join(PLUGIN, "procedures", "feature.md"), "utf8");
   assert.match(feature, /--attempt 3/, "the feature workflow must escalate the builder after two failed rounds");
   // the Scope block has its own limit (scope.test.mjs); these limits keep the steps short
   const words = withoutScope(readFileSync(join(PLUGIN, "agents", "challenger.md"), "utf8")).split(/\s+/).length;
   assert.ok(words <= 650, `challenger.md is ${words} words`);
 });
 
-// /starter-kit:feature is a short dispatcher: the procedure lives in workflows/feature.md and runs in a fresh conductor context,
+// /starter-kit:feature is a short dispatcher: the procedure lives in procedures/feature.md and runs in a fresh conductor context,
 // with the main conversation as the fallback, so the main conversation grows by a short report per feature.
 test("the feature command dispatches to a fresh conductor, keeps the old flow as a fallback, and stays short", () => {
   const cmd = readFileSync(join(PLUGIN, "commands", "feature.md"), "utf8");
   const words = withoutScope(cmd.replace(/^---[\s\S]*?---/, "")).split(/\s+/).filter(Boolean).length;
-  assert.ok(words <= 260, `commands/feature.md is ${words} words; the procedure belongs in workflows/feature.md`);
-  for (const must of [/build-state\.mjs" --project \. --plan/, /`conductor` agent/, /--role conductor/, /NEEDS OWNER/, /CANNOT DELEGATE/, /workflows\/feature\.md/, /RUN HERE/]) assert.match(cmd, must);
+  assert.ok(words <= 260, `commands/feature.md is ${words} words; the procedure belongs in procedures/feature.md`);
+  for (const must of [/build-state\.mjs" --project \. --plan/, /`conductor` agent/, /--role conductor/, /NEEDS OWNER/, /CANNOT DELEGATE/, /procedures\/feature\.md/, /RUN HERE/]) assert.match(cmd, must);
   const conductor = readFileSync(join(PLUGIN, "agents", "conductor.md"), "utf8");
   assert.ok(withoutScope(conductor).split(/\s+/).length <= 330, "the conductor's instructions stay short");
-  for (const must of [/workflows\/feature\.md/, /RESULT: MERGED/, /CANNOT DELEGATE/, /never start another conductor/i]) assert.match(conductor, must);
-  const flow = readFileSync(join(PLUGIN, "workflows", "feature.md"), "utf8");
+  for (const must of [/procedures\/feature\.md/, /RESULT: MERGED/, /CANNOT DELEGATE/, /never start another conductor/i]) assert.match(conductor, must);
+  const flow = readFileSync(join(PLUGIN, "procedures", "feature.md"), "utf8");
   assert.match(flow, /build-state\.mjs" --project \. --set/);
   assert.ok(!/\$ARGUMENTS/.test(flow), "a workflow file is read, not invoked: it has no $ARGUMENTS");
 });
@@ -277,7 +277,7 @@ test("a small app still gets a short plan, and setup takes the commit name from 
 });
 
 test("token savings stay in the instructions: re-review only the fix, edit instead of rewriting, a small CLAUDE.md template", () => {
-  const feature = readFileSync(join(PLUGIN, existsSync(join(PLUGIN, "workflows", "feature.md")) ? "workflows" : "commands", "feature.md"), "utf8");
+  const feature = readFileSync(join(PLUGIN, existsSync(join(PLUGIN, "procedures", "feature.md")) ? "procedures" : "commands", "feature.md"), "utf8");
   assert.match(feature, /only the fix, and only by the reviewers that objected/);
   assert.match(readFileSync(join(PLUGIN, "agents", "implementer.md"), "utf8"), /small edits; write a whole file only when/);
   assert.match(readFileSync(join(PLUGIN, "commands", "tdd.md"), "utf8"), /small edits rather than rewriting/);
@@ -300,4 +300,17 @@ test("every command file has a description that says WHEN to use it (that is wha
     const d = /^description:\s*(.+)$/m.exec(readFileSync(join(PLUGIN, "commands", `${n}.md`), "utf8"))?.[1] ?? "";
     assert.ok(d.length > 60, `commands/${n}.md has no real description`);
   }
+});
+
+// Setup offers "ask only before risky actions": routine work runs freely, the guards still question risky commands, and
+// nothing allows every command or a push.
+test("setup offers three permission levels, recommends risky-only, and never allows everything or a push", () => {
+  const init = readFileSync(join(PLUGIN, "commands", "init.md"), "utf8");
+  assert.match(init, /\*\*"Ask me only before risky actions" \(recommended\)\.\*\*/);
+  assert.match(init, /\*\*"Only tests and builds"\*\*/);
+  assert.match(init, /\*\*"Ask me every time"\*\*/);
+  assert.match(init, /Bash\(git commit:\*\)/);
+  assert.match(init, /guards still question every risky command even when it is allowed/);
+  assert.match(init, /Never add `Bash\(\*\)`, `Bash\(git push:\*\)`/);
+  assert.doesNotMatch(init.replace(/Never add[^\n]*/, ""), /`Bash\(git push:\*\)`|`Bash\(\*\)`|`Bash\(rm:\*\)`/);
 });

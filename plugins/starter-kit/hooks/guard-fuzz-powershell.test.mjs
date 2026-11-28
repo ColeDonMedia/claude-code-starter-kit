@@ -97,3 +97,23 @@ test("PowerShell: the same text through the Bash tool is still read as Bash", as
   assert.equal(await bash("rm -rf /"), "deny");
   assert.equal(await bash("echo 'rm -rf /'"), "allow");
 });
+
+// ---- deleting, moving or overwriting code (rule rm-code), in PowerShell ----
+import { mkdirSync as mkdirFixture, writeFileSync as writeFixture } from "node:fs";
+import { dirname as dirOf } from "node:path";
+for (const [f, t] of Object.entries({ "src/app.js": "export {}", "src/lib/money.js": "export {}", "build/out.js": "x", "notes/todo.txt": "x" })) {
+  mkdirFixture(dirOf(join(proj, f)), { recursive: true });
+  writeFixture(join(proj, f), t);
+}
+const PS_CODE_LOSS = [
+  "Remove-Item -Recurse -Force src", "Remove-Item src -Recurse", "Remove-Item -Path .\\src -Recurse -Force", "ri -r src", "rm -r -fo src",
+  "rd /s /q src", "cmd /c rd /s /q src", "Set-Location src; Remove-Item -Recurse lib", "cd src; ri -r lib",
+  "Move-Item src C:\\Temp\\old-src", "Move-Item -Path src -Destination ..\\elsewhere", "Set-Content -Path src\\app.js -Value ''",
+  "'' | Out-File src\\app.js", "Clear-Content src\\app.js", "echo '' > src\\app.js",
+];
+const PS_CODE_SAFE = [
+  "Remove-Item -Recurse -Force build", "Remove-Item -Recurse notes", "Set-Content -Path new.txt -Value x", "Add-Content -Path src\\app.js -Value x",
+  "Move-Item src\\app.js src\\main.js", "Set-Location src; Get-ChildItem",
+];
+test("PowerShell: deleting, moving or overwriting code always prompts (all guards)", async () => expectAll(PS_CODE_LOSS, "ask", [GATE, "pre"]));
+test("PowerShell: rebuildable folders, notes, appends and new files pass (all guards)", async () => expectAll(PS_CODE_SAFE, "allow", [GATE, "pre"]));

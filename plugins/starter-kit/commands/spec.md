@@ -21,21 +21,8 @@ or "you pick"), no research agents unless the owner asks, a plan that fits on on
 what it will not do), and a roadmap of one milestone. A detailed request is not a reason to skip this: the owner must see and
 correct your defaults before any code. In a new project a hook refuses app code until `ROADMAP.md` exists.
 
-**Taking over an app that is already partly built** (code but no `ROADMAP.md`, or "finish / continue / pick up this app"): never
-start over and never re-plan what exists. Before the steps below:
-- **Map it.** Big or unfamiliar: run `/starter-kit:onboard` first. Then list what the app does today from its screens, routes, data
-  tables and commits, and run its tests, type checks and build. Run `node "${CLAUDE_PLUGIN_ROOT}/scripts/dup-check.mjs" --project .`
-  over the whole project: every number or rule worked out in more than one place becomes a "make it one" roadmap item.
-- **Check each existing feature** by its tests, or by opening it in the running app. Write it into `ROADMAP.md` under
-  `## Milestone 0 — what already works` (`Accepted: pending`) as `- [x] Name — goal (existing <current commit>)`, with one criterion
-  per thing it does and `→ test:` or `→ manual:` proof for each, exactly as for new work. A feature that is there but broken or
-  unproven stays unticked with what is wrong, and becomes the first work.
-- **Ask only about what is left**, in one message, with defaults taken from the code ("it has invoices and clients; next: payments
-  and reminders?"). Don't ask what the code already answers (stack, look, who signs in). Keep the existing stack and `DESIGN.md` (if
-  there is none, write one from the screens that exist); no recipe applies.
-- **Research only the new parts.** Run the market check only if the app is meant to sell and hasn't launched, or the owner asks.
-- Then continue from step 5 (compare with the code). The plan says what was found working, what is broken or untested, and what is
-  left. `/starter-kit:accept` on milestone 0 lets the owner confirm the starting point.
+**Taking over an app that is already partly built** (code but no `ROADMAP.md`, or "finish / continue / pick up this app"): read
+`${CLAUDE_PLUGIN_ROOT}/procedures/spec-takeover.md` and follow it before the steps below. Never start over or re-plan what works.
 
 ## 1. Look first, ask second
 Read CLAUDE.md and skim the project (manifest, folders, existing screens or routes). Don't ask what you can see.
@@ -65,17 +52,9 @@ saved in your scratchpad>` and drop or re-source each NOT FOUND claim before usi
 rules and security advice with a stronger model (the same agent with `model` set to `sonnet`). They find: 4–6
 competing or similar products, what every one of them has (table stakes), and what users complain about. Use the
 result in the gap check.
-For an app meant to be sold or to win users (not a private tool), add a market angle, one researcher each: **demand** (people
-asking for it on forums and review sites, searches, paid ads and job posts around the problem, competitors' growth); **buyers** (who
-pays, what they pay today for the current fix, and a few named kinds of first customers the owner could reach); **gaps** (what no
-competitor does well, the complaints nobody answers, a group of users everyone ignores). From that, you (not the researcher) judge:
-how crowded it is (a few leaders with loyal users and free plans is crowded; scattered, old or disliked tools is open), what would be
-hard to copy (a niche served better, data or connections others lack, a workflow built for one trade), and give a verdict: **build
-it**, **build it narrower** (name the niche and why), **pivot** or **think again** (say what evidence would change that). Always
-recommend: the feature gaps worth building (each tied to the complaint or missing feature it answers, marked for the first version
-or later), and, when it is crowded, one to three **pivots**: nearby, less crowded directions the same idea could take (another group
-of users, one trade or niche, a neglected workflow), each with its evidence. Every claim cites its
-source; say what you couldn't find. The verdict is a recommendation: the owner decides. If there are no web tools, say so and continue.
+For an app meant to be sold or to win users (not a private tool), also read `${CLAUDE_PLUGIN_ROOT}/procedures/spec-market.md` and
+run the market check it describes: demand, buyers, gaps, a verdict (**build it**, **build it narrower**, **pivot** or **think
+again**) and the cheapest real demand test. If there are no web tools, say so and continue.
 
 ## 4. Choose the stack (new projects only)
 First run `node "${CLAUDE_PLUGIN_ROOT}/scripts/presets.mjs" --match --project .`: the kit has tested recipes for common kinds of
@@ -114,7 +93,9 @@ Check the idea against what people expect and what usually gets forgotten. Mark 
 - Table stakes from the research that the plan lacks
 
 ## 6b. Threat check (security designed in, not bolted on)
-Spend a few minutes thinking like an attacker, before any code, and write the result into the plan:
+Spend a few minutes thinking like an attacker, before any code, and write the result into the plan. First run
+`node "${CLAUDE_PLUGIN_ROOT}/scripts/cards.mjs" --match "<the whole idea>"`: for each CARD it prints (customers' data kept apart,
+payments, sign-in, roles, background jobs, email), read it and turn its tests into acceptance criteria of the features they belong to.
 - **What's worth protecting?** Personal data, payments, private content, accounts, admin powers.
 - **Who could misuse it?** A stranger, a signed-in user reaching another user's data, a bot, someone with a stolen
   password, a malicious file or message sent to the app.
@@ -193,7 +174,8 @@ On approval, write the project's memory so any later session can pick up with fu
 - `PROJECT.md` (the master document): what it is, the stack and why, how to run it, the architecture map, the
   decisions made in this planning (with the reasons and what was rejected), current state, known problems, next steps,
   plus `## Success measures` and `## Risks` (one line each, as agreed in the plan), and `## One source`: one line per number and
-  rule from the plan (`- Monthly income: <file>::<function> — the definition`), the file filled in when it is built.
+  rule from the plan (`- Monthly income: <file>::<function> — the definition. Shown on: <file>, <file>`), the file and the files
+  that show it filled in as they are built.
 - `DECISIONS.md`: append-only, one line per decision with an id (`- <date> — <decision> {#D-001}, because <reason>; rejected: <alternative>`;
   next number from `node "${CLAUDE_PLUGIN_ROOT}/scripts/notes-graph.mjs" --project . --next-id D`); record the planning decisions in it now. Give each roadmap
   feature an id (`{#F-001}`) and have it point at the decisions it follows (`[[D-001]]`). A decision that is replaced later gets
@@ -204,7 +186,7 @@ On approval, write the project's memory so any later session can pick up with fu
 - `HANDOFF.md` and `CHANGELOG.md`: start them as described in `/starter-kit:init` if they don't exist.
 - `.claude/rules/stack.md` when a recipe was used: `node "${CLAUDE_PLUGIN_ROOT}/scripts/presets.mjs" --write <id> --project .` (the
   stack's known mistakes and where its docs are; Claude Code reads it in every session).
-- `.claude/rules/stack-guides.md`, recipe or not: `node "${CLAUDE_PLUGIN_ROOT}/scripts/stack-guides.mjs" --write --project .` once the
+- `.claude/rules/stack-guides-<stack>.md`, recipe or not: `node "${CLAUDE_PLUGIN_ROOT}/scripts/stack-guides.mjs" --write --project .` once the
   first setup has added the stack's files (add `--stack <name>` to write it before then).
 Commit them. Then build the items in order with `/starter-kit:feature`, one at a time: after each merge the records
 are updated (see that command), tell the user in a line or two what now works and how to see it, and carry on to

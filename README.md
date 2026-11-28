@@ -16,6 +16,7 @@
   <a href="#every-step-from-idea-to-launch">Every step</a> ·
   <a href="docs/example.md">See an example</a> ·
   <a href="#how-it-saves-tokens-without-cutting-corners">Saving tokens</a> ·
+  <a href="#which-model-and-thinking-level-to-use">Model and effort</a> ·
   <a href="#whats-inside">What's inside</a> ·
   <a href="#protection-built-in">Protection</a> ·
   <a href="docs/README.md">Full documentation</a>
@@ -64,7 +65,7 @@ Open a project folder in Claude Code and talk normally.
 
 | You say | What happens |
 |---|---|
-| *(open a project that isn't set up)* | It sets the project up and asks you one yes/no question. |
+| *(open a project that isn't set up)* | It sets the project up and asks you one question: how much to ask before running things. |
 | "Build me an app that…" | A researched plan and roadmap. You approve it once; it builds feature by feature. |
 | "Add a…" / "Fix the…" | The feature is built test-first in its own branch, reviewed, and merged when green. |
 | "This error keeps happening" | It finds the cause with evidence and adds a test so it stays fixed. |
@@ -165,7 +166,7 @@ starter's settings, and example code that failed its own lint check. The kit han
 | **Recipes** | Four tested starting points: a website (Astro), a web app with sign-in and a database (SvelteKit, SQLite, Better Auth), an API (Fastify, SQLite) and a desktop app (Electron Forge). Each has the official setup command at a pinned version, exact package versions, the commands, the host, the accounts and settings you'll need, and the stack's known mistakes. | Recommended in the plan when one fits the app's kind and size; you can always choose something else. |
 | **Stack notes** | The recipe's known mistakes and where its docs are, written to `.claude/rules/stack.md`, which Claude Code reads in every session. | From the first feature on; updated when a major version changes. |
 | **Installed docs first** | The library's own types, README and changelog in the project, which match the exact version and cost nothing to read. | Whenever the builder isn't sure of an API, in every project, recipe or not. |
-| **Stack guidelines** | The most important do's and don'ts for 23 frameworks (Laravel, Next.js, Svelte, Flutter, SwiftUI, WPF and more), each with its official docs link, from a vetted open-source design project. Up to 25 per stack, written to `.claude/rules/stack-guides.md`. | Any project whose files show one of those stacks, recipe or not; refreshed after major updates. |
+| **Stack guidelines** | The most important do's and don'ts for 23 frameworks (Laravel, Next.js, Svelte, Flutter, SwiftUI, WPF and more), each with its official docs link, from a vetted open-source design project. Up to 25 per stack, one file each in `.claude/rules/`, loaded only while Claude works on that stack's files, so they cost nothing otherwise. Front-end and screen rules only. | Any project whose files show one of those stacks, recipe or not; refreshed after major updates. |
 
 Every recipe is set up from scratch and must pass its own tests, type checks, lint and build in the kit's own test, run whenever a recipe
 changes; each recipe records the date it last passed.
@@ -207,6 +208,39 @@ ones, your try-out at every milestone, and all seventeen pre-ship checks. Every 
 
 **What isn't proven yet:** the savings from 2.18 onward haven't been measured in a live build. The last live trial (on 2.17.2) spent
 84% of its agent tokens on Opus, mostly on review re-checks. That is why re-checks now run on Sonnet.
+
+## Which model and thinking level to use
+
+The kit picks the model for every agent it starts (builder, reviewers, testers) by itself, by the size and risk of the job. What you
+choose is only the model and **effort** (thinking level, `/effort`) of your own conversation with Claude, where planning and the
+decisions happen. These are the kit's recommendations, not Anthropic's rules:
+
+| Situation | Model | Effort | Why |
+|---|---|---|---|
+| **Starting out, everyday use** | Opus 5.5 (the default) | medium (the default) | Strong enough to plan and judge; the kit sends the heavy work to its own agents. |
+| Planning a new app, a big change, or a hard decision | Opus 5.5 | high | One good plan saves many fix rounds. Switch back afterwards. |
+| A smaller plan or a tight usage limit | Sonnet 5.5 | medium | Noticeably cheaper; the kit still reviews everything on the models it needs. |
+| The hardest planning (a big product, a tricky architecture), occasionally | Fable 5.2 | high | The most capable and the most expensive. The kit never picks it by itself; use it for that one conversation. |
+
+Avoid `max` effort for everyday work: Anthropic's documentation warns it can overthink and show diminishing returns.
+
+### Ultracode
+
+**Ultracode** is a Claude Code setting (`/effort ultracode`; off again with `/effort ultracode off`), not a model. With it on,
+Claude turns every substantive request into a *dynamic workflow*: a script that runs many subagents in parallel. Anthropic says
+workflows "can consume substantially more tokens than a typical Claude Code session", so you reach usage limits sooner.
+
+**With this kit, leave it off for normal building.** The kit already runs its own parallel agents (a fresh context per feature, up to
+five reviewers at once, the testers), with its own model choices, review rules and proof steps. A workflow starts its agents another
+way, so it can build outside that process, and it costs far more. Ultracode and the kit have not been tried together in a live build.
+
+**When it is worth it:** a one-off job that is very wide rather than deep: mapping a huge unfamiliar codebase, a search for one bug
+across hundreds of files, a large mechanical migration, or research that needs many sources cross-checked. Turn it on for that
+task, then turn it off again. You can also ask for a single workflow ("run this as a workflow") without changing the setting.
+
+Sources: [Introducing dynamic workflows in Claude Code](https://claude.com/blog/introducing-dynamic-workflows-in-claude-code),
+[Workflows](https://code.claude.com/docs/en/workflows) and [Model configuration](https://code.claude.com/docs/en/model-config) in
+the Claude Code docs.
 
 ## What's inside
 
@@ -263,8 +297,8 @@ How models are picked: [which model does what](docs/how-it-works.md#which-model-
 
 | Guard | Stops |
 |---|---|
-| Safety guard | Commands that wipe drives or history, in Bash and PowerShell; asks before risky ones, and before any delete that takes code with it |
-| Snapshots | Before every risky question, the work as it is (unsaved files included) and the local database file are saved on your computer, so a wrong "yes" can be undone |
+| Safety guard | Commands that wipe drives or history, in Bash and PowerShell; asks before risky ones, and before deleting code, moving it out of the project or overwriting a code file |
+| Snapshots | Before every risky command, the work as it is (unsaved files included), a copy of a local database file and a dump of a local Postgres or MySQL database are saved on your computer, so a wrong "yes" can be undone |
 | Secret guard | Keys, `.env` files and your private terms leaving in a commit, push or deploy |
 | Package guard | Installing packages that don't exist (invented names attackers register) |
 | Push gate | Pushes and deploys before the pre-ship scan passes for that exact commit |

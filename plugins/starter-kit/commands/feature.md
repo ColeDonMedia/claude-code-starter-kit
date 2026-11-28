@@ -22,4 +22,4 @@ Build this in isolation and merge it when it's proven: $ARGUMENTS
    MERGED: tell the owner in plain words what works and how to see it, then the PROGRESS line as printed, run `/starter-kit:accept` if NEXT says a milestone finished,
    and carry on with the next roadmap item. NEEDS OWNER: ask the owner, then send the answer to the same conductor (a new one if it
    cannot be resumed). BLOCKED: tell the owner plainly, where the work is, and what `worth-it.mjs --project .` recommends. CANNOT DELEGATE, or the launch failed: step 4.
-4. **RUN HERE:** read `${CLAUDE_PLUGIN_ROOT}/workflows/feature.md` and follow it in this conversation.
+4. **RUN HERE:** read `${CLAUDE_PLUGIN_ROOT}/procedures/feature.md` and follow it in this conversation.

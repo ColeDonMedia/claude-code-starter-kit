@@ -9,7 +9,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { addCommands, fillEnv, loadPresets, match, merge, rulesMd, show, toolOf, validate, versions, writeRules } from "./presets.mjs";
+import { addCommands, fillEnv, loadPresets, match, merge, rulesMd, show, toolOf, validate, versions, writeContainer, writeRules } from "./presets.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PLUGIN = join(HERE, "..");
@@ -181,8 +181,11 @@ test("the plan, the builder and maintenance use the recipes, and the builder rea
   assert.match(spec, /C\+\+ included/);
   assert.match(spec, /\*\*Worth building\?\*\*/);
   assert.match(spec, /\*\*build it narrower\*\*/);
-  assert.match(spec, /\*\*pivots\*\*/);
-  assert.match(spec, /\*\*demand\*\*[\s\S]*\*\*buyers\*\*[\s\S]*\*\*gaps\*\*/);
+  assert.match(spec, /procedures\/spec-market\.md/);
+  const market = readFileSync(join(PLUGIN, "procedures", "spec-market.md"), "utf8");
+  assert.match(market, /\*\*pivots\*\*/);
+  assert.match(market, /\*\*demand\*\*[\s\S]*\*\*buyers\*\*[\s\S]*\*\*gaps\*\*/);
+  assert.match(market, /\*\*The cheapest real test before building\*\*/);
   const impl = readFileSync(join(PLUGIN, "agents", "implementer.md"), "utf8");
   assert.match(impl, /\(1\) the installed package itself/);
   assert.match(impl, /presets\.mjs" --show <id>/);
@@ -191,9 +194,9 @@ test("the plan, the builder and maintenance use the recipes, and the builder rea
 });
 
 test("an app that is already partly built is taken over, not re-planned", () => {
-  const spec = readFileSync(join(PLUGIN, "commands", "spec.md"), "utf8");
-  assert.match(spec, /\*\*Taking over an app that is already partly built\*\*/);
-  assert.match(spec, /never\s+start over and never re-plan what exists/);
+  assert.match(readFileSync(join(PLUGIN, "commands", "spec.md"), "utf8"), /\*\*Taking over an app that is already partly built\*\*[\s\S]{0,200}procedures\/spec-takeover\.md/);
+  const spec = readFileSync(join(PLUGIN, "procedures", "spec-takeover.md"), "utf8");
+  assert.match(spec, /Never start over and never re-plan what exists/);
   assert.match(spec, /## Milestone 0 — what already works/);
   assert.match(spec, /\(existing <current commit>\)/);
   assert.match(spec, /dup-check\.mjs" --project \.`\s+over the whole project/);
@@ -218,6 +221,10 @@ test("every recipe sets up for real and passes its own checks (KIT_PRESET_SCAFFO
       run("npm install", project);
       for (const c of addCommands(p)) run(c, project);
       for (const a of p.after ?? []) if (a.run) run(a.run.replaceAll("{kit}", HERE.replaceAll("\\", "/")), project);
+      if (p.container && process.env.KIT_PRESET_DOCKER) {
+        writeContainer(p, project);
+        run(`docker build -t kit-preset-${p.id} .`, project);
+      }
       for (const c of p.verify) {
         try {
           run(c, project);
@@ -229,5 +236,31 @@ test("every recipe sets up for real and passes its own checks (KIT_PRESET_SCAFFO
       rmSync(setup, { recursive: true, force: true });
       rmSync(project, { recursive: true, force: true });
     }
+  }
+});
+
+test("the web app and API recipes ship a portable container, written without overwriting the project's own files", () => {
+  const dir = tmp();
+  try {
+    for (const id of ["web-app", "api"]) {
+      const p = presets.find((x) => x.id === id);
+      assert.ok(p.container, id);
+      const d = join(dir, id);
+      mkdirSync(d);
+      writeFileSync(join(d, ".dockerignore"), "mine\n");
+      const r = writeContainer(p, d);
+      assert.deepEqual(r.written, ["Dockerfile"]);
+      assert.deepEqual(r.kept, [".dockerignore"]);
+      assert.equal(readFileSync(join(d, ".dockerignore"), "utf8"), "mine\n");
+      const df = readFileSync(join(d, "Dockerfile"), "utf8");
+      assert.match(df, /^FROM node:24-bookworm-slim/m);
+      assert.match(df, /^USER node$/m, "never runs as root");
+      assert.match(df, /VOLUME \/data/, "the database file lives on a lasting volume");
+    }
+    const bad = structuredClone(presets.find((x) => x.id === "api"));
+    bad.container.files.Dockerfile[1] = "FROM node:latest";
+    assert.match(validate(bad).join("\n"), /pinned Node major|:latest/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
   }
 });

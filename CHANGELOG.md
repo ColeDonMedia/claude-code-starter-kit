@@ -4,6 +4,45 @@ What changed in each release of the starter-kit plugin, newest first, in plain w
 repository's history. Every release bumps `version` in `plugins/starter-kit/.claude-plugin/plugin.json`; a test
 fails if this file has no entry for the current version.
 
+## [2.23.0] — 2026-11-27
+From a review of everything added in 2.18 to 2.22. The owner asked for all of it and delegated the open decisions ("defer to you
+on decisions"); each is recorded in the plan as Claude's decision, made at the owner's request.
+- **Holes closed in the last releases:**
+  - `(existing <commit>)` ticks now count only under "Milestone 0" and only for a commit from before the roadmap was first
+    committed, so new work can't skip its merge proof.
+  - The One-source list is enforced. An entry can name the files that show the number (`Shown on:`). `dup-check.mjs` fails when
+    the function has no test (NO TEST) or a listed file doesn't use it (NOT USED). CHECK lines name every other file that
+    mentions the same idea without calling the function: the owner's "monthly income on six pages" case. Reviewers block on all of
+    these.
+  - Deleting code: the safety guard now follows `cd` within a command, asks before moving code out of the project
+    (`mv src /tmp`, `Move-Item`), and asks before overwriting an existing code file (`>`, Set-Content, Out-File, Clear-Content,
+    a move onto it). The snapshot hook also saves before deleting or overwriting a single code file. Before destructive SQL it now
+    also dumps a local Postgres or MySQL database named in the command, when pg_dump or mysqldump is installed.
+  - These cases are in the guard fuzz tests (round 6, Bash and PowerShell).
+  - Every bundled data file is scanned for AI-directed text and hidden characters on every test run.
+  - The status report and the milestone try-out understand a taken-over app's Milestone 0.
+- **Lighter instructions:** taking over an app and the market check moved to `procedures/spec-takeover.md` and
+  `procedures/spec-market.md`, read only when needed (planning: 3,572 words down to about 3,200). The session note is down to 493 of
+  its 520 words. Stack guidelines are now one file per stack with `paths:`, so Claude Code loads them only while working on that
+  stack's files.
+- **`workflows/` renamed to `procedures/`:** Claude Code now reads a plugin's `workflows/` folder as dynamic-workflow scripts
+  (`.js`). A test keeps that folder free of anything else.
+- **Setup asks one permission question with three answers** and recommends "ask me only before risky actions". The kit's
+  scripts, local git (never push) and the project's own commands run freely, the guards still question every risky command, and a
+  snapshot is saved first (D8).
+- **Pattern cards** (`cards/`, `scripts/cards.mjs`) cover separating customers' data, payments and webhooks, sign-in, roles,
+  background jobs and email. Each is a short checklist with the tests that prove it. Planning turns a card's tests into
+  criteria; the builder and reviewers get only the cards a feature's wording matches.
+- **The market check adds the cheapest real demand test** before building, and the result that would stop or change the build.
+- **Releases are gated (D7):** they go to the `candidate` branch, and GitHub moves `main` and `stable` only after every test
+  passes on all six setups. New or changed test files run three more times on every push, to catch timing-dependent tests like
+  the one that broke 2.21.0.
+- **Recipes:** the web-app and API recipes ship a container setup (`presets.mjs --container`), so hosting stays portable (D9). A new
+  weekly GitHub job (`recipes.yml`) lists newer pinned versions, sets every recipe up from scratch and builds the containers.
+  Neither has run yet; Docker isn't on the computer this was built on.
+- **GitHub page:** a section on which model and thinking level to use, and on Ultracode (leave it off for building with the kit;
+  use it for one-off very wide jobs), with sources.
+
 ## [2.22.0] — 2026-11-27
 - **Stack guidelines for 23 frameworks** (the owner asked for stack-specific knowledge, then to build this from the design project
   they linked). The per-stack tables of ui-ux-pro-max (MIT, commit `11ca2b3`) are vetted and copied unchanged into

@@ -104,6 +104,7 @@ test("session-start: injected text stays short (it costs tokens every session)",
     s.put("CLAUDE.md", MANAGED);
     const words = contextOf(runHook(SESSION, {}, s.dir)).split(/\s+/).length;
     assert.ok(words < 520, `session context is ${words} words; keep under 520`);
+    if (process.env.KIT_SHOW_WORDS) console.log(`session note: ${words} words`);
   } finally {
     s.cleanup();
   }

@@ -93,7 +93,7 @@ test("the One source list in PROJECT.md is read and must point at code that exis
   try {
     const reg = readRegistry(dir);
     assert.deepEqual(reg.map((e) => e.what), ["Monthly income", "Active customer", "Tax"]);
-    const p = checkRegistry(dir);
+    const p = checkRegistry(dir).problems.filter((x) => x.startsWith("STALE"));
     assert.equal(p.length, 2);
     assert.match(p.join("\n"), /Active customer.*does not exist/);
     assert.match(p.join("\n"), /Tax.*not in that file/);
@@ -115,4 +115,33 @@ test("the plan, builder and reviewer use one source for each number and rule", (
   assert.match(spec, /\*\*Numbers and rules\*\*/);
   assert.match(spec, /## One source/);
   assert.match(read("commands/init.md"), /One source:/);
+});
+
+test("the owner's case: one number on several pages must come from the one function, with a test", () => {
+  const { dir } = repo({
+    "src/lib/metrics.js": "export function monthlyIncome(rows) { return rows.reduce((s, r) => s + r.amount, 0); }\n",
+    "src/pages/dashboard.js": "import { monthlyIncome } from '../lib/metrics.js';\nexport const view = (rows) => `Monthly income: ${monthlyIncome(rows)}`;\n",
+    "src/pages/reports.js": "export const view = (rows) => `Monthly income: ${rows.filter((r) => r.paid).reduce((s, r) => s + r.amount, 0)}`;\n",
+    "src/pages/settings.js": "export const view = () => 'Settings';\n",
+    "PROJECT.md": "# P\n## One source\n- Monthly income: src/lib/metrics.js::monthlyIncome — paid invoices this month. Shown on: src/pages/dashboard.js, src/pages/reports.js\n",
+  });
+  try {
+    let r = checkRegistry(dir);
+    assert.match(r.problems.join("\n"), /NO TEST: "Monthly income"/);
+    assert.match(r.problems.join("\n"), /NOT USED: src\/pages\/reports\.js shows "Monthly income"/);
+    assert.ok(!r.problems.some((p) => p.includes("dashboard.js")), "the page that calls the function is fine");
+    assert.match(r.checks.join("\n"), /CHECK: src\/pages\/reports\.js mentions "Monthly income"/);
+    assert.ok(!r.checks.some((c) => c.includes("settings.js")));
+    // fixed: the reports page calls the function and a test covers it
+    writeFileSync(join(dir, "src/pages/reports.js"), "import { monthlyIncome } from '../lib/metrics.js';\nexport const view = (rows) => `Monthly income: ${monthlyIncome(rows)}`;\n");
+    mkdirSync(join(dir, "test"), { recursive: true });
+    writeFileSync(join(dir, "test/metrics.test.js"), "import { monthlyIncome } from '../src/lib/metrics.js';\n");
+    r = checkRegistry(dir);
+    assert.deepEqual(r.problems, []);
+    assert.deepEqual(r.checks, []);
+    const cli = spawnSync(process.execPath, [CLI, "--project", dir], { encoding: "utf8" });
+    assert.equal(cli.status, 0, cli.stdout);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });

@@ -14,12 +14,13 @@
 //           clean, discard-changes, branch-D, stash-drop, rewrite-history, disk-write, chmod-root, fork-bomb,
 //           sql-drop, db-reset, pipe-to-shell, secret-read, rm-code
 // rm-code: a recursive delete (rm -r, Remove-Item -Recurse, rd /s, find -delete, rmSync/rmtree in inline code) of a folder or
-// file that holds code asks first. Rebuildable folders (node_modules, dist, build ...), folders with no code and paths that
+// file that holds code asks first; so do moving code out of the project and overwriting an existing code file (`>`,
+// Set-Content, Out-File, a move onto it). `cd` earlier in the same command is followed. Rebuildable folders (node_modules, dist, build ...), folders with no code and paths that
 // don't exist pass. This guard only reads; the snapshot hook (snapshot-guard.mjs) saves the way back before risky commands.
 // Any parse problem or unknown input allows the command: this hook must never get in the way by accident.
 import { existsSync, readFileSync } from "node:fs";
-import { basename, join, posix, resolve } from "node:path";
-import { codeFilesAt, REBUILDABLE } from "../scripts/delete-lib.mjs";
+import { basename, join, posix, relative, resolve } from "node:path";
+import { codeFilesAt, isCodeFile, REBUILDABLE } from "../scripts/delete-lib.mjs";
 import { entriesOf, switchedOff, approvedAllows } from "../scripts/trust-lib.mjs";
 
 let raw = "";
@@ -47,6 +48,8 @@ const inMode = (mode, fn) => {
 
 const root = resolve(process.env.CLAUDE_PROJECT_DIR || input.cwd || process.cwd());
 const cwd = resolve(input.cwd || root);
+// The folder the command is in at each step: `cd src && rm -rf lib` deletes src/lib. null once it can't be known (cd $X).
+let here = cwd;
 let cfg = {};
 try {
   const p = join(root, ".claude", "kit.json");
@@ -228,8 +231,34 @@ function checkCodeDelete(raw, namePattern) {
   const t = raw.replace(/^["']|["']$/g, "").replace(/[\\/]+\*?$/, "");
   if (!t || /[*?]/.test(t) || REBUILDABLE.has(basename(t.replace(/\\/g, "/")))) return;
   const glob = namePattern ? new RegExp(`^${namePattern.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*").replace(/\?/g, ".")}$`, "i") : null;
-  const files = codeFilesAt(resolve(cwd, t.replace(/\\/g, "/"))).filter((f) => !glob || glob.test(basename(f)));
+  if (here === null && !/^([a-z]:)?[\\/]/i.test(t)) return; // relative to a folder that can't be known here
+  const files = codeFilesAt(resolve(here ?? cwd, t.replace(/\\/g, "/"))).filter((f) => !glob || glob.test(basename(f)));
   if (files.length) add("ask", "rm-code", `DELETES CODE: "${raw}" holds ${files.length >= 50 ? "50 or more" : files.length} code file${files.length === 1 ? "" : "s"} (${files.slice(0, 3).join(", ")}${files.length > 3 ? ", ..." : ""})`);
+}
+
+// Moving code out of the project (it leaves git's view), or onto an existing code file (that file is replaced).
+function checkMove(cmd, args) {
+  if (here === null) return;
+  const di = args.findIndex((a) => /^-(destination|d)$/i.test(a));
+  const plain = args.filter((a, i) => !a.startsWith("-") && !(di >= 0 && i === di + 1));
+  const dest = di >= 0 ? args[di + 1] : plain.pop();
+  if (!dest || /[$`%*?]/.test(dest)) return;
+  const at = (p) => resolve(here, p.replace(/^["']|["']$/g, "").replace(/\\/g, "/"));
+  const home = /^~([\\/]|$)/.test(dest); // the home folder is outside every project
+  const destAbs = home ? null : at(dest);
+  const rel = home ? ".." : relative(root, destAbs);
+  const outside = rel.startsWith("..") || /^[a-z]:/i.test(rel) || rel.startsWith("/");
+  for (const src of plain) {
+    if (/[$`%*?]|^~/.test(src)) continue;
+    if (!outside && isCodeFile(destAbs) && existsSync(at(src))) add("ask", "rm-code", `OVERWRITES CODE: moving "${src}" onto "${dest}" replaces that file`);
+    const files = codeFilesAt(at(src));
+    if (files.length && outside) add("ask", "rm-code", `MOVES CODE out of the project: "${src}" (${files.slice(0, 3).join(", ")}) to "${dest}"`);
+  }
+}
+// `> file`, Set-Content, Out-File, Clear-Content: replaces a whole existing code file.
+function checkOverwrite(target, how) {
+  if (!target || /[$`%*?]|^~|^\/dev\/|^nul$/i.test(target) || here === null) return;
+  if (isCodeFile(resolve(here, target.replace(/^["']|["']$/g, "").replace(/\\/g, "/")))) add("ask", "rm-code", `OVERWRITES CODE: ${how} replaces all of "${target}"`);
 }
 
 const ATTACK_TOOLS = new Set(["nmap", "masscan", "zmap", "sqlmap", "hydra", "medusa", "nikto", "gobuster", "dirb", "dirbuster", "ffuf", "wfuzz", "feroxbuster", "nuclei", "wpscan", "msfconsole", "msfvenom", "zap-cli", "zap.sh", "zaproxy", "arachni", "w3af", "commix", "xsstrike", "dalfox", "amass", "subfinder", "enum4linux", "responder", "ettercap", "aircrack-ng", "john", "hashcat"]);
@@ -532,6 +561,14 @@ function analyze(text, depth = 0) {
       const list = entriesOf(tcfg).map((e) => e.replace(/^auto-runner$/, "the project's own test runner (tests execute project code)").replace(/^verify:/, "run: ").replace(/^related:/, "run on each edit: ").replace(/^switch:/, "TURN OFF protection: ").replace(/^allow:/, "ALLOW risky action: ").replace(/^rigor:/, "LOWER review strength (cheaper models): rigor "));
       add("ask", "trust-commands", `approve letting "${target}" run these automatically on your computer — ${list.join("; ")}`);
     } else if (["rm", "rmdir", "rd", "del", "erase", "remove-item", "ri"].includes(cmd)) checkRm(cmd, args);
+    else if (["cd", "chdir", "pushd", "set-location", "sl"].includes(cmd)) {
+      const to = args.filter((a) => !a.startsWith("-"))[0];
+      if (to) here = /[$`%]|^~/.test(to) || here === null ? null : resolve(here, to.replace(/^["']|["']$/g, "").replace(/\\/g, "/"));
+    } else if (["mv", "move", "move-item", "mi", "ren", "rename", "rename-item", "rni"].includes(cmd)) checkMove(cmd, args);
+    else if (["set-content", "sc", "out-file", "clear-content", "clc"].includes(cmd)) {
+      const pi = args.findIndex((a) => /^-(path|literalpath|filepath)$/i.test(a));
+      checkOverwrite(pi >= 0 ? args[pi + 1] : args.find((a) => !a.startsWith("-")), cmd);
+    }
     else if (cmd === "git") checkGit(args);
     else if (/^mkfs/.test(cmd) || ["diskpart", "fdisk", "parted", "wipefs", "format-volume", "clear-disk", "initialize-disk", "remove-partition"].includes(cmd)) add("deny", "disk-write", `${cmd} can erase a whole disk`);
     else if (cmd === "dd" && args.some((a) => /^of=\/dev\//.test(a))) add("deny", "disk-write", "dd writing straight to a disk device");
@@ -548,6 +585,8 @@ function analyze(text, depth = 0) {
     if (SECRET_READERS.has(cmd) && touchesSecretFile(args)) add("ask", "secret-read", "reads, copies or uploads a file that usually holds secrets");
     // redirect straight onto a disk device
     seg.tokens.forEach((t, k) => {
+      if (/^(1?>|>\|)$/.test(t)) checkOverwrite(seg.tokens[k + 1], "`>`");
+      else if (/^1?>(?![>&|])./.test(t)) checkOverwrite(t.replace(/^1?>/, ""), "`>`");
       if (/^>+$/.test(t) && /^\/dev\/(sd|nvme|hd|disk)/.test(seg.tokens[k + 1] ?? "")) add("deny", "disk-write", "redirecting output onto a disk device");
       if (/^>+\/dev\/(sd|nvme|hd|disk)/.test(t)) add("deny", "disk-write", "redirecting output onto a disk device");
     });
@@ -568,7 +607,7 @@ const why = chosen.map((f) => `${f.reason} [${f.id}]`).join("; ");
 // The snapshot hook runs on the same command and keeps the way back; say so, so the person knows a wrong "yes" can be undone.
 const SNAP = new Set(["rm-code", "rm-wide", "reset-hard", "clean", "discard-changes", "stash-drop", "branch-D", "sql-drop", "db-reset", "rewrite-history"]);
 const saved = level === "ask" && chosen.some((f) => SNAP.has(f.id))
-  ? " In a git project the work as it is now (and any local database file) is saved first, so it can be brought back (the kit's snapshot.mjs --list)."
+  ? " In a git project the work as it is now (and a copy or dump of any local database) is saved first, so it can be brought back (the kit's snapshot.mjs --list)."
   : "";
 const reason =
   level === "deny"

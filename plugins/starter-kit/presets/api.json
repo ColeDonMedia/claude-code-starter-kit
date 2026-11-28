@@ -1,7 +1,9 @@
 {
   "id": "api",
   "title": "API (a server other programs talk to)",
-  "kinds": ["api"],
+  "kinds": [
+    "api"
+  ],
   "fits": "A JSON API for an app, a webhook receiver, or a backend for a phone or desktop app, with its own data.",
   "notFor": [
     "more than one server at once (the database is one file on one server)",
@@ -9,13 +11,33 @@
   ],
   "maxUsersPeak": 500,
   "stack": [
-    { "part": "Language", "choice": "JavaScript (ES modules) on Node.js 22 or newer", "why": "Nothing to compile; tests run with Node's own test runner." },
-    { "part": "Framework", "choice": "Fastify 5, set up by the official fastify-cli", "why": "Fast, widely used, with request validation built in." },
-    { "part": "Security", "choice": "@fastify/helmet and @fastify/rate-limit", "why": "Safe headers and a cap on requests from one caller, from the first route." },
-    { "part": "Database", "choice": "SQLite through better-sqlite3, with Drizzle for queries and migrations", "why": "One file, no database server; queries that can't be injected." }
+    {
+      "part": "Language",
+      "choice": "JavaScript (ES modules) on Node.js 22 or newer",
+      "why": "Nothing to compile; tests run with Node's own test runner."
+    },
+    {
+      "part": "Framework",
+      "choice": "Fastify 5, set up by the official fastify-cli",
+      "why": "Fast, widely used, with request validation built in."
+    },
+    {
+      "part": "Security",
+      "choice": "@fastify/helmet and @fastify/rate-limit",
+      "why": "Safe headers and a cap on requests from one caller, from the first route."
+    },
+    {
+      "part": "Database",
+      "choice": "SQLite through better-sqlite3, with Drizzle for queries and migrations",
+      "why": "One file, no database server; queries that can't be injected."
+    }
   ],
-  "tools": { "fastify-cli": "8.0.4" },
-  "scaffold": ["npx --yes fastify-cli@8.0.4 generate app --esm"],
+  "tools": {
+    "fastify-cli": "8.0.4"
+  },
+  "scaffold": [
+    "npx --yes fastify-cli@8.0.4 generate app --esm"
+  ],
   "skip": [],
   "add": {
     "dependencies": {
@@ -24,12 +46,18 @@
       "drizzle-orm": "0.45.4",
       "better-sqlite3": "13.2.0"
     },
-    "devDependencies": { "drizzle-kit": "0.31.11" }
+    "devDependencies": {
+      "drizzle-kit": "0.31.11"
+    }
   },
   "after": [
-    { "do": "Register @fastify/helmet and @fastify/rate-limit as plugins in plugins/ (one file each, like plugins/sensible.js), with a test that a response carries the headers and that the limit answers 429." }
+    {
+      "do": "Register @fastify/helmet and @fastify/rate-limit as plugins in plugins/ (one file each, like plugins/sensible.js), with a test that a response carries the headers and that the limit answers 429."
+    }
   ],
-  "verify": ["npm test"],
+  "verify": [
+    "npm test"
+  ],
   "commands": {
     "install": "npm ci",
     "dev": "npm run dev (http://localhost:3000)",
@@ -37,16 +65,30 @@
     "start": "npm start"
   },
   "host": {
-    "name": "Any Node.js host with a lasting disk, running one copy",
-    "deploy": "npm ci --omit=dev, then npm start with the database file on the lasting disk. Set up by /starter-kit:launch; not part of the recipe test."
+    "name": "Any host that runs a container (or Node.js) with a lasting disk, running one copy",
+    "deploy": "npm ci --omit=dev, then npm start with the database file on the lasting disk. Set up by /starter-kit:launch; not part of the recipe test. The recipe's container files (presets.mjs --container) make it portable; /starter-kit:launch compares two or three hosts' current prices then (decision D9)."
   },
   "accounts": [
-    { "name": "GitHub", "when": "before the first push", "why": "Holds the code and runs the checks on every push." },
-    { "name": "A hosting account (one server with a lasting disk)", "when": "at launch", "why": "Runs the API and keeps the database file." }
+    {
+      "name": "GitHub",
+      "when": "before the first push",
+      "why": "Holds the code and runs the checks on every push."
+    },
+    {
+      "name": "A hosting account (one server with a lasting disk)",
+      "when": "at launch",
+      "why": "Runs the API and keeps the database file."
+    }
   ],
   "settings": [
-    { "name": "DATABASE_URL", "why": "Where the database file lives." },
-    { "name": "PORT", "why": "The port the host expects; fastify-cli reads FASTIFY_PORT or PORT." }
+    {
+      "name": "DATABASE_URL",
+      "why": "Where the database file lives."
+    },
+    {
+      "name": "PORT",
+      "why": "The port the host expects; fastify-cli reads FASTIFY_PORT or PORT."
+    }
   ],
   "notes": [
     "Files in plugins/ and routes/ are loaded automatically by @fastify/autoload; a folder under routes/ becomes a path prefix. Shared things (database, auth) are plugins wrapped in fastify-plugin so every route sees them.",
@@ -58,9 +100,57 @@
     "Never log request bodies or headers whole: they carry passwords and tokens."
   ],
   "docs": [
-    { "name": "Fastify", "local": "node_modules/fastify/docs/ and fastify.d.ts", "url": "https://fastify.dev/docs/latest/" },
-    { "name": "Drizzle", "local": "node_modules/drizzle-orm/ (the .d.ts files)", "url": "https://orm.drizzle.team/docs/overview" },
-    { "name": "Node test runner", "local": "node --help (the test section)", "url": "https://nodejs.org/api/test.html" }
+    {
+      "name": "Fastify",
+      "local": "node_modules/fastify/docs/ and fastify.d.ts",
+      "url": "https://fastify.dev/docs/latest/"
+    },
+    {
+      "name": "Drizzle",
+      "local": "node_modules/drizzle-orm/ (the .d.ts files)",
+      "url": "https://orm.drizzle.team/docs/overview"
+    },
+    {
+      "name": "Node test runner",
+      "local": "node --help (the test section)",
+      "url": "https://nodejs.org/api/test.html"
+    }
   ],
-  "tested": "2026-11-27"
+  "tested": "2026-11-27",
+  "container": {
+    "why": "One portable image for any host that runs containers with a lasting disk (decision D9: no host is built in).",
+    "files": {
+      "Dockerfile": [
+        "# Built and checked weekly by the starter kit's recipe job. One copy of the API; the database file lives on the /data volume.",
+        "FROM node:24-bookworm-slim",
+        "WORKDIR /app",
+        "ENV NODE_ENV=production DATABASE_URL=/data/app.db",
+        "COPY package*.json ./",
+        "RUN npm ci --omit=dev",
+        "COPY . .",
+        "RUN mkdir -p /data && chown node:node /data",
+        "USER node",
+        "VOLUME /data",
+        "EXPOSE 3000",
+        "CMD [\"npx\", \"--no-install\", \"fastify\", \"start\", \"--address\", \"0.0.0.0\", \"--port\", \"3000\", \"-l\", \"info\", \"app.js\"]"
+      ],
+      ".dockerignore": [
+        "node_modules",
+        ".git",
+        ".env",
+        ".env.*",
+        "!.env.example",
+        "*.db",
+        "*.db-*",
+        ".claude",
+        "build",
+        "dist",
+        ".svelte-kit",
+        "test-results",
+        "e2e/test-results",
+        "playwright-report"
+      ]
+    },
+    "run": "docker run -p 3000:3000 -v api-data:/data <image>"
+  }
 }

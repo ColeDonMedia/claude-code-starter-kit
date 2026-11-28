@@ -19,6 +19,9 @@ Nothing counts as accepted because the tests pass. The owner has to see it and s
    none is, say so and stop. If it says a milestone waits only on criteria that only GitHub can prove, rewrite those criteria the
    way it shows (`→ ci: <workflow>::<job>`, the promise unchanged) and tick the feature with its merge commit, then run it again:
    the owner can accept now, and the launch waits for those jobs to pass.
+   **Milestone 0** (a taken-over app, "what already works") is different: nothing was built, so skip steps 2 and 3. Show the
+   owner what the kit found working, what it found broken or untested, and how each was checked, and ask them to confirm that this
+   is the starting point. Their answer is recorded the same way.
 2. **Check it against the approved plan.** Run `node "${CLAUDE_PLUGIN_ROOT}/scripts/milestone-gaps.mjs" --project . --milestone <N>`.
    It compares the milestone with ROADMAP.md as first committed and lists DROPPED (an approved feature or criterion gone or
    reworded), SKIPPED (a cited test that never runs), SHARED (one test cited for several criteria) and MANUAL (a high-risk

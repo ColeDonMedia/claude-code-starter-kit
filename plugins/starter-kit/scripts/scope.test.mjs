@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 
 const PLUGIN = join(dirname(fileURLToPath(import.meta.url)), "..");
 const LABELS = ["Job", "Starts when", "May", "Must not", "Done when", "Hands back"];
-const files = ["commands", "agents", "workflows"].flatMap((d) => readdirSync(join(PLUGIN, d)).filter((f) => f.endsWith(".md")).map((f) => `${d}/${f}`));
+const files = ["commands", "agents", "procedures"].flatMap((d) => readdirSync(join(PLUGIN, d)).filter((f) => f.endsWith(".md")).map((f) => `${d}/${f}`));
 
 export function scopeBlock(text) {
   const m = text.match(/^## Scope\n((?:- \*\*[^*]+:\*\* .+\n?)+)/m);
@@ -42,4 +42,13 @@ test("every agent's Must not names the things it may never touch", () => {
     const mustNot = scopeBlock(readFileSync(join(PLUGIN, f), "utf8"))?.match(/\*\*Must not:\*\* (.+)/)?.[1] ?? "";
     assert.ok(mustNot.length > 30, `${f}: Must not is too thin`);
   }
+});
+
+// Claude Code reads a plugin's workflows/ folder as dynamic-workflow scripts (.js). The kit's own instruction files live in
+// procedures/, so nothing there can be mistaken for a workflow.
+test("the plugin's workflows/ folder, if any, holds only workflow scripts", async () => {
+  const { existsSync } = await import("node:fs");
+  const dir = join(PLUGIN, "workflows");
+  if (!existsSync(dir)) return;
+  assert.deepEqual(readdirSync(dir).filter((f) => !/\.(m?js)$/.test(f)), []);
 });

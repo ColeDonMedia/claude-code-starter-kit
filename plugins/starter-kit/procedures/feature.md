@@ -40,6 +40,10 @@ project's records, so a big project doesn't mean a big brief. Then add:
 - the reminder that it must install dependencies first (a new worktree has none)
 - the acceptance criteria, if there are any, with the instruction to write one failing test per criterion
 - a branch the roadmap item names as holding failing tests (from the user tester or the red team): merge it first, keep its tests
+- the pattern cards for this feature: `node "${CLAUDE_PLUGIN_ROOT}/scripts/cards.mjs" --match "<item title, goal and criteria>"`
+  prints a path per CARD (separating customers' data, payments, sign-in, roles, background jobs, email). Tell the builder to read
+  each one, follow its rules and write the tests from its "Prove it with tests" list that apply. Give the same paths to the
+  reviewer, challenger and security reviewer: a card rule broken or a card test missing for a case the feature has is BLOCKS.
 
 It commits on its own branch and reports the BRANCH name and the WORKTREE path. Keep its agent ID —
 you will need it in step 2.

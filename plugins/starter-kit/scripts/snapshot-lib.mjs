@@ -118,6 +118,65 @@ export function restoreSnapshot(dir, id, path = ".") {
   return ref;
 }
 
+// ---------- database dumps (Postgres, MySQL on this computer) ----------
+const LOCAL = /^(localhost|127\.0\.0\.1|::1|\[::1\])$/i;
+// What to dump for a destructive command aimed at a local Postgres or MySQL database, from the command's own words:
+// a postgres:// or mysql:// address on this computer, or `psql -d <db>` / `mysql <db>` with a local or no host.
+// Returns [{ tool, args, name }] (nothing for a database elsewhere: the database guard refuses those anyway).
+export function dumpPlans(command) {
+  const plans = [];
+  for (const m of String(command).matchAll(/\b(postgres(?:ql)?|mysql):\/\/([^\s"'@/]*@)?([^\s"':/]+|\[[^\]]+\])(?::(\d+))?\/([\w.-]+)/gi)) {
+    if (!LOCAL.test(m[3])) continue;
+    const url = m[0];
+    if (/^postgres/i.test(m[1])) plans.push({ tool: "pg_dump", args: ["--no-owner", url], name: m[5] });
+    else {
+      const [user, pass] = (m[2] ?? "").replace(/@$/, "").split(":");
+      plans.push({ tool: "mysqldump", args: [...(user ? [`-u${decodeURIComponent(user)}`] : []), ...(pass ? [`-p${decodeURIComponent(pass)}`] : []), "-h", "127.0.0.1", ...(m[4] ? ["-P", m[4]] : []), m[5]], name: m[5] });
+    }
+  }
+  if (plans.length) return plans;
+  const words = String(command).split(/\s+/).map((w) => w.replace(/^["']|["']$/g, ""));
+  const host = (flag) => {
+    const i = words.findIndex((w) => w === flag);
+    return i >= 0 ? words[i + 1] : null;
+  };
+  const pi = words.findIndex((w) => /^psql$/i.test(w));
+  if (pi >= 0) {
+    const h = host("-h");
+    const db = host("-d") ?? words.slice(pi + 1).find((w, i, a) => !w.startsWith("-") && !/^-/.test(a[i - 1] ?? ""));
+    if (db && !/^(postgres|-)/.test(db) && (!h || LOCAL.test(h))) plans.push({ tool: "pg_dump", args: ["--no-owner", ...(h ? ["-h", h] : []), ...(host("-U") ? ["-U", host("-U")] : []), db], name: db });
+  }
+  const mi = words.findIndex((w) => /^(mysql|mariadb)$/i.test(w));
+  if (mi >= 0) {
+    const h = host("-h");
+    const rest = words.slice(mi + 1);
+    const db = rest.find((w, i) => !w.startsWith("-") && !/^-(h|u|P|e)$/.test(rest[i - 1] ?? ""));
+    const pw = rest.find((w) => /^-p.+/.test(w));
+    if (db && (!h || LOCAL.test(h))) plans.push({ tool: "mysqldump", args: [...(host("-u") ? [`-u${host("-u")}`] : []), ...(pw ? [pw] : []), ...(h ? ["-h", h] : []), db], name: db });
+  }
+  return plans;
+}
+
+// Runs each dump into .claude/backups/<time>/<db>.sql when the dump tool is installed. Returns the files written.
+export function dumpLocalDatabases(dir, command, run = spawnSync) {
+  const plans = dumpPlans(command);
+  if (!plans.length) return [];
+  const root = repoRoot(dir) ?? resolve(dir);
+  const base = join(root, ".claude", "backups");
+  const dest = join(base, `${stamp()}-${randomBytes(2).toString("hex")}-dump`);
+  const out = [];
+  for (const p of plans) {
+    const r = run(p.tool, p.args, { encoding: "utf8", timeout: 120_000, maxBuffer: 1 << 30, windowsHide: true });
+    if (r.status !== 0 || !r.stdout) continue;
+    mkdirSync(dest, { recursive: true });
+    writeFileSync(join(base, ".gitignore"), "*\n");
+    const file = join(dest, `${p.name}.sql`);
+    writeFileSync(file, r.stdout);
+    out.push(relative(root, file).split(sep).join("/"));
+  }
+  return out;
+}
+
 // ---------- database copies ----------
 function findDbFiles(root, hint = []) {
   const out = new Set();

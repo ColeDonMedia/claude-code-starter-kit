@@ -43,16 +43,17 @@ brief and in the project's files.
    `code-index.mjs --project . --find <likely name>` and a search for the key words. **Does it do what this feature needs?** Yes:
    call it. Almost: extend that one function, keeping tests for its old callers and adding one for the new use; never write a
    second version beside it. No, because it means something different (income before refunds, say): give the new one its own
-   clear name and add it to PROJECT.md's `## One source` list (`- What it is: path::name — its definition in plain words`).
+   clear name and add it to PROJECT.md's `## One source` list (`- What it is: path::name — its definition in plain words. Shown on:
+   <each file that displays or uses it>`); add every file you make show it to that line.
    Any number or rule shown or used in more than one place lives in one function, listed there, and every screen showing it
-   calls that function; a test checks each screen shows the function's value for the same data. Before reporting, run
-   `dup-check.mjs --project . --base <MAIN>` and fix every DUPLICATE it reports in your own change.
+   calls that function, and a test calls the function itself. Before reporting, run `dup-check.mjs --project . --base <MAIN>`:
+   fix every DUPLICATE, NO TEST, NOT USED and STALE line, and answer every CHECK line (a file naming the same idea without the function).
    Never guess a library or framework API from memory: if you are not certain of a function, option or
    version behavior, look it up first, in this order: (1) the installed package itself, which matches the
    pinned version exactly and costs nothing (its type definitions, README, CHANGELOG and docs folder in
    `node_modules/<name>/`, site-packages or the vendored source); (2) a docs tool such as context7 if one is
    installed; (3) the official docs on the web, for the version in the lockfile. Read `.claude/rules/stack.md`
-   and `.claude/rules/stack-guides.md` first if the project has them: the stack's known mistakes, its most important do's and
+   and the `.claude/rules/stack-guides-<stack>.md` files first if the project has them: the stack's known mistakes, its most important do's and
    don'ts, and where its docs are.
    For anything with a screen: follow `DESIGN.md` if the project has one (colors, type, spacing, components);
    build every state, not just the happy one (empty, loading, error, success); make it work at phone width
